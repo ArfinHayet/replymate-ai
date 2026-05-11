@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { CachedAnswer } from './cached-answer.entity';
-
-const CACHE_THRESHOLD = 0.25;
 
 @Injectable()
 export class CacheService {
@@ -13,6 +12,7 @@ export class CacheService {
     @InjectRepository(CachedAnswer)
     private readonly cacheRepo: Repository<CachedAnswer>,
     private readonly dataSource: DataSource,
+    private readonly config: ConfigService,
   ) {}
 
   async findHit(queryVector: number[]): Promise<string | null> {
@@ -25,9 +25,15 @@ export class CacheService {
         [JSON.stringify(queryVector)],
       );
 
-    if (rows.length > 0 && parseFloat(rows[0].distance) < CACHE_THRESHOLD) {
-      this.logger.log('Semantic cache hit');
-      return rows[0].answer;
+    const threshold = this.config.get<number>('rag.cacheThreshold') ?? 0.07;
+    if (rows.length > 0) {
+      const dist = parseFloat(rows[0].distance);
+      this.logger.log(`Cache nearest distance: ${dist.toFixed(4)} (threshold: ${threshold})`);
+      if (dist < threshold) {
+        this.logger.log('Semantic cache HIT');
+        return rows[0].answer;
+      }
+      this.logger.log('Semantic cache MISS — distance too large');
     }
     return null;
   }

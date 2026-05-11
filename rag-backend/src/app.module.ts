@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import configuration from './config/configuration';
 import { DocumentChunk } from './document/document-chunk.entity';
+import { Pdf } from './document/pdf.entity';
+import { Company } from './company/company.entity';
 import { ChatMessage } from './chat/chat-message.entity';
 import { CachedAnswer } from './cache/cached-answer.entity';
 import { DocumentModule } from './document/document.module';
@@ -12,6 +14,7 @@ import { RetrievalModule } from './retrieval/retrieval.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { CacheModule } from './cache/cache.module';
 import { AuthModule } from './auth/auth.module';
+import { CompanyModule } from './company/company.module';
 
 @Module({
   imports: [
@@ -26,7 +29,7 @@ import { AuthModule } from './auth/auth.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, ChatMessage, CachedAnswer],
+        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer],
         synchronize: true,
         logging: false,
         extra: {
@@ -36,6 +39,7 @@ import { AuthModule } from './auth/auth.module';
         ssl: { rejectUnauthorized: false },
       }),
     }),
+    CompanyModule,
     DocumentModule,
     RetrievalModule,
     GeminiModule,

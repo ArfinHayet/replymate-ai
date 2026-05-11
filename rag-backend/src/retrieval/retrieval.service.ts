@@ -10,7 +10,7 @@ export interface RetrievedChunk {
 }
 
 /** Cosine distance above which a chunk is considered irrelevant */
-const DOC_THRESHOLD = 0.5;
+const DOC_THRESHOLD = 0.7;
 
 @Injectable()
 export class RetrievalService {
@@ -67,5 +67,23 @@ export class RetrievalService {
           `[Excerpt ${i + 1} — ${r.file_name}]\n${r.content}`,
       )
       .join('\n\n');
+  }
+
+  /**
+   * Returns true if any document_chunk exists within the distance threshold
+   * for the given pre-computed embedding vector.
+   * Used as a pre-flight guard so ChatService can short-circuit before
+   * calling the LLM when the knowledge base is empty or irrelevant.
+   */
+  async hasRelevantChunks(vector: number[]): Promise<boolean> {
+    const rows: { distance: string }[] = await this.dataSource.query(
+      `SELECT (embedding::vector <=> $1::vector) AS distance
+       FROM document_chunks
+       ORDER BY distance ASC
+       LIMIT 1`,
+      [JSON.stringify(vector)],
+    );
+    if (rows.length === 0) return false;
+    return parseFloat(rows[0].distance) < DOC_THRESHOLD;
   }
 }

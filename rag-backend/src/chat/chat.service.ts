@@ -7,6 +7,8 @@ import * as path from 'path';
 import { ChatMessage } from './chat-message.entity';
 import { GeminiService } from '../gemini/gemini.service';
 import { CacheService } from '../cache/cache.service';
+import { CompanyService } from '../company/company.service';
+import { RetrievalService } from '../retrieval/retrieval.service';
 
 /** Max stored messages loaded per session (10 full turns) */
 const MAX_HISTORY = 20;
@@ -24,6 +26,8 @@ export class ChatService implements OnModuleInit {
     private readonly config: ConfigService,
     private readonly geminiService: GeminiService,
     private readonly cacheService: CacheService,
+    private readonly companyService: CompanyService,
+    private readonly retrievalService: RetrievalService,
   ) {}
 
   onModuleInit() {
@@ -43,6 +47,35 @@ export class ChatService implements OnModuleInit {
     this.logger.log('System prompt loaded');
   }
 
+  private sanitizeForPrompt(value: string, maxLength = 500): string {
+    return value
+      .slice(0, maxLength)
+      .replace(
+        /\b(ignore|disregard|forget|override|bypass|you are now|act as|new instructions?|system prompt|jailbreak)\b/gi,
+        '[removed]',
+      )
+      .replace(/[<>{}]/g, '');
+  }
+
+  private async buildSystemPrompt(): Promise<string> {
+    const company = await this.companyService.getActive();
+    if (!company) return this.systemPrompt;
+
+    const name = this.sanitizeForPrompt(company.name, 100);
+    const description = this.sanitizeForPrompt(company.shortDescription, 500);
+
+    const persona = [
+      '<company_profile>',
+      `You are a support representative for ${name}.`,
+      `Company overview: ${description}`,
+      `When users ask about "your company", "what you do", "your services", or anything about ${name}, you MUST call search_documents("${name}") to retrieve detailed information before answering.`,
+      '</company_profile>',
+      '',
+    ].join('\n');
+
+    return persona + '\n' + this.systemPrompt;
+  }
+
   async chat(
     message: string,
     sessionId: string,
@@ -58,24 +91,25 @@ export class ChatService implements OnModuleInit {
       return { answer: cachedAnswer, cached: true };
     }
 
-    // ── 3. Load conversation history ─────────────────────────────────────────
-    const history = await this.loadHistory(sessionId);
+    // ── 2.5 Pre-flight: if no relevant chunks exist, skip LLM entirely ───────
+    const hasKnowledge = await this.retrievalService.hasRelevantChunks(queryVector);
+    if (!hasKnowledge) {
+      this.logger.log('No relevant chunks in KB — returning fallback without calling LLM');
+      await this.saveTurn(sessionId, message, this.fallbackMessage);
+      return { answer: this.fallbackMessage, cached: false };
+    }
+
+    // ── 3. Load conversation history + build dynamic system prompt ───────────
+    const [history, systemPrompt] = await Promise.all([
+      this.loadHistory(sessionId),
+      this.buildSystemPrompt(),
+    ]);
 
     // ── 4. Run agentic loop — LLM decides when/what to retrieve ─────────────
-    //
-    // The LLM receives:
-    //   - system prompt (behavioural rules + tool-use instructions)
-    //   - conversation history
-    //   - current user message
-    //   - search_documents tool definition
-    //
-    // It then issues function calls which GeminiService executes and returns
-    // as functionResponse messages — document content NEVER enters the system
-    // prompt, so it cannot override instructions (no prompt injection).
     let answer: string;
     try {
       answer = await this.geminiService.runAgenticLoop(
-        this.systemPrompt,
+        systemPrompt,
         history,
         message,
       );

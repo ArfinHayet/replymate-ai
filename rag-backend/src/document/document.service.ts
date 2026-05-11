@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -7,6 +7,8 @@ import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { PDFParse } = require('pdf-parse') as { PDFParse: new (opts: { data: Buffer }) => { getText(): Promise<{ text: string }> } };
 import { DocumentChunk } from './document-chunk.entity';
+import { Pdf } from './pdf.entity';
+import { UpdatePdfDto } from './dto/update-pdf.dto';
 
 @Injectable()
 export class DocumentService {
@@ -16,6 +18,8 @@ export class DocumentService {
   constructor(
     @InjectRepository(DocumentChunk)
     private readonly chunkRepo: Repository<DocumentChunk>,
+    @InjectRepository(Pdf)
+    private readonly pdfRepo: Repository<Pdf>,
     private readonly config: ConfigService,
   ) {
     this.embeddings = new GoogleGenerativeAIEmbeddings({
@@ -28,6 +32,7 @@ export class DocumentService {
     message: string;
     fileName: string;
     chunksCreated: number;
+    pdfId: string;
   }> {
     this.logger.log(`Ingesting: ${file.originalname}`);
 
@@ -45,6 +50,10 @@ export class DocumentService {
     const docs = await splitter.createDocuments([cleanText]);
     this.logger.log(`Split into ${docs.length} chunks`);
 
+    // Create the PDF record first so chunks can reference it
+    const pdf = this.pdfRepo.create({ fileName: file.originalname });
+    await this.pdfRepo.save(pdf);
+
     const BATCH_SIZE = 10;
     const chunks: DocumentChunk[] = [];
 
@@ -59,6 +68,7 @@ export class DocumentService {
             content: batch[j].pageContent,
             fileName: file.originalname,
             chunkIndex: i + j,
+            pdfId: pdf.id,
             embedding: JSON.stringify(vectors[j]),
           }),
         );
@@ -73,6 +83,28 @@ export class DocumentService {
       message: 'PDF ingested successfully',
       fileName: file.originalname,
       chunksCreated: chunks.length,
+      pdfId: pdf.id,
     };
+  }
+
+  findAllPdfs(): Promise<Pdf[]> {
+    return this.pdfRepo.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async findOnePdf(id: string): Promise<Pdf> {
+    const pdf = await this.pdfRepo.findOne({ where: { id } });
+    if (!pdf) throw new NotFoundException(`PDF ${id} not found`);
+    return pdf;
+  }
+
+  async updatePdf(id: string, dto: UpdatePdfDto): Promise<Pdf> {
+    const pdf = await this.findOnePdf(id);
+    pdf.fileName = dto.fileName;
+    return this.pdfRepo.save(pdf);
+  }
+
+  async deletePdf(id: string): Promise<void> {
+    const pdf = await this.findOnePdf(id);
+    await this.pdfRepo.remove(pdf);
   }
 }

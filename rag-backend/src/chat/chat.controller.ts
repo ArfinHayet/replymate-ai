@@ -12,7 +12,7 @@ export class ChatController {
   constructor(private readonly chatService: ChatService) {}
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  // @UseGuards(JwtAuthGuard)
   async chat(@Body() body: ChatRequestDto) {
     if (!body.message?.trim()) throw new BadRequestException('message is required');
     if (!body.sessionId?.trim()) throw new BadRequestException('sessionId is required');

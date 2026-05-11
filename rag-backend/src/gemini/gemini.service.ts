@@ -34,7 +34,7 @@ export class GeminiService {
     userMessage: string,
   ): Promise<string> {
     const apiKey = this.config.get<string>('google.apiKey')!;
-    const maxIterations = this.config.get<number>('rag.maxToolIterations') ?? 5;
+    const maxIterations = this.config.get<number>('rag.maxToolIterations') ?? 10;
 
     // ── 1. Tool definition with Zod schema ───────────────────────────────────
     const searchDocumentsTool = tool(
@@ -86,18 +86,36 @@ export class GeminiService {
         ],
       },
       {
-        recursionLimit: maxIterations * 2,  // LangGraph counts node visits, not LLM calls
+        // LangGraph counts every node visit (agent + tool node = 2 per tool call).
+        // Multiply by 4 to allow ~2x the configured tool iterations as headroom.
+        recursionLimit: maxIterations * 4,
       },
     );
 
-    // Last message in the result is the final AI answer
+    console.log('Agentic loop result:', result);
+
+    // Last message in the result is the final AI answer.
+    // Google GenAI often returns content as an array of parts ({ type, text })
+    // instead of a plain string. JSON.stringify-ing that re-escapes newlines as
+    // literal \n, breaking markdown rendering. Extract text parts explicitly.
     const lastMsg = result.messages.at(-1);
-    const output = typeof lastMsg?.content === 'string'
-      ? lastMsg.content
-      : JSON.stringify(lastMsg?.content ?? '');
+    let output: string;
+    if (typeof lastMsg?.content === 'string') {
+      output = lastMsg.content;
+    } else if (Array.isArray(lastMsg?.content)) {
+      output = (lastMsg.content as { type: string; text?: string }[])
+        .filter((c) => c.type === 'text' && c.text)
+        .map((c) => c.text!)
+        .join('');
+    } else {
+      output = '';
+    }
 
     if (!output) throw new Error('Agent returned empty output');
-    return output;
+
+    // Gemini sometimes emits literal \n (backslash-n) instead of real newlines.
+    // Unescape them so markdown renderers receive proper line breaks.
+    return output.replace(/\\n/g, '\n');
   }
 
   /** Embed a text string using Gemini embedding-001 via REST */

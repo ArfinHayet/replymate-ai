@@ -1,5 +1,6 @@
-import { Entity, PrimaryColumn, Column, CreateDateColumn, BeforeInsert } from 'typeorm';
+import { Entity, PrimaryColumn, Column, CreateDateColumn, BeforeInsert, ManyToOne, JoinColumn } from 'typeorm';
 import { randomUUID } from 'crypto';
+import { Pdf } from './pdf.entity';
 
 @Entity('document_chunks')
 export class DocumentChunk {
@@ -10,6 +11,13 @@ export class DocumentChunk {
   generateId() {
     if (!this.id) this.id = randomUUID();
   }
+
+  @Column({ type: 'uuid', nullable: true })
+  pdfId?: string;
+
+  @ManyToOne(() => Pdf, (pdf) => pdf.chunks, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'pdfId' })
+  pdf?: Pdf;
 
   @Column({ type: 'text' })
   content?: string;
