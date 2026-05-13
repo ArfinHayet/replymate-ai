@@ -104,6 +104,30 @@ export class AuthService {
     };
   }
 
+  /**
+   * Exchange a valid refresh token for a new access + refresh token pair.
+   */
+  async refreshToken(refreshToken: string) {
+    const { data, error } = await this.supabaseClient.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+
+    if (error || !data.session) {
+      this.logger.warn(`Token refresh failed: ${error?.message}`);
+      throw new UnauthorizedException('Invalid or expired refresh token.');
+    }
+
+    this.logger.log(`Token refreshed for user: ${data.user?.email}`);
+    return {
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+      user: {
+        id: data.user!.id,
+        email: data.user!.email,
+      },
+    };
+  }
+
   private redirectBase(): string {
     const port = this.config.get<number>('port') || 3000;
     return `http://localhost:${port}`;

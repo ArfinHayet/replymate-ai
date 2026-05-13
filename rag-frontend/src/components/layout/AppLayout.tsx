@@ -7,13 +7,13 @@ import { Button } from '@/components/ui/button'
 import { logout } from '@/lib/api'
 
 const navItems = [
-  { to: '/upload',         icon: FileUp,        label: 'Upload PDF' },
-  { to: '/pdfs',           icon: Files,         label: 'Manage PDFs' },
-  { to: '/images/upload',  icon: ImageUp,       label: 'Upload Image' },
-  { to: '/images',         icon: Images,        label: 'Images' },
-  { to: '/company',        icon: Building2,     label: 'Company' },
-  { to: '/chat',           icon: MessageSquare, label: 'Chat' },
-  { to: '/embed',          icon: Code2,         label: 'Embed Widget' },
+  { to: '/upload', icon: FileUp, label: 'Upload PDF' },
+  { to: '/pdfs', icon: Files, label: 'Manage PDFs' },
+  { to: '/images/upload', icon: ImageUp, label: 'Upload Image' },
+  { to: '/images', icon: Images, label: 'Images' },
+  { to: '/company', icon: Building2, label: 'Company' },
+  { to: '/chat', icon: MessageSquare, label: 'Chat' },
+  { to: '/embed', icon: Code2, label: 'Embed Widget' },
 ]
 
 export function AppLayout() {
@@ -46,6 +46,7 @@ export function AppLayout() {
             <NavLink
               key={to}
               to={to}
+              end={to === '/images'}
               className={({ isActive }) =>
                 cn(
                   'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',

@@ -50,4 +50,12 @@ export class AuthController {
       throw new BadRequestException('password is required');
     return this.authService.login(body.email.trim(), body.password);
   }
+
+  @Post('refresh')
+  async refresh(@Body() body: { refresh_token: string }) {
+    if (!body.refresh_token?.trim())
+      throw new BadRequestException('refresh_token is required');
+    return this.authService.refreshToken(body.refresh_token.trim());
+  }
 }
+
