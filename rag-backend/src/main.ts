@@ -15,10 +15,12 @@ async function bootstrap() {
 
   app.enableCors({
     origin: (origin, callback) => {
+      console.log('[cors] origin check', { origin, allowedOrigins });
       // Allow server-to-server / curl requests (no Origin header)
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.warn('[cors] REJECTED origin', origin);
         callback(new Error(`Origin ${origin} not allowed by CORS`));
       }
     },
