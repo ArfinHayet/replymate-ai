@@ -42,7 +42,7 @@ export class ChatService implements OnModuleInit {
     this.fallbackMessage =
       markerIdx !== -1 && lines[markerIdx + 1]
         ? lines[markerIdx + 1].trim()
-        : "I'm sorry, I don't have information about that in the available documents.";
+        : "That's outside the scope of what I can help with here. I'm only able to answer questions based on the available knowledge base — feel free to ask me anything related to it!";
 
     this.logger.log('System prompt loaded');
   }
