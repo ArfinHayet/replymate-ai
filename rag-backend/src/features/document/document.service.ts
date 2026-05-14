@@ -27,6 +27,40 @@ export class DocumentService {
   }
 
   private async extractTextFromPdf(buffer: Buffer): Promise<string> {
+    // pdfjs-dist uses DOMMatrix (a browser API) at module-load time.
+    // Polyfill it for Node.js / serverless environments (e.g., Vercel) that don't expose it.
+    if (typeof (globalThis as Record<string, unknown>).DOMMatrix === 'undefined') {
+      class DOMMatrixPolyfill {
+        a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
+        m11 = 1; m12 = 0; m13 = 0; m14 = 0;
+        m21 = 0; m22 = 1; m23 = 0; m24 = 0;
+        m31 = 0; m32 = 0; m33 = 1; m34 = 0;
+        m41 = 0; m42 = 0; m43 = 0; m44 = 1;
+        is2D = true; isIdentity = true;
+        static fromMatrix() { return new DOMMatrixPolyfill(); }
+        static fromFloat32Array() { return new DOMMatrixPolyfill(); }
+        static fromFloat64Array() { return new DOMMatrixPolyfill(); }
+        multiply(this: void) { return new DOMMatrixPolyfill(); }
+        translate(this: void) { return new DOMMatrixPolyfill(); }
+        scale(this: void) { return new DOMMatrixPolyfill(); }
+        scaleNonUniform(this: void) { return new DOMMatrixPolyfill(); }
+        scale3d(this: void) { return new DOMMatrixPolyfill(); }
+        rotate(this: void) { return new DOMMatrixPolyfill(); }
+        rotateFromVector(this: void) { return new DOMMatrixPolyfill(); }
+        rotateAxisAngle(this: void) { return new DOMMatrixPolyfill(); }
+        skewX(this: void) { return new DOMMatrixPolyfill(); }
+        skewY(this: void) { return new DOMMatrixPolyfill(); }
+        flipX(this: void) { return new DOMMatrixPolyfill(); }
+        flipY(this: void) { return new DOMMatrixPolyfill(); }
+        inverse(this: void) { return new DOMMatrixPolyfill(); }
+        transformPoint(this: void, p: unknown) { return p ?? { x: 0, y: 0, z: 0, w: 1 }; }
+        toFloat32Array(this: void) { return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
+        toFloat64Array(this: void) { return new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
+        toString(this: void) { return 'matrix(1, 0, 0, 1, 0, 0)'; }
+      }
+      (globalThis as Record<string, unknown>).DOMMatrix = DOMMatrixPolyfill;
+    }
+
     // Dynamic import required — pdfjs-dist v4+ is pure ESM; require() cannot load it
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
@@ -36,8 +70,8 @@ export class DocumentService {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { pathToFileURL } = require('url') as typeof import('url');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { resolve } = require('path') as typeof import('path');
-      const workerPath = resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+      const nodePath = require('path') as typeof import('path');
+      const workerPath = nodePath.resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
       const workerUrl = pathToFileURL(workerPath).href;
       console.log('[pdfjs] setting workerSrc', { workerPath, workerUrl, cwd: process.cwd() });
       pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
@@ -79,7 +113,7 @@ export class DocumentService {
 
     // Strip null bytes (\x00) that PDF parsers embed for icons/special chars —
     // PostgreSQL UTF-8 encoding rejects them.
-    const cleanText = rawText.replace(/\x00/g, '');
+    const cleanText = rawText.split('\0').join('');
 
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: this.config.get<number>('rag.chunkSize'),
