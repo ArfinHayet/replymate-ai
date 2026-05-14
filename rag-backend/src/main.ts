@@ -22,8 +22,11 @@ async function bootstrap() {
   app.enableCors({
     origin: (origin, callback) => {
       console.log('[cors] origin check', { origin, allowedOrigins });
-      // Allow server-to-server / curl requests (no Origin header)
-      if (!origin || allowedOrigins.includes(origin)) {
+      if (!origin) {
+        // No Origin header = server-to-server / health-check — skip CORS headers
+        return callback(null, false);
+      }
+      if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
         console.warn('[cors] REJECTED origin', origin);
@@ -31,6 +34,8 @@ async function bootstrap() {
       }
     },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
   const port = config.get<number>('port') || 3000;
