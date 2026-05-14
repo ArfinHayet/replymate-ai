@@ -6,7 +6,7 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Embeddings } from '@langchain/core/embeddings';
 import { LlmFactoryService } from '../../core/llm/llm-factory.service';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse') as (buf: Buffer) => Promise<{ text: string }>;
+const { PDFParse } = require('pdf-parse') as { PDFParse: new (opts: { data: Buffer }) => { getText(): Promise<{ text: string }> } };
 import { DocumentChunk } from './document-chunk.entity';
 import { Pdf } from './pdf.entity';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
@@ -36,7 +36,7 @@ export class DocumentService {
   }> {
     this.logger.log(`Ingesting: ${file.originalname} for user ${userId}`);
 
-    const parsed = await pdfParse(file.buffer);
+    const parsed = await new PDFParse({ data: file.buffer }).getText();
     if (!parsed.text?.trim()) throw new Error('PDF contains no extractable text');
 
     // Strip null bytes (\x00) that PDF parsers embed for icons/special chars —
