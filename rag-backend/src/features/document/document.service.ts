@@ -5,8 +5,6 @@ import { ConfigService } from '@nestjs/config';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Embeddings } from '@langchain/core/embeddings';
 import { LlmFactoryService } from '../../core/llm/llm-factory.service';
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const { PDFParse } = require('pdf-parse') as { PDFParse: new (opts: { data: Buffer }) => { getText(): Promise<{ text: string }> } };
 import { DocumentChunk } from './document-chunk.entity';
 import { Pdf } from './pdf.entity';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
@@ -28,6 +26,41 @@ export class DocumentService {
     this.embeddings = this.llmFactory.getEmbeddings();
   }
 
+  private async extractTextFromPdf(buffer: Buffer): Promise<string> {
+    // Dynamic import required — pdfjs-dist v4+ is pure ESM; require() cannot load it
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
+
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      // pdfjs-dist v5 requires a real worker path — empty string no longer works.
+      // Use pathToFileURL so this works correctly on both Windows and Linux/Vercel.
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { pathToFileURL } = require('url') as typeof import('url');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { resolve } = require('path') as typeof import('path');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
+        resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'),
+      ).href;
+    }
+
+    const loadingTask = pdfjsLib.getDocument({
+      data: new Uint8Array(buffer),
+      useSystemFonts: true,
+      disableFontFace: true,
+      verbosity: 0,
+    });
+    const pdf = await loadingTask.promise;
+    const pageTexts: string[] = [];
+    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item) => ('str' in item ? item.str : ''))
+        .join(' ');
+      pageTexts.push(pageText);
+    }
+    return pageTexts.join('\n');
+  }
+
   async ingestPdf(file: Express.Multer.File, userId: string): Promise<{
     message: string;
     fileName: string;
@@ -36,12 +69,12 @@ export class DocumentService {
   }> {
     this.logger.log(`Ingesting: ${file.originalname} for user ${userId}`);
 
-    const parsed = await new PDFParse({ data: file.buffer }).getText();
-    if (!parsed.text?.trim()) throw new Error('PDF contains no extractable text');
+    const rawText = await this.extractTextFromPdf(file.buffer);
+    if (!rawText?.trim()) throw new Error('PDF contains no extractable text');
 
     // Strip null bytes (\x00) that PDF parsers embed for icons/special chars —
     // PostgreSQL UTF-8 encoding rejects them.
-    const cleanText = parsed.text.replace(/\x00/g, '');
+    const cleanText = rawText.replace(/\x00/g, '');
 
     const splitter = new RecursiveCharacterTextSplitter({
       chunkSize: this.config.get<number>('rag.chunkSize'),
