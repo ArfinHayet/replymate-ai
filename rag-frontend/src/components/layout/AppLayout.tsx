@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
-import { FileUp, Files, MessageSquare, Bot, Building2, LogOut, Code2, ImageUp, Images } from "lucide-react";
+import { FileUp, Files, MessageSquare, Bot, Building2, LogOut, Code2, Images } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { logout } from "@/lib/api";

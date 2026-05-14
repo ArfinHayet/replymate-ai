@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Pencil, Trash2, Loader2, Files, RefreshCw, FileText, Calendar, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, Loader2, Files, RefreshCw, FileText, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
