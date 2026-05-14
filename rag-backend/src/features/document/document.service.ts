@@ -37,11 +37,15 @@ export class DocumentService {
       const { pathToFileURL } = require('url') as typeof import('url');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { resolve } = require('path') as typeof import('path');
-      pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(
-        resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs'),
-      ).href;
+      const workerPath = resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
+      const workerUrl = pathToFileURL(workerPath).href;
+      console.log('[pdfjs] setting workerSrc', { workerPath, workerUrl, cwd: process.cwd() });
+      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
+    } else {
+      console.log('[pdfjs] workerSrc already set', { workerSrc: pdfjsLib.GlobalWorkerOptions.workerSrc });
     }
 
+    console.log('[pdfjs] getDocument start', { bufferSize: buffer.length });
     const loadingTask = pdfjsLib.getDocument({
       data: new Uint8Array(buffer),
       useSystemFonts: true,
@@ -49,6 +53,7 @@ export class DocumentService {
       verbosity: 0,
     });
     const pdf = await loadingTask.promise;
+    console.log('[pdfjs] document loaded', { numPages: pdf.numPages });
     const pageTexts: string[] = [];
     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
       const page = await pdf.getPage(pageNum);
