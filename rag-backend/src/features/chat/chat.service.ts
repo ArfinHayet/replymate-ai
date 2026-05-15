@@ -150,9 +150,11 @@ export class ChatService implements OnModuleInit {
     userMsg: string,
     aiMsg: string,
   ): Promise<void> {
+    const userTime = new Date();
+    const aiTime = new Date(userTime.getTime() + 1);
     await this.chatRepo.save([
-      this.chatRepo.create({ sessionId, userId, role: 'user', content: userMsg }),
-      this.chatRepo.create({ sessionId, userId, role: 'assistant', content: aiMsg }),
+      this.chatRepo.create({ sessionId, userId, role: 'user', content: userMsg, createdAt: userTime }),
+      this.chatRepo.create({ sessionId, userId, role: 'assistant', content: aiMsg, createdAt: aiTime }),
     ]);
   }
 

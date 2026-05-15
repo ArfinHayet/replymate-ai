@@ -163,7 +163,16 @@ export function ChatHistoryPage() {
 
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8">
                 <div className="mx-auto flex max-w-4xl flex-col gap-5">
-                  {selectedSession.messages.map((message) => (
+                  {[...selectedSession.messages]
+                    .sort((a, b) => {
+                      const timeDiff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+                      if (timeDiff !== 0) return timeDiff;
+                      // Tiebreaker for legacy data with identical timestamps: user before assistant
+                      if (a.role === "user" && b.role === "assistant") return -1;
+                      if (a.role === "assistant" && b.role === "user") return 1;
+                      return 0;
+                    })
+                    .map((message) => (
                     <div
                       key={message.id}
                       className={cn("flex items-end gap-3", message.role === "user" && "flex-row-reverse")}
