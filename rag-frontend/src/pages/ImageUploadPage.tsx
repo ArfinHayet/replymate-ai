@@ -105,7 +105,7 @@ export function ImageUploadPage() {
     <div className="p-8 max-w-2xl">
       <h1 className="text-2xl font-bold mb-1">Upload Image</h1>
       <p className="text-muted-foreground mb-6 text-sm">
-        Add images to the knowledge base. Gemini Vision will auto-generate a title and description
+        Add images to the knowledge base. The system will auto-generate a title and description
         which you can edit before saving.
       </p>
 
@@ -157,7 +157,7 @@ export function ImageUploadPage() {
           {state === 'analyzing' && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Analyzing image with Gemini Vision…
+              Analyzing image and preparing metadata...
             </div>
           )}
 
@@ -240,8 +240,8 @@ export function ImageUploadPage() {
         <CardContent>
           <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
             <li>Image binary is uploaded to Supabase Storage</li>
-            <li>Title + description are embedded with gemini-embedding-001</li>
-            <li>Record (title, description, URL, embedding) is stored in the database</li>
+            <li>Title and description are indexed for semantic search</li>
+            <li>Record details and storage URL are saved in the database</li>
             <li>The Chat page can answer questions about this image's content</li>
           </ol>
         </CardContent>

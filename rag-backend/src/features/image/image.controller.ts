@@ -25,7 +25,7 @@ import { UpdateImageDto } from './dto/update-image.dto';
 export class ImageController {
   constructor(private readonly imageService: ImageService) {}
 
-  /** Analyze an image with Gemini Vision — returns auto-generated title + description */
+  /** Analyze an image and return an auto-generated title + description. */
   @Post('analyze')
   analyze(@Body() dto: AnalyzeImageDto) {
     if (!dto.base64 || !dto.mimeType) {

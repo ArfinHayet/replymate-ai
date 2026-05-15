@@ -27,11 +27,11 @@ export class RetrievalService {
   }
 
   /**
-   * MCP tool executor — called by GeminiService when the LLM issues a
+   * MCP tool executor — called when the chat model issues a
    * search_documents function call.
    *
    * Embeds the query, runs pgvector cosine search, and returns relevant
-   * chunks as a plain string. The result is sent back to Gemini as a
+   * chunks as a plain string. The result is sent back to the model as a
    * function_response message — it never touches the system prompt.
    */
   async searchDocuments(query: string, userId: string): Promise<string> {

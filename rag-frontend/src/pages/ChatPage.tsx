@@ -330,6 +330,7 @@ export function ChatPage() {
         }
         .chat-textarea::placeholder { color: var(--text-faint); }
         .chat-textarea:disabled { opacity: 0.5; }
+        .chat-textarea:focus-visible { outline: none; }
 
         .send-btn {
           width: 36px; height: 36px; border-radius: 14px;

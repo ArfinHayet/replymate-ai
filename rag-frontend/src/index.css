@@ -105,6 +105,9 @@ html {
 .text-rm-trip-error {
   color: var(--rm-trip-state-error);
 }
+.text-rm-trip-state-error {
+  color: var(--rm-trip-state-error);
+}
 .text-rm-trip-warning {
   color: var(--rm-trip-state-warning);
 }
@@ -137,6 +140,9 @@ html {
   background-color: var(--rm-trip-state-success);
 }
 .bg-rm-trip-error {
+  background-color: var(--rm-trip-state-error);
+}
+.bg-rm-trip-state-error {
   background-color: var(--rm-trip-state-error);
 }
 .bg-rm-trip-warning {

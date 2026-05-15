@@ -137,7 +137,7 @@ export class ChatService implements OnModuleInit {
       order: { createdAt: 'ASC' },
       take: MAX_HISTORY,
     });
-    // Map to Gemini message format
+    // Map to the provider message format.
     return msgs.map((m) => ({
       role: m.role === 'user' ? ('user' as const) : ('model' as const),
       parts: [{ text: m.content }],

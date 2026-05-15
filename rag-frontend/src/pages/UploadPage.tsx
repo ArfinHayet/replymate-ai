@@ -287,7 +287,7 @@ export function UploadPage() {
   const steps = [
     "Text is extracted and cleaned of invalid characters",
     "Content is split into overlapping chunks (1 000 chars · 200 overlap)",
-    "Each chunk is embedded with gemini-embedding-001",
+    "Each chunk is indexed for semantic search",
     "Chunks and vectors are stored in pgvector (Supabase)",
     "The Chat page can now answer questions about this content",
   ];
@@ -583,7 +583,7 @@ export function UploadPage() {
               <div>
                 <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">Upload Image</h2>
                 <p className="text-rm-trip-text-muted text-xs">
-                  PNG, JPG, WEBP · max 10 MB · Gemini Vision auto-generates title &amp; description
+                  PNG, JPG, WEBP · max 10 MB · Title and description are auto-generated
                 </p>
               </div>
 
@@ -638,7 +638,7 @@ export function UploadPage() {
               {imgState === "analyzing" && (
                 <div className="flex items-center gap-2.5 text-sm text-rm-trip-text-muted bg-violet-50 border border-violet-100 rounded-rm-trip-smooth px-4 py-3">
                   <Loader2 className="h-4 w-4 animate-spin text-violet-500 shrink-0" />
-                  <span>Analyzing image with Gemini Vision…</span>
+                  <span>Analyzing image and preparing metadata...</span>
                 </div>
               )}
 
