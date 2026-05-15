@@ -12,24 +12,13 @@ interface Message {
   cached?: boolean;
 }
 
-const SESSION_KEY = "rag-session-id";
-
-function getOrCreateSession(): string {
-  let id = localStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, id);
-  }
-  return id;
-}
-
 const SUGGESTED = ["What is this document about?", "Summarize the key points", "What are the main topics?"];
 
 export function ChatPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const sessionId = useRef(getOrCreateSession());
+  const sessionId = useRef(crypto.randomUUID());
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -69,9 +58,7 @@ export function ChatPage() {
 
   const clearChat = () => {
     setMessages([]);
-    const newId = crypto.randomUUID();
-    localStorage.setItem(SESSION_KEY, newId);
-    sessionId.current = newId;
+    sessionId.current = crypto.randomUUID();
   };
 
   return (

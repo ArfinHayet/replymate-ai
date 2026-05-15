@@ -5,14 +5,20 @@ import {
   Body,
   Query,
   BadRequestException,
+  Res,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Post('signup')
   async signup(@Body() body: SignupDto) {
@@ -33,14 +39,96 @@ export class AuthController {
    */
   @Get('verify-email')
   async verifyEmail(
-    @Query('token_hash') tokenHash?: string,
-    @Query('type') type?: string,
+    @Query('token_hash') tokenHash: string | undefined,
+    @Query('type') type: string | undefined,
+    @Res() res: Response,
   ) {
     if (tokenHash && type) {
-      return this.authService.verifyEmail(tokenHash, type);
+      await this.authService.verifyEmail(tokenHash, type);
     }
-    // Implicit / PKCE flows: email already confirmed by Supabase before redirect
-    return { message: 'Email verified successfully. You can now log in.' };
+    const loginUrl = `${this.config.get<string>('frontendUrl') ?? 'http://localhost:5173'}/login`;
+    return res.send(this.buildVerifiedPage(loginUrl));
+  }
+
+  private buildVerifiedPage(loginUrl: string): string {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Verified</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e8edf5 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.10);
+      padding: 48px 40px;
+      max-width: 440px;
+      width: 90%;
+      text-align: center;
+    }
+    .icon-wrap {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #ecfdf5;
+      margin-bottom: 24px;
+    }
+    .icon-wrap svg { display: block; }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #1a202c;
+      margin-bottom: 12px;
+    }
+    p {
+      font-size: 1rem;
+      color: #4a5568;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+    .btn {
+      display: inline-block;
+      background: #4F46E5;
+      color: #ffffff;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 14px 36px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: opacity 0.15s ease;
+    }
+    .btn:hover { opacity: 0.88; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon-wrap">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+           xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="12" cy="12" r="12" fill="#10B981"/>
+        <path d="M7 12.5l3.5 3.5 6.5-7" stroke="#ffffff"
+              stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <h1>Email Verified!</h1>
+    <p>Your email address has been successfully verified.<br/>You can now sign in to your account.</p>
+    <a href="${loginUrl}" class="btn">Go to Login</a>
+  </div>
+</body>
+</html>`;
   }
 
   @Post('login')

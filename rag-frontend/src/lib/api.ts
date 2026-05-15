@@ -1,9 +1,9 @@
 import axios from 'axios'
 import { getToken, setToken, clearToken, getRefreshToken, setRefreshToken, clearRefreshToken } from './auth'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const BASE_URL = import.meta.env.VITE_API_URL
 
-const api = axios.create({ baseURL: BASE_URL, withCredentials: true })
+const api = axios.create({ baseURL: BASE_URL })
 
 // Attach JWT token from cookie to every request automatically
 api.interceptors.request.use((config) => {

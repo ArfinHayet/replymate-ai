@@ -129,7 +129,6 @@ export class AuthService {
   }
 
   private redirectBase(): string {
-    const port = this.config.get<number>('port') || 3000;
-    return `http://localhost:${port}`;
+    return this.config.get<string>('appUrl') ?? 'http://localhost:3000';
   }
 }

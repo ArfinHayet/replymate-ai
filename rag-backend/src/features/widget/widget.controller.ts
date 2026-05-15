@@ -31,7 +31,7 @@ export class WidgetController {
     // In development, read directly from src/ so changes are reflected immediately
     // without waiting for a rebuild. In production (dist-only deploy), fall back to dist.
     const srcPath = path.join(process.cwd(), 'src', 'public', 'widget.js');
-    const distPath = path.join(__dirname, '..', 'public', 'widget.js');
+    const distPath = path.join(__dirname, '..', '..', 'public', 'widget.js');
     const scriptPath = fs.existsSync(srcPath) ? srcPath : distPath;
 
     res.setHeader('Content-Type', 'application/javascript; charset=utf-8');

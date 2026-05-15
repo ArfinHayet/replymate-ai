@@ -33,4 +33,6 @@ export default () => ({
     jwtSecret: process.env.SUPABASE_JWT_SECRET,
     imagesBucket: process.env.SUPABASE_IMAGES_BUCKET ?? 'images',
   },
+  appUrl: process.env.APP_URL ?? `http://localhost:${parseInt(process.env.PORT ?? '3000', 10) || 3000}`,
+  frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
 });
