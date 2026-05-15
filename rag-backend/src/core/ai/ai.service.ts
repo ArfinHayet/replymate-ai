@@ -42,6 +42,10 @@ export class AiService {
     const maxIterations = this.config.get<number>('rag.maxToolIterations') ?? 10;
 
     // ── 1. Tool definitions ───────────────────────────────────────────────────
+    // Accumulate every {title, url} pair the search_images tool returns so we
+    // can restore any URLs the LLM inadvertently mutates in its final answer.
+    const imageUrls: { title: string; url: string }[] = [];
+
     const searchDocumentsTool = tool(
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_documents("${query.slice(0, 80)}")`);
@@ -67,7 +71,16 @@ export class AiService {
     const searchImagesTool = tool(
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_images("${query.slice(0, 80)}")`);
-        return this.retrievalService.searchImages(query, userId);
+        const result = await this.retrievalService.searchImages(query, userId);
+        // Parse every Title/URL pair so we can restore them if the LLM mutates them.
+        for (const block of result.split(/\n\n+/)) {
+          const titleMatch = block.match(/^Title:\s*(.+)$/m);
+          const urlMatch   = block.match(/^URL:\s*(.+)$/m);
+          if (titleMatch && urlMatch) {
+            imageUrls.push({ title: titleMatch[1].trim(), url: urlMatch[1].trim() });
+          }
+        }
+        return result;
       },
       {
         name: 'search_images',
@@ -134,7 +147,62 @@ export class AiService {
     if (!output) throw new Error('Agent returned empty output');
 
     // Some models emit literal \n instead of real newlines — unescape them.
-    return output.replace(/\\n/g, '\n');
+    const unescaped = output.replace(/\\n/g, '\n');
+
+    // Restore any image URLs the LLM may have inadvertently modified.
+    return this.restoreImageUrls(unescaped, imageUrls);
+  }
+
+  /**
+   * Scans Markdown image syntax in `text` and replaces any URL that does not
+   * exactly match a known tool-result URL with the correct original.
+   * Matching priority: exact → title → URL prefix → single-image fallback.
+   */
+  private restoreImageUrls(
+    text: string,
+    knownUrls: { title: string; url: string }[],
+  ): string {
+    if (knownUrls.length === 0) return text;
+
+    return text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (match, alt: string, url: string) => {
+      // 1. Already exact — nothing to do.
+      if (knownUrls.some((k) => k.url === url)) return match;
+
+      // 2. Match by alt text ↔ known title (case-insensitive substring).
+      const byTitle = knownUrls.find(
+        (k) =>
+          k.title.toLowerCase() === alt.toLowerCase() ||
+          alt.toLowerCase().includes(k.title.toLowerCase()) ||
+          k.title.toLowerCase().includes(alt.toLowerCase()),
+      );
+      if (byTitle) {
+        this.logger.warn(`Restored image URL for "${alt}": "${url}" → "${byTitle.url}"`);
+        return `![${alt}](${byTitle.url})`;
+      }
+
+      // 3. URL shares the same storage path (LLM may have truncated a query string).
+      const byPrefix = knownUrls.find((k) => {
+        const knownBase = k.url.split('?')[0];
+        const givenBase = url.split('?')[0];
+        return (
+          knownBase === givenBase ||
+          knownBase.startsWith(givenBase) ||
+          givenBase.startsWith(knownBase)
+        );
+      });
+      if (byPrefix) {
+        this.logger.warn(`Restored image URL by prefix for "${alt}": "${url}" → "${byPrefix.url}"`);
+        return `![${alt}](${byPrefix.url})`;
+      }
+
+      // 4. Only one known image — it must be the intended target.
+      if (knownUrls.length === 1) {
+        this.logger.warn(`Restored single image URL for "${alt}": "${url}" → "${knownUrls[0].url}"`);
+        return `![${alt}](${knownUrls[0].url})`;
+      }
+
+      return match;
+    });
   }
 
   /**
