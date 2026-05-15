@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/static-components */
 import { useState, useRef, type DragEvent, type ChangeEvent } from "react";
 import {
   FileUp,
@@ -280,74 +281,6 @@ export function UploadPage() {
     <div className="flex items-center gap-3 rounded-rm-trip-smooth bg-red-50 border border-red-200 p-4">
       <XCircle className="h-5 w-5 text-rm-trip-state-error shrink-0" />
       <p className="text-sm text-rm-trip-state-error">{msg}</p>
-    </div>
-  );
-
-  const DropZone = ({
-    dragging,
-    hasFile,
-    icon,
-    iconActive,
-    accentClass,
-    bgAccent,
-    label,
-    sublabel,
-    fileMeta,
-    onDragOver,
-    onDragLeave,
-    onDrop,
-    onClick,
-    children,
-  }: {
-    dragging: boolean;
-    hasFile: boolean;
-    icon: React.ReactNode;
-    iconActive: React.ReactNode;
-    accentClass: string;
-    bgAccent: string;
-    label: string;
-    sublabel: React.ReactNode;
-    fileMeta?: React.ReactNode;
-    onDragOver: (e: DragEvent<HTMLDivElement>) => void;
-    onDragLeave: () => void;
-    onDrop: (e: DragEvent<HTMLDivElement>) => void;
-    onClick: () => void;
-    children?: React.ReactNode;
-  }) => (
-    <div
-      className={cn(
-        "relative border-2 border-dashed rounded-rm-trip-smooth p-10 text-center cursor-pointer transition-all duration-200 select-none group",
-        dragging
-          ? `${accentClass} ${bgAccent} scale-[1.01]`
-          : hasFile
-            ? `${accentClass.replace("border-", "border-").replace(/\b(\w+)\b/, "$1/60")} ${bgAccent.replace("bg-", "bg-").replace(/\b(\w+)\b(\s|$)/, "$1/40$2")}`
-            : `border-gray-200 hover:${accentClass.replace("border-", "hover:border-").split(" ")[0]}/50 hover:bg-gray-50/60`,
-      )}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-      onClick={onClick}
-    >
-      {hasFile ? (
-        fileMeta
-      ) : (
-        <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
-          <div
-            className={cn(
-              "h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center transition-colors duration-200",
-              `group-hover:${bgAccent}`,
-            )}
-          >
-            <span className="group-hover:hidden">{icon}</span>
-            <span className="hidden group-hover:block">{iconActive}</span>
-          </div>
-          <div>
-            <p className="font-semibold text-rm-trip-text text-sm">{label}</p>
-            <p className="text-xs mt-0.5">{sublabel}</p>
-          </div>
-        </div>
-      )}
-      {children}
     </div>
   );
 

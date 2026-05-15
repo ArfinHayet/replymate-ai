@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
-import { FileUp, Files, MessageSquare, Bot, Building2, LogOut, Code2, ImageUp, Images } from "lucide-react";
+import { FileUp, Files, MessageSquare, Bot, Building2, LogOut, Code2, Images } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { logout } from "@/lib/api";
@@ -8,7 +8,6 @@ import { logout } from "@/lib/api";
 const navItems = [
   { to: "/upload", icon: FileUp, label: "Upload Knowledge" },
   { to: "/pdfs", icon: Files, label: "Manage PDFs" },
-  // { to: "/images/upload", icon: ImageUp, label: "Upload Image" },
   { to: "/images", icon: Images, label: "Images" },
   { to: "/company", icon: Building2, label: "Company" },
   { to: "/chat", icon: MessageSquare, label: "Chat" },
@@ -24,9 +23,9 @@ export function AppLayout() {
   };
 
   return (
-    <div className="flex h-screen bg-rm-trip-surface overflow-hidden">
+    <div className="flex h-dvh bg-rm-trip-surface overflow-hidden">
       {/* ── Sidebar ── */}
-      <aside className="w-60 flex flex-col shrink-0 bg-white border-r border-gray-100 shadow-rm-trip-card">
+      <aside className="hidden w-64 shrink-0 flex-col bg-white border-r border-gray-100 shadow-rm-trip-card md:flex">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-gray-100">
           <div className="flex h-9 w-9 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand shadow-rm-trip-glow">
@@ -72,8 +71,31 @@ export function AppLayout() {
         </div>
       </aside>
 
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 px-2 py-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
+        <nav className="flex items-center justify-around gap-1">
+          {navItems.map(({ to, icon: Icon, label }) => (
+            <NavLink
+              key={to}
+              to={to}
+              end={to === "/images"}
+              className={({ isActive }) =>
+                cn(
+                  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-rm-trip-smooth px-2 py-2 text-[11px] font-semibold transition-all",
+                  isActive
+                    ? "bg-rm-trip-brand text-white"
+                    : "text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text",
+                )
+              }
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="max-w-full truncate">{label.replace(" Knowledge", "")}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
+
       {/* ── Main content ── */}
-      <main className="flex-1 overflow-auto min-h-0">
+      <main className="flex-1 overflow-auto min-h-0 pb-20 md:pb-0">
         <Outlet />
       </main>
 
