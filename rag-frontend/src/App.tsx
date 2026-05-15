@@ -7,6 +7,7 @@ import { ChatPage } from './pages/ChatPage'
 import { CompanyPage } from './pages/CompanyPage'
 import { LoginPage } from './pages/LoginPage'
 import { SignupPage } from './pages/SignupPage'
+import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { EmbedPage } from './pages/EmbedPage'
 import { ImageUploadPage } from './pages/ImageUploadPage'
 import { ImagesPage } from './pages/ImagesPage'
@@ -19,6 +20,7 @@ export default function App() {
         {/* Public routes — no sidebar */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
         {/* Protected routes — inside sidebar layout */}
         <Route element={<PrivateRoute />}>
