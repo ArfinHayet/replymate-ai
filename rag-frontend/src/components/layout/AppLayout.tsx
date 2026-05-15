@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 
-import { FileUp, Files, MessageSquare, Bot, Building2, LogOut, Code2, Images } from "lucide-react";
+import { FileUp, Files, MessageSquare, History, Bot, Building2, LogOut, Code2, Images } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { logout } from "@/lib/api";
@@ -11,6 +11,7 @@ const navItems = [
   { to: "/images", icon: Images, label: "Images" },
   { to: "/company", icon: Building2, label: "Company" },
   { to: "/chat", icon: MessageSquare, label: "Chat" },
+  { to: "/chat-history", icon: History, label: "Chat History" },
   { to: "/embed", icon: Code2, label: "Embed Widget" },
 ];
 
@@ -72,7 +73,7 @@ export function AppLayout() {
       </aside>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 px-2 py-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden">
-        <nav className="flex items-center justify-around gap-1">
+        <nav className="flex items-center gap-1 overflow-x-auto">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -80,7 +81,7 @@ export function AppLayout() {
               end={to === "/images"}
               className={({ isActive }) =>
                 cn(
-                  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-rm-trip-smooth px-2 py-2 text-[11px] font-semibold transition-all",
+                  "flex min-w-[72px] flex-col items-center gap-1 rounded-rm-trip-smooth px-2 py-2 text-[11px] font-semibold transition-all",
                   isActive
                     ? "bg-rm-trip-brand text-white"
                     : "text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text",

@@ -4,6 +4,7 @@ import { PrivateRoute } from './components/PrivateRoute'
 import { UploadPage } from './pages/UploadPage'
 import { PdfsPage } from './pages/PdfsPage'
 import { ChatPage } from './pages/ChatPage'
+import { ChatHistoryPage } from './pages/ChatHistoryPage'
 import { CompanyPage } from './pages/CompanyPage'
 import { LoginPage } from './pages/LoginPage'
 import { SignupPage } from './pages/SignupPage'
@@ -32,6 +33,7 @@ export default function App() {
             <Route path="/images" element={<ImagesPage />} />
             <Route path="/company" element={<CompanyPage />} />
             <Route path="/chat" element={<ChatPage />} />
+            <Route path="/chat-history" element={<ChatHistoryPage />} />
             <Route path="/embed" element={<EmbedPage />} />
           </Route>
         </Route>
