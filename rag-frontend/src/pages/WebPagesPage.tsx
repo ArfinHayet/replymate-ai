@@ -192,11 +192,19 @@ export function WebPagesPage() {
             },
           ]}
           data={pages}
-          loading={loading}
-          emptyIcon={<Globe className="h-10 w-10 text-gray-300" />}
-          emptyTitle="No web pages yet"
-          emptyDescription='Go to "Upload Knowledge" → URL tab to ingest your first web page.'
-          skeletonRows={4}
+          isLoading={loading}
+          getRowKey={(page) => page.id}
+          emptyState={
+            <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-rm-trip-smooth bg-gray-100">
+                <Globe className="h-8 w-8 text-gray-300" />
+              </div>
+              <div>
+                <p className="font-rm-trip-heading font-bold text-rm-trip-text">No web pages yet</p>
+                <p className="mt-1 text-sm text-rm-trip-text-muted">Go to "Upload Knowledge" → URL tab to ingest your first web page.</p>
+              </div>
+            </div>
+          }
         />
       </div>
 
