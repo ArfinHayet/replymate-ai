@@ -1,13 +1,24 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
+import express from 'express';
+import type { Request } from 'express';
+
+type RawBodyRequest = Request & { rawBody?: Buffer };
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bodyParser: false,
   });
-  app.use(require('express').json({ limit: '10mb' }));
-  app.use(require('express').urlencoded({ limit: '10mb', extended: true }));
+  app.use(express.json({
+    limit: '10mb',
+    verify: (req: RawBodyRequest, _res: unknown, buf: Buffer) => {
+      if (req.originalUrl?.startsWith('/whatsapp/webhook')) {
+        req.rawBody = Buffer.from(buf);
+      }
+    },
+  }));
+  app.use(express.urlencoded({ limit: '10mb', extended: true }));
   const config = app.get(ConfigService);
 
   app.enableCors({ origin: '*' });
@@ -19,4 +30,4 @@ async function bootstrap() {
   console.log(`   POST /admin/upload  — ingest PDF into knowledge base`);
   console.log(`   POST /chat          — agentic RAG chat (MCP tool retrieval)`);
 }
-bootstrap();
+void bootstrap();
