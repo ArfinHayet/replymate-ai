@@ -25,6 +25,7 @@ export function ChatHistoryPage() {
           query={viewModel.query}
           onQueryChange={viewModel.setQuery}
           onSelectSession={viewModel.selectSession}
+          onRetry={() => void viewModel.loadSessions()}
         />
         <ChatHistoryConversation selectedSession={viewModel.selectedSession} />
       </div>

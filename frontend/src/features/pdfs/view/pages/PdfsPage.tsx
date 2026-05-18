@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { InlineError } from "@/components/ui/InlineError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { usePdfViewModel } from "../../viewModel/usePdfViewModel";
 
@@ -44,6 +45,14 @@ export function PdfsPage() {
       </PageHeader>
 
       <div className="mx-auto space-y-6 px-8 py-8">
+        {vm.error && !vm.loading && (
+          <InlineError
+            title="Could not load documents"
+            message="Your uploaded documents are unavailable right now."
+            onRetry={() => void refresh()}
+            retrying={vm.loading}
+          />
+        )}
         <div className="grid gap-4 sm:grid-cols-3">
           <Stat label="Total Documents" value={vm.loading ? <Skeleton className="h-7 w-8" /> : vm.pdfs.length} />
           <Stat label="Latest Upload" value={vm.loading ? <Skeleton className="h-6 w-32" /> : vm.pdfs[0]?.fileName ?? "None yet"} />

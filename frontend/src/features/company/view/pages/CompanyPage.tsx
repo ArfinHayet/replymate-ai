@@ -1,6 +1,7 @@
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { InlineError } from "@/components/ui/InlineError";
 import { useCompanyViewModel } from "../../viewModel/useCompanyViewModel";
 import { CompanyDeleteDialog } from "../components/CompanyDeleteDialog";
 import { CompanyFormDialog } from "../components/CompanyFormDialog";
@@ -59,6 +60,14 @@ export function CompanyPage() {
       </PageHeader>
 
       <div className="mx-auto px-8 py-8 space-y-6">
+        {viewModel.error && !viewModel.loading && (
+          <InlineError
+            title="Could not load company profile"
+            message="Your company details are unavailable right now. Retry before editing assistant behavior."
+            onRetry={() => void refreshCompanies()}
+            retrying={viewModel.loading}
+          />
+        )}
         <CompanyStats companies={viewModel.companies} loading={viewModel.loading} />
         <CompanyTable
           companies={viewModel.companies}

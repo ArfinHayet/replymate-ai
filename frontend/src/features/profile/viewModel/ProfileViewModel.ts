@@ -5,4 +5,5 @@ export interface ProfileViewModel {
   loading: boolean;
   error: string | null;
   joinedDate: string;
+  loadProfile(): Promise<{ success: boolean; errorMessage?: string }>;
 }

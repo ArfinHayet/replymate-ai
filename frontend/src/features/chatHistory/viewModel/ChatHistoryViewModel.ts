@@ -8,6 +8,7 @@ export interface ChatHistoryViewModel {
   error: string | null;
   query: string;
   selectedId: string;
+  loadSessions(): Promise<{ success: boolean; errorMessage?: string }>;
   setQuery(value: string): void;
   selectSession(sessionId: string): void;
 }

@@ -1,6 +1,7 @@
 import { Calendar, Loader2, Mail, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { InlineError } from "@/components/ui/InlineError";
 import type { UserProfile } from "../../model/entities/UserProfile";
 import { useProfileViewModel } from "../../viewModel/useProfileViewModel";
 
@@ -31,11 +32,17 @@ export function ProfilePage() {
 
   if (vm.error || !vm.profile) {
     return (
-      <div className="flex h-full items-center justify-center p-8 text-center">
-        <div>
+      <div className="flex h-full items-center justify-center bg-rm-trip-surface p-8">
+        <div className="w-full max-w-md">
           <UserRound className="mx-auto h-10 w-10 text-rm-trip-text-muted" />
-          <p className="mt-3 font-semibold text-rm-trip-text">Could not load profile</p>
-          <p className="mt-1 text-sm text-rm-trip-text-muted">{vm.error}</p>
+          <div className="mt-4">
+            <InlineError
+              title="Could not load profile"
+              message={vm.error ?? "Your account information is unavailable right now."}
+              onRetry={() => void vm.loadProfile()}
+              retrying={vm.loading}
+            />
+          </div>
         </div>
       </div>
     );

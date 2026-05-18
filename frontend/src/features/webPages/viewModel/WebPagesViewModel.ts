@@ -9,6 +9,7 @@ export interface WebPagesActionResult {
 export interface WebPagesViewModel {
   pages: KnowledgeWebPage[];
   loading: boolean;
+  error: string | null;
   refetchingId: string | null;
   deleteTarget: KnowledgeWebPage | null;
   deleting: boolean;

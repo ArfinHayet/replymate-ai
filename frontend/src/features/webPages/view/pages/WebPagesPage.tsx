@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { InlineError } from "@/components/ui/InlineError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWebPagesViewModel } from "../../viewModel/useWebPagesViewModel";
 
@@ -26,6 +27,14 @@ export function WebPagesPage() {
       </PageHeader>
 
       <div className="mx-auto space-y-6 px-8 py-8">
+        {vm.error && !vm.loading && (
+          <InlineError
+            title="Could not load web pages"
+            message="Your saved web pages are unavailable right now."
+            onRetry={() => void refresh()}
+            retrying={vm.loading}
+          />
+        )}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Stat label="Sites" value={vm.loading ? <Skeleton className="h-7 w-8" /> : vm.pages.length} />
           <Stat label="Content Sections" value={vm.loading ? <Skeleton className="h-7 w-12" /> : vm.pages.reduce((sum, page) => sum + page.chunksCreated, 0)} />

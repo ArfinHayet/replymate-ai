@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { InlineError } from "@/components/ui/InlineError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useImagesViewModel } from "../../viewModel/useImagesViewModel";
 
@@ -31,6 +32,14 @@ export function ImagesPage() {
       </PageHeader>
 
       <div className="mx-auto space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+        {vm.error && !vm.loading && (
+          <InlineError
+            title="Could not load images"
+            message="Your saved images are unavailable right now."
+            onRetry={() => void refresh()}
+            retrying={vm.loading}
+          />
+        )}
         <div className="grid gap-4 sm:grid-cols-3">
           <Stat label="Total Images" value={vm.loading ? <Skeleton className="h-7 w-8" /> : vm.images.length} />
           <Stat label="Latest Image" value={vm.loading ? <Skeleton className="h-6 w-32" /> : vm.images[0]?.title ?? "None yet"} />

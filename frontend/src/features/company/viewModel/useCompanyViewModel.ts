@@ -8,6 +8,7 @@ export function useCompanyViewModel(): CompanyViewModel {
   const companyService = useMemo(() => createCompanyService(), []);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Company | null>(null);
   const [form, setForm] = useState<CompanyFormState>(emptyCompanyForm);
@@ -18,10 +19,13 @@ export function useCompanyViewModel(): CompanyViewModel {
   const loadCompanies = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       setCompanies(await companyService.listCompanies());
       return { success: true };
     } catch {
-      return { success: false, errorMessage: "Failed to load companies" };
+      const errorMessage = "Failed to load companies";
+      setError(errorMessage);
+      return { success: false, errorMessage };
     } finally {
       setLoading(false);
     }
@@ -101,6 +105,7 @@ export function useCompanyViewModel(): CompanyViewModel {
   return {
     companies,
     loading,
+    error,
     formOpen,
     editTarget,
     form,

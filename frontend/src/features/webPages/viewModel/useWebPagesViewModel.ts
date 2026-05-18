@@ -7,6 +7,7 @@ export function useWebPagesViewModel(): WebPagesViewModel {
   const webPageService = useMemo(() => createWebPageService(), []);
   const [pages, setPages] = useState<KnowledgeWebPage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [refetchingId, setRefetchingId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<KnowledgeWebPage | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -14,10 +15,13 @@ export function useWebPagesViewModel(): WebPagesViewModel {
   const loadPages = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       setPages(await webPageService.listWebPages());
       return { success: true };
     } catch {
-      return { success: false, errorMessage: "Failed to load web pages" };
+      const errorMessage = "Failed to load web pages";
+      setError(errorMessage);
+      return { success: false, errorMessage };
     } finally {
       setLoading(false);
     }
@@ -74,6 +78,7 @@ export function useWebPagesViewModel(): WebPagesViewModel {
   return {
     pages,
     loading,
+    error,
     refetchingId,
     deleteTarget,
     deleting,

@@ -2,6 +2,7 @@ import { Code2, Copy, Globe, Key, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { InlineError } from "@/components/ui/InlineError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEmbedViewModel } from "../../viewModel/useEmbedViewModel";
 
@@ -42,6 +43,13 @@ export function EmbedPage() {
 
               {vm.loadingKeys ? (
                 <TableSkeleton columns="grid-cols-[1.2fr_2fr_1fr_80px]" />
+              ) : vm.keysError ? (
+                <InlineError
+                  title="Could not load widget keys"
+                  message="Widget keys are unavailable right now."
+                  onRetry={() => void run(vm.loadWidgetKeys())}
+                  retrying={vm.loadingKeys}
+                />
               ) : vm.keys.length === 0 ? (
                 <p className="text-sm text-rm-trip-text-muted">No widget keys yet. Create one above.</p>
               ) : (
@@ -134,6 +142,13 @@ export function EmbedPage() {
 
               {vm.loadingDomains ? (
                 <TableSkeleton columns="grid-cols-[2fr_1fr_48px]" />
+              ) : vm.domainsError ? (
+                <InlineError
+                  title="Could not load allowed domains"
+                  message="Allowed domains are unavailable right now."
+                  onRetry={() => void run(vm.loadAllowedDomains())}
+                  retrying={vm.loadingDomains}
+                />
               ) : vm.domains.length === 0 ? (
                 <p className="text-sm text-rm-trip-text-muted">No allowed domains yet.</p>
               ) : (

@@ -7,6 +7,7 @@ export function useImagesViewModel(): ImagesViewModel {
   const imageService = useMemo(() => createImageService(), []);
   const [images, setImages] = useState<KnowledgeImage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<KnowledgeImage | null>(null);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
@@ -17,10 +18,13 @@ export function useImagesViewModel(): ImagesViewModel {
   const loadImages = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       setImages(await imageService.listImages());
       return { success: true };
     } catch {
-      return { success: false, errorMessage: "Failed to load images" };
+      const errorMessage = "Failed to load images";
+      setError(errorMessage);
+      return { success: false, errorMessage };
     } finally {
       setLoading(false);
     }
@@ -76,6 +80,7 @@ export function useImagesViewModel(): ImagesViewModel {
   return {
     images,
     loading,
+    error,
     editTarget,
     editTitle,
     editDescription,

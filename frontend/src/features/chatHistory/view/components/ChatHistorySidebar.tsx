@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { InlineError } from "@/components/ui/InlineError";
 import { cn } from "@/lib/utils";
 import type { ChatSession } from "../../model/entities/ChatSession";
 import { formatRelativeTime, shortSessionId } from "../../model/services/chatHistoryFormatters";
@@ -11,6 +12,7 @@ interface ChatHistorySidebarProps {
   query: string;
   onQueryChange: (value: string) => void;
   onSelectSession: (sessionId: string) => void;
+  onRetry: () => void;
 }
 
 export function ChatHistorySidebar({
@@ -21,6 +23,7 @@ export function ChatHistorySidebar({
   query,
   onQueryChange,
   onSelectSession,
+  onRetry,
 }: ChatHistorySidebarProps) {
   return (
     <aside className="flex min-h-0 flex-col border-b border-gray-100 bg-white lg:border-b-0 lg:border-r">
@@ -43,8 +46,13 @@ export function ChatHistorySidebar({
           </div>
         )}
         {error && (
-          <div className="px-4 py-12 text-center">
-            <p className="text-sm font-semibold text-red-500">{error}</p>
+          <div className="px-2 py-4">
+            <InlineError
+              title="Could not load chat history"
+              message={error}
+              onRetry={onRetry}
+              retrying={loading}
+            />
           </div>
         )}
         {!loading &&

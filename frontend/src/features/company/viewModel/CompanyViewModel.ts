@@ -4,6 +4,7 @@ import type { CompanyFormState } from "../model/entities/CompanyFormState";
 export interface CompanyViewModel {
   companies: Company[];
   loading: boolean;
+  error: string | null;
   formOpen: boolean;
   editTarget: Company | null;
   form: CompanyFormState;

@@ -13,8 +13,12 @@ export interface EmbedViewModel {
   newDomain: string;
   loadingKeys: boolean;
   loadingDomains: boolean;
+  keysError: string | null;
+  domainsError: string | null;
   apiUrl: string;
   snippetTemplate: string;
+  loadWidgetKeys(): Promise<EmbedActionResult>;
+  loadAllowedDomains(): Promise<EmbedActionResult>;
   setNewLabel(value: string): void;
   setNewDomain(value: string): void;
   createKey(): Promise<EmbedActionResult>;

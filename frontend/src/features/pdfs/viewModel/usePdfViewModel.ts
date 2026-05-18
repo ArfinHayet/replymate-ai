@@ -7,6 +7,7 @@ export function usePdfViewModel(): PdfViewModel {
   const pdfService = useMemo(() => createPdfService(), []);
   const [pdfs, setPdfs] = useState<PdfDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [renameTarget, setRenameTarget] = useState<PdfDocument | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [renaming, setRenaming] = useState(false);
@@ -16,10 +17,13 @@ export function usePdfViewModel(): PdfViewModel {
   const loadPdfs = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       setPdfs(await pdfService.listPdfs());
       return { success: true };
     } catch {
-      return { success: false, errorMessage: "Failed to load PDFs" };
+      const errorMessage = "Failed to load documents";
+      setError(errorMessage);
+      return { success: false, errorMessage };
     } finally {
       setLoading(false);
     }
@@ -71,6 +75,7 @@ export function usePdfViewModel(): PdfViewModel {
   return {
     pdfs,
     loading,
+    error,
     renameTarget,
     renameValue,
     renaming,

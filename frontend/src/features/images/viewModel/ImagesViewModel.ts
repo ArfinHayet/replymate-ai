@@ -9,6 +9,7 @@ export interface ImagesActionResult {
 export interface ImagesViewModel {
   images: KnowledgeImage[];
   loading: boolean;
+  error: string | null;
   editTarget: KnowledgeImage | null;
   editTitle: string;
   editDescription: string;

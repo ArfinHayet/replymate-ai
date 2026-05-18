@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AllowedDomain, WidgetKey } from "../model/entities/WidgetSettings";
 import { createEmbedService } from "../model/services/createEmbedService";
 import type { EmbedViewModel } from "./EmbedViewModel";
@@ -13,20 +13,43 @@ export function useEmbedViewModel(): EmbedViewModel {
   const [newDomain, setNewDomain] = useState("");
   const [loadingKeys, setLoadingKeys] = useState(true);
   const [loadingDomains, setLoadingDomains] = useState(true);
+  const [keysError, setKeysError] = useState<string | null>(null);
+  const [domainsError, setDomainsError] = useState<string | null>(null);
+
+  const loadWidgetKeys = useCallback(async () => {
+    try {
+      setLoadingKeys(true);
+      setKeysError(null);
+      setKeys(await embedService.listWidgetKeys());
+      return { success: true };
+    } catch {
+      const errorMessage = "Failed to load widget keys";
+      setKeysError(errorMessage);
+      return { success: false, errorMessage };
+    } finally {
+      setLoadingKeys(false);
+    }
+  }, [embedService]);
+
+  const loadAllowedDomains = useCallback(async () => {
+    try {
+      setLoadingDomains(true);
+      setDomainsError(null);
+      setDomains(await embedService.listAllowedDomains());
+      return { success: true };
+    } catch {
+      const errorMessage = "Failed to load allowed domains";
+      setDomainsError(errorMessage);
+      return { success: false, errorMessage };
+    } finally {
+      setLoadingDomains(false);
+    }
+  }, [embedService]);
 
   useEffect(() => {
-    embedService
-      .listWidgetKeys()
-      .then(setKeys)
-      .catch(() => undefined)
-      .finally(() => setLoadingKeys(false));
-
-    embedService
-      .listAllowedDomains()
-      .then(setDomains)
-      .catch(() => undefined)
-      .finally(() => setLoadingDomains(false));
-  }, [embedService]);
+    void Promise.resolve().then(loadWidgetKeys);
+    void Promise.resolve().then(loadAllowedDomains);
+  }, [loadAllowedDomains, loadWidgetKeys]);
 
   const createKey = async () => {
     try {
@@ -87,8 +110,12 @@ export function useEmbedViewModel(): EmbedViewModel {
     newDomain,
     loadingKeys,
     loadingDomains,
+    keysError,
+    domainsError,
     apiUrl: API_URL,
     snippetTemplate: embedService.createSnippetTemplate(API_URL),
+    loadWidgetKeys,
+    loadAllowedDomains,
     setNewLabel,
     setNewDomain,
     createKey,

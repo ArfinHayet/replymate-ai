@@ -9,6 +9,7 @@ export interface PdfActionResult {
 export interface PdfViewModel {
   pdfs: PdfDocument[];
   loading: boolean;
+  error: string | null;
   renameTarget: PdfDocument | null;
   renameValue: string;
   renaming: boolean;

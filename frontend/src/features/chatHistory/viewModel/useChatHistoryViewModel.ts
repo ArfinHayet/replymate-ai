@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ChatSession } from "../model/entities/ChatSession";
 import { createChatHistoryService } from "../model/services/createChatHistoryService";
 import type { ChatHistoryViewModel } from "./ChatHistoryViewModel";
@@ -11,16 +11,26 @@ export function useChatHistoryViewModel(): ChatHistoryViewModel {
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
 
-  useEffect(() => {
-    chatHistoryService
-      .listSessions()
-      .then((data) => {
-        setSessions(data);
-        if (data.length > 0) setSelectedId(data[0].sessionId);
-      })
-      .catch(() => setError("Failed to load chat history."))
-      .finally(() => setLoading(false));
+  const loadSessions = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await chatHistoryService.listSessions();
+      setSessions(data);
+      if (data.length > 0) setSelectedId((current) => current || data[0].sessionId);
+      return { success: true };
+    } catch {
+      const errorMessage = "Failed to load chat history.";
+      setError(errorMessage);
+      return { success: false, errorMessage };
+    } finally {
+      setLoading(false);
+    }
   }, [chatHistoryService]);
+
+  useEffect(() => {
+    void Promise.resolve().then(loadSessions);
+  }, [loadSessions]);
 
   const filteredSessions = useMemo(
     () => chatHistoryService.filterSessions(sessions, query),
@@ -36,6 +46,7 @@ export function useChatHistoryViewModel(): ChatHistoryViewModel {
     error,
     query,
     selectedId,
+    loadSessions,
     setQuery,
     selectSession: setSelectedId,
   };
