@@ -1,4 +1,5 @@
 import { API_BASE_URL, api } from "@/lib/api";
+import { apiRoutes } from "@/lib/apiRoutes";
 import { getToken } from "@/lib/auth";
 import type {
   ImageAnalysisResult,
@@ -15,7 +16,7 @@ export class HttpUploadRepository implements UploadRepository {
     const form = new FormData();
     form.append("file", file);
 
-    const response = await api.post<PdfUploadResult>("/admin/upload", form, {
+    const response = await api.post<PdfUploadResult>(apiRoutes.upload.pdf, form, {
       onUploadProgress: (event) => {
         if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
       },
@@ -28,7 +29,7 @@ export class HttpUploadRepository implements UploadRepository {
   }
 
   async analyzeImage(base64: string, mimeType: string): Promise<ImageAnalysisResult> {
-    const response = await api.post<ImageAnalysisResult>("/images/analyze", { base64, mimeType });
+    const response = await api.post<ImageAnalysisResult>(apiRoutes.images.analyze, { base64, mimeType });
     return response.data;
   }
 
@@ -38,7 +39,7 @@ export class HttpUploadRepository implements UploadRepository {
     form.append("title", title);
     form.append("description", description);
 
-    const response = await api.post<ImageUploadResult>("/images", form);
+    const response = await api.post<ImageUploadResult>(apiRoutes.images.list, form);
     return response.data;
   }
 }
@@ -48,7 +49,7 @@ async function streamIngestUrls(
   onEvent: (event: IngestUrlsStreamEvent) => void,
 ): Promise<IngestUrlsResponse> {
   const token = getToken();
-  const response = await fetch(`${API_BASE_URL}/admin/ingest-urls`, {
+  const response = await fetch(`${API_BASE_URL}${apiRoutes.upload.urls}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

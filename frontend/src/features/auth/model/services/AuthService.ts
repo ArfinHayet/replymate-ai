@@ -1,3 +1,4 @@
+import { apiRoutes } from "@/lib/apiRoutes";
 import type { AuthRepository } from "../repositories/AuthRepository";
 
 export class AuthService {
@@ -22,7 +23,7 @@ export class AuthService {
   }
 
   signInWithGoogle(origin: string) {
-    return this.authRepository.signInWithGoogle(`${origin}/auth/callback`);
+    return this.authRepository.signInWithGoogle(`${origin}${apiRoutes.auth.callbackPath}`);
   }
 
   isAuthenticated() {

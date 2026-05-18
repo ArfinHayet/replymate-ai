@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { apiRoutes } from './apiRoutes'
 import { clearRefreshToken, clearToken, getRefreshToken, getToken, setRefreshToken, setToken } from './auth'
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL
@@ -51,7 +52,7 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const { data } = await axios.post<RefreshTokenResponse>(`${API_BASE_URL}/auth/refresh`, {
+        const { data } = await axios.post<RefreshTokenResponse>(`${API_BASE_URL}${apiRoutes.auth.refresh}`, {
           refresh_token: refreshToken,
         })
         setToken(data.access_token)
