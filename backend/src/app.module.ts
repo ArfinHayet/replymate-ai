@@ -23,6 +23,9 @@ import { ImageModule } from './features/image/image.module';
 import { WebPage } from './features/web-page/web-page.entity';
 import { WebPageChunk } from './features/web-page/web-page-chunk.entity';
 import { WebPageModule } from './features/web-page/web-page.module';
+import { WhatsappIntegration } from './features/whatsapp/whatsapp-integration.entity';
+import { WhatsappMessageEvent } from './features/whatsapp/whatsapp-message-event.entity';
+import { WhatsappModule } from './features/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -37,7 +40,7 @@ import { WebPageModule } from './features/web-page/web-page.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk],
+        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent],
         synchronize: true,
         logging: false,
         extra: {
@@ -57,6 +60,7 @@ import { WebPageModule } from './features/web-page/web-page.module';
     WidgetModule,
     ImageModule,
     WebPageModule,
+    WhatsappModule,
   ],
 })
 export class AppModule implements OnModuleInit {

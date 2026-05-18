@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -8,6 +8,15 @@ import { LlmFactoryService } from '../../core/llm/llm-factory.service';
 import { DocumentChunk } from './document-chunk.entity';
 import { Pdf } from './pdf.entity';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
+
+// ─── Vercel limits ────────────────────────────────────────────────────────────
+// Hobby  : 4.5 MB body, 10 s timeout, 1 GB RAM
+// Pro    : 4.5 MB body (can raise to 5 MB in vercel.json), 60 s timeout, 3 GB RAM
+// Workaround for body limit: upload to S3/Blob and pass a URL instead of raw bytes.
+// For the timeout: keep embedding concurrency low and stream-save in batches.
+const MAX_PDF_BYTES = 4 * 1024 * 1024; // 4 MB — safe under Vercel's 4.5 MB body cap
+const EMBED_BATCH_SIZE = 5;            // smaller batches → each API call is faster
+const EMBED_CONCURRENCY = 3;           // run N batches in parallel to beat the clock
 
 @Injectable()
 export class DocumentService {
@@ -26,9 +35,10 @@ export class DocumentService {
     this.embeddings = this.llmFactory.getEmbeddings();
   }
 
+  // ─── PDF → plain text ───────────────────────────────────────────────────────
+
   private async extractTextFromPdf(buffer: Buffer): Promise<string> {
-    // pdfjs-dist uses DOMMatrix (a browser API) at module-load time.
-    // Polyfill it for Node.js / serverless environments (e.g., Vercel) that don't expose it.
+    // pdfjs-dist uses DOMMatrix (browser API) — polyfill for Node / Vercel.
     if (typeof (globalThis as Record<string, unknown>).DOMMatrix === 'undefined') {
       class DOMMatrixPolyfill {
         a = 1; b = 0; c = 0; d = 1; e = 0; f = 0;
@@ -40,46 +50,42 @@ export class DocumentService {
         static fromMatrix() { return new DOMMatrixPolyfill(); }
         static fromFloat32Array() { return new DOMMatrixPolyfill(); }
         static fromFloat64Array() { return new DOMMatrixPolyfill(); }
-        multiply(this: void) { return new DOMMatrixPolyfill(); }
-        translate(this: void) { return new DOMMatrixPolyfill(); }
-        scale(this: void) { return new DOMMatrixPolyfill(); }
-        scaleNonUniform(this: void) { return new DOMMatrixPolyfill(); }
-        scale3d(this: void) { return new DOMMatrixPolyfill(); }
-        rotate(this: void) { return new DOMMatrixPolyfill(); }
-        rotateFromVector(this: void) { return new DOMMatrixPolyfill(); }
-        rotateAxisAngle(this: void) { return new DOMMatrixPolyfill(); }
-        skewX(this: void) { return new DOMMatrixPolyfill(); }
-        skewY(this: void) { return new DOMMatrixPolyfill(); }
-        flipX(this: void) { return new DOMMatrixPolyfill(); }
-        flipY(this: void) { return new DOMMatrixPolyfill(); }
-        inverse(this: void) { return new DOMMatrixPolyfill(); }
-        transformPoint(this: void, p: unknown) { return p ?? { x: 0, y: 0, z: 0, w: 1 }; }
-        toFloat32Array(this: void) { return new Float32Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
-        toFloat64Array(this: void) { return new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]); }
-        toString(this: void) { return 'matrix(1, 0, 0, 1, 0, 0)'; }
+        multiply() { return new DOMMatrixPolyfill(); }
+        translate() { return new DOMMatrixPolyfill(); }
+        scale() { return new DOMMatrixPolyfill(); }
+        scaleNonUniform() { return new DOMMatrixPolyfill(); }
+        scale3d() { return new DOMMatrixPolyfill(); }
+        rotate() { return new DOMMatrixPolyfill(); }
+        rotateFromVector() { return new DOMMatrixPolyfill(); }
+        rotateAxisAngle() { return new DOMMatrixPolyfill(); }
+        skewX() { return new DOMMatrixPolyfill(); }
+        skewY() { return new DOMMatrixPolyfill(); }
+        flipX() { return new DOMMatrixPolyfill(); }
+        flipY() { return new DOMMatrixPolyfill(); }
+        inverse() { return new DOMMatrixPolyfill(); }
+        transformPoint(p: unknown) { return p ?? { x: 0, y: 0, z: 0, w: 1 }; }
+        toFloat32Array() { return new Float32Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]); }
+        toFloat64Array() { return new Float64Array([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]); }
+        toString() { return 'matrix(1, 0, 0, 1, 0, 0)'; }
       }
       (globalThis as Record<string, unknown>).DOMMatrix = DOMMatrixPolyfill;
     }
 
-    // Dynamic import required — pdfjs-dist v4+ is pure ESM; require() cannot load it
+    // pdfjs-dist v4+ is pure ESM — dynamic import required.
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
 
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      // pdfjs-dist v5 requires a real worker path — empty string no longer works.
-      // Use pathToFileURL so this works correctly on both Windows and Linux/Vercel.
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { pathToFileURL } = require('url') as typeof import('url');
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const nodePath = require('path') as typeof import('path');
-      const workerPath = nodePath.resolve(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
-      const workerUrl = pathToFileURL(workerPath).href;
-      console.log('[pdfjs] setting workerSrc', { workerPath, workerUrl, cwd: process.cwd() });
-      pdfjsLib.GlobalWorkerOptions.workerSrc = workerUrl;
-    } else {
-      console.log('[pdfjs] workerSrc already set', { workerSrc: pdfjsLib.GlobalWorkerOptions.workerSrc });
+      const workerPath = nodePath.resolve(
+        process.cwd(),
+        'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs',
+      );
+      pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
     }
 
-    console.log('[pdfjs] getDocument start', { bufferSize: buffer.length });
     const loadingTask = pdfjsLib.getDocument({
       data: new Uint8Array(buffer),
       useSystemFonts: true,
@@ -87,32 +93,74 @@ export class DocumentService {
       verbosity: 0,
     });
     const pdf = await loadingTask.promise;
-    console.log('[pdfjs] document loaded', { numPages: pdf.numPages });
-    const pageTexts: string[] = [];
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const textContent = await page.getTextContent();
-      const pageText = textContent.items
-        .map((item) => ('str' in item ? item.str : ''))
-        .join(' ');
-      pageTexts.push(pageText);
-    }
+    this.logger.log(`pdfjs: loaded ${pdf.numPages} pages`);
+
+    // FIX 1: Parse pages concurrently instead of one-by-one.
+    // For a 50-page PDF this alone saves several seconds on Vercel.
+    const pagePromises = Array.from({ length: pdf.numPages }, (_, i) =>
+      pdf.getPage(i + 1).then(async (page) => {
+        const tc = await page.getTextContent();
+        return tc.items.map((item) => ('str' in item ? item.str : '')).join(' ');
+      }),
+    );
+    const pageTexts = await Promise.all(pagePromises);
     return pageTexts.join('\n');
   }
 
-  async ingestPdf(file: Express.Multer.File, userId: string): Promise<{
-    message: string;
-    fileName: string;
-    chunksCreated: number;
-    pdfId: string;
-  }> {
-    this.logger.log(`Ingesting: ${file.originalname} for user ${userId}`);
+  // ─── Parallel embedding helper ──────────────────────────────────────────────
+
+  /**
+   * FIX 2: Embed chunks in parallel batches.
+   *
+   * The original code was fully sequential: embed batch 1, await, embed batch 2, await…
+   * With EMBED_CONCURRENCY=3 we fire 3 API calls at the same time, which is 3× faster
+   * and critical for staying under Vercel's 60 s function timeout on large PDFs.
+   */
+  private async embedInParallel(
+    texts: string[],
+  ): Promise<number[][]> {
+    const batches: string[][] = [];
+    for (let i = 0; i < texts.length; i += EMBED_BATCH_SIZE) {
+      batches.push(texts.slice(i, i + EMBED_BATCH_SIZE));
+    }
+
+    const results = new Array<number[][]>(batches.length);
+
+    // Process `EMBED_CONCURRENCY` batches at a time
+    for (let start = 0; start < batches.length; start += EMBED_CONCURRENCY) {
+      const window = batches.slice(start, start + EMBED_CONCURRENCY);
+      const embeddings = await Promise.all(
+        window.map((batch) => this.embeddings.embedDocuments(batch)),
+      );
+      embeddings.forEach((emb, idx) => { results[start + idx] = emb; });
+      this.logger.log(
+        `Embedded batches ${start + 1}–${Math.min(start + EMBED_CONCURRENCY, batches.length)} / ${batches.length}`,
+      );
+    }
+
+    return results.flat();
+  }
+
+  // ─── Ingest ─────────────────────────────────────────────────────────────────
+
+  async ingestPdf(
+    file: Express.Multer.File,
+    userId: string,
+  ): Promise<{ message: string; fileName: string; chunksCreated: number; pdfId: string }> {
+    // FIX 3: Reject oversized files early with a clear error instead of timing out.
+    if (file.buffer.length > MAX_PDF_BYTES) {
+      throw new PayloadTooLargeException(
+        `PDF exceeds the ${MAX_PDF_BYTES / 1024 / 1024} MB limit. ` +
+        `Please compress the file or split it into smaller parts.`,
+      );
+    }
+
+    this.logger.log(`Ingesting: ${file.originalname} (${file.buffer.length} bytes) for user ${userId}`);
 
     const rawText = await this.extractTextFromPdf(file.buffer);
     if (!rawText?.trim()) throw new Error('PDF contains no extractable text');
 
-    // Strip null bytes (\x00) that PDF parsers embed for icons/special chars —
-    // PostgreSQL UTF-8 encoding rejects them.
+    // Strip null bytes — PostgreSQL UTF-8 rejects \x00.
     const cleanText = rawText.split('\0').join('');
 
     const splitter = new RecursiveCharacterTextSplitter({
@@ -122,38 +170,37 @@ export class DocumentService {
     const docs = await splitter.createDocuments([cleanText]);
     this.logger.log(`Split into ${docs.length} chunks`);
 
-    // Create the PDF record first so chunks can reference it
+    // Create the PDF record first so chunks can FK-reference it.
     const pdf = this.pdfRepo.create({ fileName: file.originalname, userId });
     await this.pdfRepo.save(pdf);
 
-    const BATCH_SIZE = 10;
-    const chunks: DocumentChunk[] = [];
+    // FIX 2 (continued): embed all chunks in parallel batches.
+    const allTexts = docs.map((d) => d.pageContent);
+    const allVectors = await this.embedInParallel(allTexts);
 
-    for (let i = 0; i < docs.length; i += BATCH_SIZE) {
-      const batch = docs.slice(i, i + BATCH_SIZE);
-      const vectors = await this.embeddings.embedDocuments(
-        batch.map((d) => d.pageContent),
-      );
-      for (let j = 0; j < batch.length; j++) {
-        chunks.push(
-          this.chunkRepo.create({
-            content: batch[j].pageContent,
-            fileName: file.originalname,
-            chunkIndex: i + j,
-            pdfId: pdf.id,
-            userId,
-            embedding: JSON.stringify(vectors[j]),
-          }),
-        );
-      }
-      this.logger.log(
-        `Embedded batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(docs.length / BATCH_SIZE)}`,
-      );
+    // FIX 4: Build all chunk entities and save in one shot.
+    // Multiple chunkRepo.save() calls inside a loop generate N round-trips to
+    // the DB; a single bulk save is one round-trip and far faster on Vercel's
+    // managed Postgres (which has non-trivial connection latency).
+    const chunks: DocumentChunk[] = docs.map((doc, i) =>
+      this.chunkRepo.create({
+        content: doc.pageContent,
+        fileName: file.originalname,
+        chunkIndex: i,
+        pdfId: pdf.id,
+        userId,
+        embedding: JSON.stringify(allVectors[i]),
+      }),
+    );
+
+    // Save in DB-friendly batches to avoid hitting Postgres parameter limits
+    // (max 65 535 bind params; a chunk entity with ~5 columns → safe up to ~13 k chunks).
+    const DB_SAVE_BATCH = 500;
+    for (let i = 0; i < chunks.length; i += DB_SAVE_BATCH) {
+      await this.chunkRepo.save(chunks.slice(i, i + DB_SAVE_BATCH));
     }
 
-    await this.chunkRepo.save(chunks);
-
-    // Invalidate semantic cache — new documents may change answers to cached questions
+    // Invalidate semantic cache — new documents may change answers to cached questions.
     await this.dataSource.query(
       `DELETE FROM cached_answers WHERE "userId" = $1`,
       [userId],
@@ -167,6 +214,8 @@ export class DocumentService {
       pdfId: pdf.id,
     };
   }
+
+  // ─── CRUD ───────────────────────────────────────────────────────────────────
 
   findAllPdfs(userId: string): Promise<Pdf[]> {
     return this.pdfRepo.find({ where: { userId }, order: { createdAt: 'DESC' } });

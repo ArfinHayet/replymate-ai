@@ -48,4 +48,8 @@ export default () => ({
   },
   appUrl: process.env.APP_URL ?? `http://localhost:${parseInt(process.env.PORT ?? '3000', 10) || 3000}`,
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  whatsapp: {
+    credentialEncryptionKey: process.env.WHATSAPP_CREDENTIAL_ENCRYPTION_KEY,
+    graphVersion: process.env.WHATSAPP_GRAPH_VERSION ?? 'v24.0',
+  },
 });
