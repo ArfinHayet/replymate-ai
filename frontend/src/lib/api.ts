@@ -241,6 +241,8 @@ export interface WebPage {
   url: string
   title: string
   chunksCreated: number
+  pagesFetched: number
+  pagesFailed: number
   createdAt: string
   updatedAt: string
 }
@@ -250,6 +252,8 @@ export interface IngestUrlResult {
   success: boolean
   title?: string
   chunksCreated?: number
+  pagesFetched?: number
+  pagesFailed?: number
   webPageId?: string
   error?: string
 }
@@ -258,13 +262,105 @@ export interface IngestUrlsResponse {
   pages: IngestUrlResult[]
 }
 
+export type IngestUrlsStreamEvent =
+  | { type: 'start'; total: number }
+  | { type: 'url-start'; url: string }
+  | { type: 'scanning'; rootUrl: string; url: string }
+  | { type: 'url-result'; result: IngestUrlResult }
+  | { type: 'done'; pages: IngestUrlResult[] }
+
 export const ingestUrls = (urls: string[]): Promise<IngestUrlsResponse> =>
   api.post<IngestUrlsResponse>('/admin/ingest-urls', { urls }).then((r) => r.data)
+
+export const ingestUrlsStream = async (
+  urls: string[],
+  onEvent: (event: IngestUrlsStreamEvent) => void,
+): Promise<IngestUrlsResponse> => {
+  const token = getToken()
+  const response = await fetch(`${BASE_URL}/admin/ingest-urls`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ urls }),
+  })
+
+  if (!response.ok) {
+    let message = 'Ingestion failed'
+    try {
+      const data = await response.json()
+      message = data?.message ?? message
+    } catch {
+      const text = await response.text()
+      if (text) message = text
+    }
+    throw new Error(message)
+  }
+  if (!response.body) throw new Error('Streaming is not supported by this browser')
+
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let finalPages: IngestUrlResult[] = []
+
+  const emitBlock = (block: string) => {
+    const lines = block.split(/\r?\n/)
+    let eventName = 'message'
+    const dataLines: string[] = []
+
+    for (const line of lines) {
+      if (line.startsWith('event:')) eventName = line.slice(6).trim()
+      if (line.startsWith('data:')) dataLines.push(line.slice(5).trim())
+    }
+    if (dataLines.length === 0) return
+
+    const data = JSON.parse(dataLines.join('\n')) as Record<string, unknown>
+    if (eventName === 'start') {
+      onEvent({ type: 'start', total: Number(data.total ?? 0) })
+    } else if (eventName === 'url-start') {
+      onEvent({ type: 'url-start', url: String(data.url ?? '') })
+    } else if (eventName === 'scanning') {
+      onEvent({
+        type: 'scanning',
+        rootUrl: String(data.rootUrl ?? ''),
+        url: String(data.url ?? ''),
+      })
+    } else if (eventName === 'url-result') {
+      onEvent({ type: 'url-result', result: data as unknown as IngestUrlResult })
+    } else if (eventName === 'done') {
+      finalPages = (data.pages ?? []) as IngestUrlResult[]
+      onEvent({ type: 'done', pages: finalPages })
+    }
+  }
+
+  while (true) {
+    const { value, done } = await reader.read()
+    if (done) break
+
+    buffer += decoder.decode(value, { stream: true })
+    const blocks = buffer.split(/\n\n/)
+    buffer = blocks.pop() ?? ''
+    blocks.forEach(emitBlock)
+  }
+
+  buffer += decoder.decode()
+  if (buffer.trim()) emitBlock(buffer)
+
+  return { pages: finalPages }
+}
 
 export const listWebPages = (): Promise<WebPage[]> =>
   api.get<WebPage[]>('/web-pages').then((r) => r.data)
 
-export const refetchWebPage = (id: string): Promise<{ webPageId: string; url: string; title: string; chunksCreated: number }> =>
+export const refetchWebPage = (id: string): Promise<{
+  webPageId: string
+  url: string
+  title: string
+  chunksCreated: number
+  pagesFetched: number
+  pagesFailed: number
+}> =>
   api.post(`/web-pages/${id}/refetch`).then((r) => r.data)
 
 export const deleteWebPage = (id: string) => api.delete(`/web-pages/${id}`)

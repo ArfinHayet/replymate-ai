@@ -12,6 +12,8 @@ import { RetrievalService } from '../../core/retrieval/retrieval.service';
 
 /** Max stored messages loaded per session (10 full turns) */
 const MAX_HISTORY = 20;
+const RETRIEVAL_CONTEXT_TURNS = 6;
+const RETRIEVAL_CONTEXT_CHAR_LIMIT = 1600;
 
 @Injectable()
 export class ChatService implements OnModuleInit {
@@ -59,11 +61,31 @@ export class ChatService implements OnModuleInit {
       `You are a support representative for ${name}.`,
       `Company overview: ${description}`,
       `IMPORTANT: If the user asks "who are you", "what are you", "introduce yourself", "tell me about yourself", or any similar identity question, you MUST respond with exactly this: "I'm a support assistant for ${name}. ${description} How can I help you today?" — do NOT call any tool for this.`,
-      `When users ask about "your company", "what you do", "your services", or anything about ${name}, you MUST call search_documents("${name}") to retrieve detailed information before answering.`,
+      `When users ask about "your company", "what you do", "your services", or anything about ${name}, you MUST call search_documents("${name}") and search_web_pages("${name}") to retrieve detailed information before answering.`,
       '',
     ].join('\n');
 
     return persona + '\n' + this.systemPrompt;
+  }
+
+  private buildContextualRetrievalQuery(
+    history: { role: 'user' | 'model'; parts: { text?: string }[] }[],
+    message: string,
+  ): string {
+    const recentContext = history
+      .slice(-RETRIEVAL_CONTEXT_TURNS)
+      .map((m) => {
+        const role = m.role === 'user' ? 'User' : 'Assistant';
+        const text = m.parts.map((p) => p.text ?? '').join('').trim();
+        return text ? `${role}: ${text}` : '';
+      })
+      .filter(Boolean)
+      .join('\n')
+      .slice(-RETRIEVAL_CONTEXT_CHAR_LIMIT);
+
+    return recentContext
+      ? `Recent conversation:\n${recentContext}\n\nCurrent question: ${message}`
+      : message;
   }
 
   async chat(
@@ -91,8 +113,15 @@ export class ChatService implements OnModuleInit {
       this.buildSystemPrompt(userId),
     ]);
 
+    const preflightQuery = this.buildContextualRetrievalQuery(history, message);
+    const preflightVector =
+      preflightQuery === message
+        ? queryVector
+        : await this.aiService.embedText(preflightQuery);
     const hasCompanyProfile = systemPrompt !== this.systemPrompt;
-    const hasKnowledge = hasCompanyProfile || await this.retrievalService.hasRelevantChunks(queryVector, userId);
+    const hasKnowledge =
+      hasCompanyProfile ||
+      await this.retrievalService.hasRelevantKnowledge(preflightVector, userId);
     if (!hasKnowledge) {
       this.logger.log('No relevant chunks in KB — returning fallback without calling LLM');
       await this.saveTurn(sessionId, userId, message, this.fallbackMessage);

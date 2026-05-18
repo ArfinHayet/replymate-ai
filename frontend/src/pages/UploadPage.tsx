@@ -19,10 +19,15 @@ import {
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { uploadPdf, type UploadResult, analyzeImage, saveImage, type ImageItem, ingestUrls, type IngestUrlResult } from "@/lib/api";
+import { uploadPdf, type UploadResult, analyzeImage, saveImage, type ImageItem, ingestUrlsStream, type IngestUrlResult } from "@/lib/api";
 
 type UploadState = "idle" | "uploading" | "analyzing" | "ready" | "saving" | "success" | "error";
 type ActiveTab = "pdf" | "markdown" | "url" | "image";
+type UrlScanItem = {
+  url: string;
+  rootUrl?: string;
+  status: "scanning" | "done" | "failed";
+};
 
 export function UploadPage() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("pdf");
@@ -144,10 +149,21 @@ export function UploadPage() {
   const [urlProgress, setUrlProgress] = useState(0);
   const [urls, setUrls] = useState<string[]>([""]);
   const [urlResults, setUrlResults] = useState<IngestUrlResult[]>([]);
+  const [urlScanItems, setUrlScanItems] = useState<UrlScanItem[]>([]);
   const addUrl = () => setUrls((prev) => [...prev, ""]);
   const removeUrl = (i: number) => setUrls((prev) => prev.filter((_, idx) => idx !== i));
   const updateUrl = (i: number, val: string) => setUrls((prev) => prev.map((u, idx) => (idx === i ? val : u)));
   const validUrls = urls.filter((u) => u.trim().length > 0);
+  const upsertScanItem = (item: UrlScanItem) => {
+    setUrlScanItems((prev) => {
+      const existing = prev.findIndex((scan) => scan.url === item.url);
+      if (existing === -1) return [...prev, item];
+
+      const next = [...prev];
+      next[existing] = { ...next[existing], ...item };
+      return next;
+    });
+  };
   const handleUrlIngest = async () => {
     if (validUrls.length === 0) {
       toast.error("Add at least one URL");
@@ -156,13 +172,31 @@ export function UploadPage() {
     setUrlState("uploading");
     setUrlProgress(0);
     setUrlResults([]);
-    // Simulate progress while Jina fetch + embedding runs server-side
-    const interval = setInterval(() => setUrlProgress((p) => Math.min(p + 8, 85)), 800);
+    setUrlScanItems([]);
     try {
-      const res = await ingestUrls(validUrls);
-      clearInterval(interval);
-      setUrlProgress(100);
-      setUrlResults(res.pages);
+      const res = await ingestUrlsStream(validUrls, (event) => {
+        if (event.type === "start") {
+          setUrlProgress(5);
+        } else if (event.type === "url-start") {
+          setUrlProgress((p) => Math.max(p, 8));
+        } else if (event.type === "scanning") {
+          upsertScanItem({ url: event.url, rootUrl: event.rootUrl, status: "scanning" });
+          setUrlProgress((p) => Math.min(p + 3, 92));
+        } else if (event.type === "url-result") {
+          setUrlResults((prev) => [...prev.filter((r) => r.url !== event.result.url), event.result]);
+          upsertScanItem({
+            url: event.result.url,
+            status: event.result.success ? "done" : "failed",
+          });
+          setUrlProgress((p) => Math.min(p + 8, 96));
+        } else if (event.type === "done") {
+          setUrlResults(event.pages);
+          setUrlScanItems((prev) =>
+            prev.map((scan) => (scan.status === "scanning" ? { ...scan, status: "done" } : scan)),
+          );
+          setUrlProgress(100);
+        }
+      });
       setUrlState("success");
       const succeeded = res.pages.filter((p) => p.success).length;
       const failed = res.pages.length - succeeded;
@@ -170,10 +204,8 @@ export function UploadPage() {
       if (failed > 0) toast.error(`${failed} URL${failed !== 1 ? "s" : ""} failed to ingest`);
       setUrls([""]);
     } catch (err: unknown) {
-      clearInterval(interval);
       setUrlState("error");
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? "Ingestion failed";
+      const message = err instanceof Error ? err.message : "Ingestion failed";
       toast.error(message);
     }
   };
@@ -182,6 +214,7 @@ export function UploadPage() {
     setUrls([""]);
     setUrlProgress(0);
     setUrlResults([]);
+    setUrlScanItems([]);
   };
 
   // ── Image state ─────────────────────────────────────────────────────────
@@ -265,9 +298,9 @@ export function UploadPage() {
 
   // ── Tab config ──────────────────────────────────────────────────────────
   const tabs: { id: ActiveTab; label: string; icon: React.ReactNode; hint: string }[] = [
+    { id: "url", label: "URL", icon: <Link2 className="h-3.5 w-3.5" />, hint: "web pages" },
     { id: "pdf", label: "PDF", icon: <FileUp className="h-3.5 w-3.5" />, hint: "max 50 MB" },
     // { id: "markdown", label: "Markdown", icon: <FileText className="h-3.5 w-3.5" />, hint: "max 10 MB" },
-    { id: "url", label: "URL", icon: <Link2 className="h-3.5 w-3.5" />, hint: "web pages" },
     { id: "image", label: "Image", icon: <ImageUp className="h-3.5 w-3.5" />, hint: "max 10 MB" },
   ];
 
@@ -308,459 +341,494 @@ export function UploadPage() {
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader title="Ingest Content" subtitle="Add documents and images to your knowledge base." />
       <div className="px-4 py-8 sm:px-8">
-      <div className="mx-auto">
-        {/* ── Tab switcher ── */}
-        <div className="flex gap-1 mb-6 bg-white rounded-rm-trip-smooth p-1 shadow-rm-trip-card border border-gray-100 w-fit">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center justify-center gap-1 py-1.5 px-3 rounded-[0.4rem] text-xs font-semibold transition-all duration-200",
-                activeTab === tab.id
-                  ? "bg-rm-trip-brand text-white shadow-rm-trip-card"
-                  : "text-rm-trip-text-muted hover:text-rm-trip-text hover:bg-gray-50",
-              )}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* ── Panel card ── */}
-        <div className="bg-white rounded-rm-trip-smooth shadow-rm-trip-card border border-gray-100 overflow-hidden">
-          {/* ════════ PDF PANEL ════════ */}
-          {activeTab === "pdf" && (
-            <div className="p-6 space-y-5">
-              <div>
-                <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">Upload PDF</h2>
-                <p className="text-rm-trip-text-muted text-xs">PDF only · max 50 MB</p>
-              </div>
-              <div
-                className={cn(
-                  "relative border-2 border-dashed rounded-rm-trip-smooth p-10 text-center cursor-pointer transition-all duration-200 select-none group",
-                  pdfDragging
-                    ? "border-rm-trip-brand bg-blue-50 scale-[1.01]"
-                    : selectedPdf
-                      ? "border-rm-trip-brand/60 bg-blue-50/40"
-                      : "border-gray-200 hover:border-rm-trip-brand/50 hover:bg-gray-50/60",
-                )}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setPdfDragging(true);
-                }}
-                onDragLeave={() => setPdfDragging(false)}
-                onDrop={handlePdfDrop}
-                onClick={() => pdfInputRef.current?.click()}
-              >
-                <input
-                  ref={pdfInputRef}
-                  type="file"
-                  accept=".pdf,application/pdf"
-                  className="hidden"
-                  onChange={handlePdfChange}
-                />
-                {selectedPdf ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-14 w-14 rounded-rm-trip-smooth bg-rm-trip-brand/10 flex items-center justify-center">
-                      <File className="h-7 w-7 text-rm-trip-brand" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-rm-trip-text text-sm">{selectedPdf.name}</p>
-                      <p className="text-rm-trip-text-muted text-xs mt-0.5">
-                        {(selectedPdf.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
-                    </div>
-                    <span className="text-xs text-rm-trip-brand font-medium">Click to change file</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
-                    <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-rm-trip-brand/10 transition-colors duration-200">
-                      <FileUp className="h-7 w-7 group-hover:text-rm-trip-brand transition-colors duration-200" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-rm-trip-text text-sm">Drop your PDF here</p>
-                      <p className="text-xs mt-0.5">
-                        or <span className="text-rm-trip-brand font-medium">click to browse</span>
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {pdfState === "uploading" && <ProgressBar value={pdfProgress} />}
-              {pdfState === "success" && pdfResult && (
-                <SuccessBanner>
-                  <div>
-                    <p className="font-semibold text-emerald-800 text-sm">{pdfResult.fileName}</p>
-                    <p className="text-xs text-emerald-700 mt-0.5">
-                      {pdfResult.chunksCreated} chunks created · ID: {pdfResult.pdfId.slice(0, 8)}…
-                    </p>
-                  </div>
-                </SuccessBanner>
-              )}
-              {pdfState === "error" && <ErrorBanner msg="Upload failed. See the toast for details." />}
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={handlePdfUpload}
-                  disabled={!selectedPdf || pdfState === "uploading"}
-                  className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  <Upload className="h-4 w-4" />
-                  {pdfState === "uploading" ? "Processing…" : "Upload & Ingest"}
-                </button>
-                {(selectedPdf || pdfState !== "idle") && (
-                  <button
-                    onClick={resetPdf}
-                    className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ════════ MARKDOWN PANEL ════════ */}
-          {activeTab === "markdown" && (
-            <div className="p-6 space-y-5">
-              <div>
-                <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">
-                  Upload Markdown
-                </h2>
-                <p className="text-rm-trip-text-muted text-xs">.md / .mdx only · max 10 MB</p>
-              </div>
-              <div
-                className={cn(
-                  "relative border-2 border-dashed rounded-rm-trip-smooth p-10 text-center cursor-pointer transition-all duration-200 select-none group",
-                  mdDragging
-                    ? "border-rm-trip-accent bg-teal-50 scale-[1.01]"
-                    : selectedMd
-                      ? "border-rm-trip-accent/60 bg-teal-50/40"
-                      : "border-gray-200 hover:border-rm-trip-accent/50 hover:bg-gray-50/60",
-                )}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setMdDragging(true);
-                }}
-                onDragLeave={() => setMdDragging(false)}
-                onDrop={handleMdDrop}
-                onClick={() => mdInputRef.current?.click()}
-              >
-                <input
-                  ref={mdInputRef}
-                  type="file"
-                  accept=".md,.mdx,text/markdown"
-                  className="hidden"
-                  onChange={handleMdChange}
-                />
-                {selectedMd ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-14 w-14 rounded-rm-trip-smooth bg-rm-trip-accent/10 flex items-center justify-center">
-                      <FileText className="h-7 w-7 text-rm-trip-accent" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-rm-trip-text text-sm">{selectedMd.name}</p>
-                      <p className="text-rm-trip-text-muted text-xs mt-0.5">{(selectedMd.size / 1024).toFixed(1)} KB</p>
-                    </div>
-                    <span className="text-xs text-rm-trip-accent font-medium">Click to change file</span>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
-                    <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-rm-trip-accent/10 transition-colors duration-200">
-                      <FileText className="h-7 w-7 group-hover:text-rm-trip-accent transition-colors duration-200" />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-rm-trip-text text-sm">Drop your Markdown file here</p>
-                      <p className="text-xs mt-0.5">
-                        or <span className="text-rm-trip-accent font-medium">click to browse</span>
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-              {mdState === "uploading" && <ProgressBar value={mdProgress} color="bg-rm-trip-accent" />}
-              {mdState === "success" && (
-                <SuccessBanner>
-                  <p className="text-sm font-semibold text-emerald-800">Markdown ingested successfully</p>
-                </SuccessBanner>
-              )}
-              {mdState === "error" && <ErrorBanner msg="Upload failed. See the toast for details." />}
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={handleMdUpload}
-                  disabled={!selectedMd || mdState === "uploading"}
-                  className="flex items-center gap-2 bg-rm-trip-accent hover:bg-rm-trip-accent-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  <Upload className="h-4 w-4" />
-                  {mdState === "uploading" ? "Processing…" : "Upload & Ingest"}
-                </button>
-                {(selectedMd || mdState !== "idle") && (
-                  <button
-                    onClick={resetMd}
-                    className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ════════ URL PANEL ════════ */}
-          {activeTab === "url" && (
-            <div className="p-6 space-y-5">
-              <div>
-                <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">
-                  Ingest from URLs
-                </h2>
-                <p className="text-rm-trip-text-muted text-xs">
-                  Add one or more web pages to extract and embed content
-                </p>
-              </div>
-              <div className="space-y-2.5">
-                {urls.map((url, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="flex-1 relative">
-                      <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-rm-trip-text-muted pointer-events-none" />
-                      <input
-                        type="url"
-                        value={url}
-                        onChange={(e) => updateUrl(i, e.target.value)}
-                        placeholder="https://example.com/docs/page"
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-colors duration-150"
-                      />
-                    </div>
-                    {urls.length > 1 && (
-                      <button
-                        onClick={() => removeUrl(i)}
-                        className="h-9 w-9 flex items-center justify-center rounded-rm-trip-smooth border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-state-error hover:border-red-200 hover:bg-red-50 transition-all duration-150"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+        <div className="mx-auto">
+          {/* ── Tab switcher ── */}
+          <div className="flex gap-1 mb-6 bg-white rounded-rm-trip-smooth p-1 shadow-rm-trip-card border border-gray-100 w-fit">
+            {tabs.map((tab) => (
               <button
-                onClick={addUrl}
-                className="flex items-center gap-2 text-rm-trip-brand hover:text-rm-trip-brand-dark text-sm font-semibold transition-colors duration-150"
-              >
-                <Plus className="h-4 w-4" />
-                Add another URL
-              </button>
-              {urlState === "uploading" && <ProgressBar value={urlProgress} />}
-              {urlState === "success" && urlResults.length > 0 && (
-                <SuccessBanner>
-                  <div className="space-y-1.5 flex-1">
-                    {urlResults.map((r, i) => (
-                      <div key={i} className="flex items-start gap-2">
-                        {r.success ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-emerald-800 truncate">{r.url}</p>
-                          {r.success ? (
-                            <p className="text-xs text-emerald-700">{r.title} · {r.chunksCreated} chunks</p>
-                          ) : (
-                            <p className="text-xs text-red-600">{r.error}</p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </SuccessBanner>
-              )}
-              {urlState === "error" && <ErrorBanner msg="Ingestion failed. See the toast for details." />}
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={handleUrlIngest}
-                  disabled={validUrls.length === 0 || urlState === "uploading"}
-                  className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                  {urlState === "uploading"
-                    ? "Processing…"
-                    : `Ingest ${validUrls.length > 0 ? validUrls.length : ""} URL${validUrls.length !== 1 ? "s" : ""}`}
-                </button>
-                {urlState !== "idle" && (
-                  <button
-                    onClick={resetUrl}
-                    className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ════════ IMAGE PANEL ════════ */}
-          {activeTab === "image" && (
-            <div className="p-6 space-y-5">
-              <div>
-                <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">Upload Image</h2>
-                <p className="text-rm-trip-text-muted text-xs">
-                  PNG, JPG, WEBP · max 10 MB · Title and description are auto-generated
-                </p>
-              </div>
-
-              {/* Drop zone */}
-              <div
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  "relative border-2 border-dashed rounded-rm-trip-smooth text-center cursor-pointer transition-all duration-200 select-none group overflow-hidden",
-                  imgDragging
-                    ? "border-violet-400 bg-violet-50 scale-[1.01]"
-                    : selectedImg
-                      ? "border-violet-400/60 bg-violet-50/40"
-                      : "border-gray-200 hover:border-violet-400/50 hover:bg-gray-50/60",
-                  imgPreview ? "p-4" : "p-10",
+                  "flex items-center justify-center gap-1 py-1.5 px-3 rounded-[0.4rem] text-xs font-semibold transition-all duration-200",
+                  activeTab === tab.id
+                    ? "bg-rm-trip-brand text-white shadow-rm-trip-card"
+                    : "text-rm-trip-text-muted hover:text-rm-trip-text hover:bg-gray-50",
                 )}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setImgDragging(true);
-                }}
-                onDragLeave={() => setImgDragging(false)}
-                onDrop={handleImgDrop}
-                onClick={() => (imgState === "idle" || imgState === "error" ? imgInputRef.current?.click() : undefined)}
               >
-                <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImgChange} />
-                {imgPreview ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <img
-                      src={imgPreview}
-                      alt="Preview"
-                      className="max-h-52 rounded-lg object-contain mx-auto shadow-sm"
-                    />
-                    <p className="text-xs text-rm-trip-text-muted">{selectedImg?.name}</p>
-                    {(imgState === "idle" || imgState === "error") && (
-                      <span className="text-xs text-violet-600 font-medium">Click to change image</span>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
-                    <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-violet-100 transition-colors duration-200">
-                      <ImageUp className="h-7 w-7 group-hover:text-violet-500 transition-colors duration-200" />
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* ── Panel card ── */}
+          <div className="bg-white rounded-rm-trip-smooth shadow-rm-trip-card border border-gray-100 overflow-hidden">
+            {/* ════════ PDF PANEL ════════ */}
+            {activeTab === "pdf" && (
+              <div className="p-6 space-y-5">
+                <div>
+                  <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">Upload PDF</h2>
+                  <p className="text-rm-trip-text-muted text-xs">PDF only · max 50 MB</p>
+                </div>
+                <div
+                  className={cn(
+                    "relative border-2 border-dashed rounded-rm-trip-smooth p-10 text-center cursor-pointer transition-all duration-200 select-none group",
+                    pdfDragging
+                      ? "border-rm-trip-brand bg-blue-50 scale-[1.01]"
+                      : selectedPdf
+                        ? "border-rm-trip-brand/60 bg-blue-50/40"
+                        : "border-gray-200 hover:border-rm-trip-brand/50 hover:bg-gray-50/60",
+                  )}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setPdfDragging(true);
+                  }}
+                  onDragLeave={() => setPdfDragging(false)}
+                  onDrop={handlePdfDrop}
+                  onClick={() => pdfInputRef.current?.click()}
+                >
+                  <input
+                    ref={pdfInputRef}
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="hidden"
+                    onChange={handlePdfChange}
+                  />
+                  {selectedPdf ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-14 w-14 rounded-rm-trip-smooth bg-rm-trip-brand/10 flex items-center justify-center">
+                        <File className="h-7 w-7 text-rm-trip-brand" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-rm-trip-text text-sm">{selectedPdf.name}</p>
+                        <p className="text-rm-trip-text-muted text-xs mt-0.5">
+                          {(selectedPdf.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
+                      <span className="text-xs text-rm-trip-brand font-medium">Click to change file</span>
                     </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
+                      <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-rm-trip-brand/10 transition-colors duration-200">
+                        <FileUp className="h-7 w-7 group-hover:text-rm-trip-brand transition-colors duration-200" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-rm-trip-text text-sm">Drop your PDF here</p>
+                        <p className="text-xs mt-0.5">
+                          or <span className="text-rm-trip-brand font-medium">click to browse</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {pdfState === "uploading" && <ProgressBar value={pdfProgress} />}
+                {pdfState === "success" && pdfResult && (
+                  <SuccessBanner>
                     <div>
-                      <p className="font-semibold text-rm-trip-text text-sm">Drop an image here</p>
-                      <p className="text-xs mt-0.5">
-                        or <span className="text-violet-600 font-medium">click to browse</span>
+                      <p className="font-semibold text-emerald-800 text-sm">{pdfResult.fileName}</p>
+                      <p className="text-xs text-emerald-700 mt-0.5">
+                        {pdfResult.chunksCreated} chunks created · ID: {pdfResult.pdfId.slice(0, 8)}…
                       </p>
                     </div>
-                  </div>
+                  </SuccessBanner>
                 )}
-              </div>
-
-              {/* Analyzing state */}
-              {imgState === "analyzing" && (
-                <div className="flex items-center gap-2.5 text-sm text-rm-trip-text-muted bg-violet-50 border border-violet-100 rounded-rm-trip-smooth px-4 py-3">
-                  <Loader2 className="h-4 w-4 animate-spin text-violet-500 shrink-0" />
-                  <span>Analyzing image and preparing metadata...</span>
-                </div>
-              )}
-
-              {/* Editable fields — shown once analysis is done */}
-              {(imgState === "ready" || imgState === "saving" || imgState === "success") && (
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-rm-trip-text-muted uppercase tracking-wide">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      value={imgTitle}
-                      onChange={(e) => setImgTitle(e.target.value)}
-                      placeholder="Image title"
-                      disabled={imgState === "saving" || imgState === "success"}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-colors duration-150 disabled:opacity-60"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-rm-trip-text-muted uppercase tracking-wide">
-                      Description
-                    </label>
-                    <textarea
-                      value={imgDesc}
-                      onChange={(e) => setImgDesc(e.target.value)}
-                      placeholder="Image description"
-                      rows={4}
-                      disabled={imgState === "saving" || imgState === "success"}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-colors duration-150 resize-none disabled:opacity-60"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Success */}
-              {imgState === "success" && imgResult && (
-                <SuccessBanner>
-                  <div>
-                    <p className="font-semibold text-emerald-800 text-sm">{imgResult.title}</p>
-                    <p className="text-xs text-emerald-700 mt-0.5">Saved · ID: {imgResult.id.slice(0, 8)}…</p>
-                  </div>
-                </SuccessBanner>
-              )}
-
-              {/* Error */}
-              {imgState === "error" && <ErrorBanner msg="Something went wrong. See toast for details." />}
-
-              {/* Actions */}
-              <div className="flex gap-2 pt-1">
-                {imgState === "ready" && (
+                {pdfState === "error" && <ErrorBanner msg="Upload failed. See the toast for details." />}
+                <div className="flex gap-2 pt-1">
                   <button
-                    onClick={() => void handleImgSave()}
-                    disabled={!imgTitle.trim() || !imgDesc.trim()}
+                    onClick={handlePdfUpload}
+                    disabled={!selectedPdf || pdfState === "uploading"}
                     className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                   >
-                    <Save className="h-4 w-4" />
-                    Save to Knowledge Base
+                    <Upload className="h-4 w-4" />
+                    {pdfState === "uploading" ? "Processing…" : "Upload & Ingest"}
                   </button>
-                )}
-                {imgState === "saving" && (
-                  <button
-                    disabled
-                    className="flex items-center gap-2 bg-rm-trip-brand text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card opacity-70 text-sm cursor-not-allowed"
-                  >
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Saving…
-                  </button>
-                )}
-                {(selectedImg || imgState !== "idle") && (
-                  <button
-                    onClick={resetImg}
-                    className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
-                  >
-                    Reset
-                  </button>
-                )}
+                  {(selectedPdf || pdfState !== "idle") && (
+                    <button
+                      onClick={resetPdf}
+                      className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* ── What happens after upload ── */}
-        <div className="mt-5 bg-white rounded-rm-trip-smooth shadow-rm-trip-card border border-gray-100 p-6">
-          <h3 className="font-rm-trip-heading font-semibold text-rm-trip-text text-sm mb-4 flex items-center gap-2">
-            <span className="h-5 w-5 rounded-full bg-rm-trip-brand/10 text-rm-trip-brand flex items-center justify-center text-xs font-bold">
-              ?
-            </span>
-            What happens after upload?
-          </h3>
-          <ol className="space-y-2.5">
-            {steps.map((step, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-rm-trip-text-muted">
-                <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-rm-trip-brand text-white text-xs font-bold flex items-center justify-center">
-                  {i + 1}
-                </span>
-                {step}
-              </li>
-            ))}
-          </ol>
+            {/* ════════ MARKDOWN PANEL ════════ */}
+            {activeTab === "markdown" && (
+              <div className="p-6 space-y-5">
+                <div>
+                  <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">
+                    Upload Markdown
+                  </h2>
+                  <p className="text-rm-trip-text-muted text-xs">.md / .mdx only · max 10 MB</p>
+                </div>
+                <div
+                  className={cn(
+                    "relative border-2 border-dashed rounded-rm-trip-smooth p-10 text-center cursor-pointer transition-all duration-200 select-none group",
+                    mdDragging
+                      ? "border-rm-trip-accent bg-teal-50 scale-[1.01]"
+                      : selectedMd
+                        ? "border-rm-trip-accent/60 bg-teal-50/40"
+                        : "border-gray-200 hover:border-rm-trip-accent/50 hover:bg-gray-50/60",
+                  )}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setMdDragging(true);
+                  }}
+                  onDragLeave={() => setMdDragging(false)}
+                  onDrop={handleMdDrop}
+                  onClick={() => mdInputRef.current?.click()}
+                >
+                  <input
+                    ref={mdInputRef}
+                    type="file"
+                    accept=".md,.mdx,text/markdown"
+                    className="hidden"
+                    onChange={handleMdChange}
+                  />
+                  {selectedMd ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <div className="h-14 w-14 rounded-rm-trip-smooth bg-rm-trip-accent/10 flex items-center justify-center">
+                        <FileText className="h-7 w-7 text-rm-trip-accent" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-rm-trip-text text-sm">{selectedMd.name}</p>
+                        <p className="text-rm-trip-text-muted text-xs mt-0.5">{(selectedMd.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      <span className="text-xs text-rm-trip-accent font-medium">Click to change file</span>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
+                      <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-rm-trip-accent/10 transition-colors duration-200">
+                        <FileText className="h-7 w-7 group-hover:text-rm-trip-accent transition-colors duration-200" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-rm-trip-text text-sm">Drop your Markdown file here</p>
+                        <p className="text-xs mt-0.5">
+                          or <span className="text-rm-trip-accent font-medium">click to browse</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {mdState === "uploading" && <ProgressBar value={mdProgress} color="bg-rm-trip-accent" />}
+                {mdState === "success" && (
+                  <SuccessBanner>
+                    <p className="text-sm font-semibold text-emerald-800">Markdown ingested successfully</p>
+                  </SuccessBanner>
+                )}
+                {mdState === "error" && <ErrorBanner msg="Upload failed. See the toast for details." />}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={handleMdUpload}
+                    disabled={!selectedMd || mdState === "uploading"}
+                    className="flex items-center gap-2 bg-rm-trip-accent hover:bg-rm-trip-accent-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    <Upload className="h-4 w-4" />
+                    {mdState === "uploading" ? "Processing…" : "Upload & Ingest"}
+                  </button>
+                  {(selectedMd || mdState !== "idle") && (
+                    <button
+                      onClick={resetMd}
+                      className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ════════ URL PANEL ════════ */}
+            {activeTab === "url" && (
+              <div className="p-6 space-y-5">
+                <div>
+                  <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">
+                    Ingest from URLs
+                  </h2>
+                  <p className="text-rm-trip-text-muted text-xs">
+                    Add one or more web pages to extract and embed content
+                  </p>
+                </div>
+                <div className="space-y-2.5">
+                  {urls.map((url, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="flex-1 relative">
+                        <Link2 className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-rm-trip-text-muted pointer-events-none" />
+                        <input
+                          type="url"
+                          value={url}
+                          onChange={(e) => updateUrl(i, e.target.value)}
+                          placeholder="https://example.com/docs/page"
+                          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-colors duration-150"
+                        />
+                      </div>
+                      {urls.length > 1 && (
+                        <button
+                          onClick={() => removeUrl(i)}
+                          className="h-9 w-9 flex items-center justify-center rounded-rm-trip-smooth border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-state-error hover:border-red-200 hover:bg-red-50 transition-all duration-150"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={addUrl}
+                  className="flex items-center gap-2 text-rm-trip-brand hover:text-rm-trip-brand-dark text-sm font-semibold transition-colors duration-150"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add another URL
+                </button>
+                {urlState === "uploading" && <ProgressBar value={urlProgress} />}
+                {(urlState === "uploading" || urlState === "success") && urlScanItems.length > 0 && (
+                  <div className="rounded-rm-trip-smooth border border-blue-100 bg-blue-50/60 p-4">
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-rm-trip-brand">
+                        Live crawl
+                      </p>
+                      <p className="text-xs text-rm-trip-text-muted">
+                        {urlScanItems.length} page{urlScanItems.length !== 1 ? "s" : ""} seen
+                      </p>
+                    </div>
+                    <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                      {urlScanItems.map((scan) => (
+                        <div key={scan.url} className="flex items-start gap-2 text-xs">
+                          {scan.status === "scanning" ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-rm-trip-brand shrink-0 mt-0.5" />
+                          ) : scan.status === "done" ? (
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <XCircle className="h-3.5 w-3.5 text-red-500 shrink-0 mt-0.5" />
+                          )}
+                          <p className="min-w-0 break-all text-rm-trip-text">
+                            <span className="font-semibold">
+                              {scan.status === "scanning" ? "Scanning:" : scan.status === "done" ? "Scanned:" : "Failed:"}
+                            </span>{" "}
+                            {scan.url}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {urlState === "success" && urlResults.length > 0 && (
+                  <SuccessBanner>
+                    <div className="space-y-1.5 flex-1">
+                      {urlResults.map((r, i) => (
+                        <div key={i} className="flex items-start gap-2">
+                          {r.success ? (
+                            <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-emerald-800 truncate">{r.url}</p>
+                            {r.success ? (
+                              <p className="text-xs text-emerald-700">
+                                {r.title} · {r.pagesFetched ?? 1} page{(r.pagesFetched ?? 1) !== 1 ? "s" : ""} ·{" "}
+                                {r.chunksCreated} chunks
+                                {(r.pagesFailed ?? 0) > 0 ? ` · ${r.pagesFailed} failed` : ""}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-red-600">{r.error}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </SuccessBanner>
+                )}
+                {urlState === "error" && <ErrorBanner msg="Ingestion failed. See the toast for details." />}
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={handleUrlIngest}
+                    disabled={validUrls.length === 0 || urlState === "uploading"}
+                    className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    {urlState === "uploading"
+                      ? "Processing…"
+                      : `Ingest ${validUrls.length > 0 ? validUrls.length : ""} URL${validUrls.length !== 1 ? "s" : ""}`}
+                  </button>
+                  {urlState !== "idle" && (
+                    <button
+                      onClick={resetUrl}
+                      className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* ════════ IMAGE PANEL ════════ */}
+            {activeTab === "image" && (
+              <div className="p-6 space-y-5">
+                <div>
+                  <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">Upload Image</h2>
+                  <p className="text-rm-trip-text-muted text-xs">
+                    PNG, JPG, WEBP · max 10 MB · Title and description are auto-generated
+                  </p>
+                </div>
+
+                {/* Drop zone */}
+                <div
+                  className={cn(
+                    "relative border-2 border-dashed rounded-rm-trip-smooth text-center cursor-pointer transition-all duration-200 select-none group overflow-hidden",
+                    imgDragging
+                      ? "border-violet-400 bg-violet-50 scale-[1.01]"
+                      : selectedImg
+                        ? "border-violet-400/60 bg-violet-50/40"
+                        : "border-gray-200 hover:border-violet-400/50 hover:bg-gray-50/60",
+                    imgPreview ? "p-4" : "p-10",
+                  )}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setImgDragging(true);
+                  }}
+                  onDragLeave={() => setImgDragging(false)}
+                  onDrop={handleImgDrop}
+                  onClick={() => (imgState === "idle" || imgState === "error" ? imgInputRef.current?.click() : undefined)}
+                >
+                  <input ref={imgInputRef} type="file" accept="image/*" className="hidden" onChange={handleImgChange} />
+                  {imgPreview ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <img
+                        src={imgPreview}
+                        alt="Preview"
+                        className="max-h-52 rounded-lg object-contain mx-auto shadow-sm"
+                      />
+                      <p className="text-xs text-rm-trip-text-muted">{selectedImg?.name}</p>
+                      {(imgState === "idle" || imgState === "error") && (
+                        <span className="text-xs text-violet-600 font-medium">Click to change image</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
+                      <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-violet-100 transition-colors duration-200">
+                        <ImageUp className="h-7 w-7 group-hover:text-violet-500 transition-colors duration-200" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-rm-trip-text text-sm">Drop an image here</p>
+                        <p className="text-xs mt-0.5">
+                          or <span className="text-violet-600 font-medium">click to browse</span>
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Analyzing state */}
+                {imgState === "analyzing" && (
+                  <div className="flex items-center gap-2.5 text-sm text-rm-trip-text-muted bg-violet-50 border border-violet-100 rounded-rm-trip-smooth px-4 py-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-violet-500 shrink-0" />
+                    <span>Analyzing image and preparing metadata...</span>
+                  </div>
+                )}
+
+                {/* Editable fields — shown once analysis is done */}
+                {(imgState === "ready" || imgState === "saving" || imgState === "success") && (
+                  <div className="space-y-3">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-rm-trip-text-muted uppercase tracking-wide">
+                        Title
+                      </label>
+                      <input
+                        type="text"
+                        value={imgTitle}
+                        onChange={(e) => setImgTitle(e.target.value)}
+                        placeholder="Image title"
+                        disabled={imgState === "saving" || imgState === "success"}
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-colors duration-150 disabled:opacity-60"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-rm-trip-text-muted uppercase tracking-wide">
+                        Description
+                      </label>
+                      <textarea
+                        value={imgDesc}
+                        onChange={(e) => setImgDesc(e.target.value)}
+                        placeholder="Image description"
+                        rows={4}
+                        disabled={imgState === "saving" || imgState === "success"}
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-colors duration-150 resize-none disabled:opacity-60"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Success */}
+                {imgState === "success" && imgResult && (
+                  <SuccessBanner>
+                    <div>
+                      <p className="font-semibold text-emerald-800 text-sm">{imgResult.title}</p>
+                      <p className="text-xs text-emerald-700 mt-0.5">Saved · ID: {imgResult.id.slice(0, 8)}…</p>
+                    </div>
+                  </SuccessBanner>
+                )}
+
+                {/* Error */}
+                {imgState === "error" && <ErrorBanner msg="Something went wrong. See toast for details." />}
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-1">
+                  {imgState === "ready" && (
+                    <button
+                      onClick={() => void handleImgSave()}
+                      disabled={!imgTitle.trim() || !imgDesc.trim()}
+                      className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      <Save className="h-4 w-4" />
+                      Save to Knowledge Base
+                    </button>
+                  )}
+                  {imgState === "saving" && (
+                    <button
+                      disabled
+                      className="flex items-center gap-2 bg-rm-trip-brand text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card opacity-70 text-sm cursor-not-allowed"
+                    >
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving…
+                    </button>
+                  )}
+                  {(selectedImg || imgState !== "idle") && (
+                    <button
+                      onClick={resetImg}
+                      className="flex items-center gap-2 border border-gray-200 text-rm-trip-text-muted hover:text-rm-trip-text hover:border-gray-300 font-semibold py-2.5 px-5 rounded-rm-trip-smooth transition-all duration-150 text-sm bg-white"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ── What happens after upload ── */}
+          <div className="mt-5 bg-white rounded-rm-trip-smooth shadow-rm-trip-card border border-gray-100 p-6">
+            <h3 className="font-rm-trip-heading font-semibold text-rm-trip-text text-sm mb-4 flex items-center gap-2">
+              <span className="h-5 w-5 rounded-full bg-rm-trip-brand/10 text-rm-trip-brand flex items-center justify-center text-xs font-bold">
+                ?
+              </span>
+              What happens after upload?
+            </h3>
+            <ol className="space-y-2.5">
+              {steps.map((step, i) => (
+                <li key={i} className="flex items-start gap-3 text-sm text-rm-trip-text-muted">
+                  <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-rm-trip-brand text-white text-xs font-bold flex items-center justify-center">
+                    {i + 1}
+                  </span>
+                  {step}
+                </li>
+              ))}
+            </ol>
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

@@ -38,7 +38,14 @@ export function WebPagesPage() {
       setPages((prev) =>
         prev.map((p) =>
           p.id === page.id
-            ? { ...p, title: res.title, chunksCreated: res.chunksCreated, updatedAt: new Date().toISOString() }
+            ? {
+                ...p,
+                title: res.title,
+                chunksCreated: res.chunksCreated,
+                pagesFetched: res.pagesFetched,
+                pagesFailed: res.pagesFailed,
+                updatedAt: new Date().toISOString(),
+              }
             : p,
         ),
       );
@@ -68,7 +75,7 @@ export function WebPagesPage() {
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader
         title="Ingested Web Pages"
-        subtitle={loading ? "…" : `${pages.length} page${pages.length !== 1 ? "s" : ""} in the knowledge base`}
+        subtitle={loading ? "…" : `${pages.length} site${pages.length !== 1 ? "s" : ""} in the knowledge base`}
       >
         <button
           onClick={() => void load()}
@@ -82,9 +89,9 @@ export function WebPagesPage() {
 
       <div className="mx-auto px-8 py-8 space-y-6">
         {/* ── Stats row ── */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="bg-white rounded-rm-trip-smooth border border-gray-100 shadow-rm-trip-card px-5 py-4">
-            <p className="text-xs font-bold uppercase tracking-widest text-rm-trip-text-muted mb-2">Total Pages</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-rm-trip-text-muted mb-2">Sites</p>
             <p className="font-rm-trip-heading font-bold text-2xl text-rm-trip-brand">
               {loading ? <Skeleton className="h-7 w-8" /> : pages.length}
             </p>
@@ -96,6 +103,16 @@ export function WebPagesPage() {
                 <Skeleton className="h-7 w-12" />
               ) : (
                 pages.reduce((sum, p) => sum + p.chunksCreated, 0)
+              )}
+            </p>
+          </div>
+          <div className="bg-white rounded-rm-trip-smooth border border-gray-100 shadow-rm-trip-card px-5 py-4">
+            <p className="text-xs font-bold uppercase tracking-widest text-rm-trip-text-muted mb-2">Crawled Pages</p>
+            <p className="font-rm-trip-heading font-bold text-2xl text-rm-trip-brand">
+              {loading ? (
+                <Skeleton className="h-7 w-12" />
+              ) : (
+                pages.reduce((sum, p) => sum + (p.pagesFetched ?? 1), 0)
               )}
             </p>
           </div>
@@ -146,11 +163,17 @@ export function WebPagesPage() {
             },
             {
               key: "chunks",
-              label: "Chunks",
+              label: "Indexed",
               render: (page) => (
-                <span className="inline-flex items-center rounded-full bg-blue-50 text-rm-trip-brand border border-blue-100 px-2.5 py-0.5 text-xs font-semibold">
-                  {page.chunksCreated}
-                </span>
+                <div className="flex flex-col items-start gap-1">
+                  <span className="inline-flex items-center rounded-full bg-blue-50 text-rm-trip-brand border border-blue-100 px-2.5 py-0.5 text-xs font-semibold">
+                    {page.chunksCreated} chunks
+                  </span>
+                  <span className="text-xs text-rm-trip-text-muted">
+                    {page.pagesFetched ?? 1} page{(page.pagesFetched ?? 1) !== 1 ? "s" : ""}
+                    {(page.pagesFailed ?? 0) > 0 ? ` · ${page.pagesFailed} failed` : ""}
+                  </span>
+                </div>
               ),
             },
             {

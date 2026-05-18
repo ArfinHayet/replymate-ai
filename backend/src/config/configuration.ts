@@ -26,6 +26,19 @@ export default () => ({
     // Recommended range: 0.05–0.10. Default: 0.07
     cacheThreshold: parseFloat(process.env.CACHE_THRESHOLD ?? '0.07'),
   },
+  web: {
+    crawlMaxPages: parseInt(process.env.WEB_CRAWL_MAX_PAGES ?? '30', 10) || 30,
+    scrapingAnt: {
+      apiKey: process.env.SCRAPINGANT_API_KEY,
+      enabled:
+        process.env.SCRAPINGANT_ENABLED == null
+          ? Boolean(process.env.SCRAPINGANT_API_KEY)
+          : process.env.SCRAPINGANT_ENABLED !== 'false',
+      timeoutSeconds: parseInt(process.env.SCRAPINGANT_TIMEOUT_SECONDS ?? '30', 10) || 30,
+      maxPagesPerIngest:
+        parseInt(process.env.SCRAPINGANT_MAX_PAGES_PER_INGEST ?? '10', 10) || 10,
+    },
+  },
   supabase: {
     url: process.env.SUPABASE_URL,
     anonKey: process.env.SUPABASE_ANON_KEY,

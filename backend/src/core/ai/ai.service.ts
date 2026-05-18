@@ -18,6 +18,9 @@ export interface Message {
   parts: { text?: string }[];
 }
 
+const TOOL_QUERY_CONTEXT_TURNS = 6;
+const TOOL_QUERY_CONTEXT_CHAR_LIMIT = 1600;
+
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
@@ -27,6 +30,31 @@ export class AiService {
     private readonly llmFactory: LlmFactoryService,
     private readonly retrievalService: RetrievalService,
   ) {}
+
+  private buildContextualToolQuery(
+    toolQuery: string,
+    history: Message[],
+    userMessage: string,
+  ): string {
+    const recentContext = history
+      .slice(-TOOL_QUERY_CONTEXT_TURNS)
+      .map((m) => {
+        const role = m.role === 'user' ? 'User' : 'Assistant';
+        const text = m.parts.map((p) => p.text ?? '').join('').trim();
+        return text ? `${role}: ${text}` : '';
+      })
+      .filter(Boolean)
+      .join('\n')
+      .slice(-TOOL_QUERY_CONTEXT_CHAR_LIMIT);
+
+    return recentContext
+      ? [
+          `Tool query: ${toolQuery}`,
+          `Current user question: ${userMessage}`,
+          `Recent conversation context:\n${recentContext}`,
+        ].join('\n\n')
+      : toolQuery;
+  }
 
   /**
    * Agentic loop via LangGraph createReactAgent.
@@ -49,7 +77,10 @@ export class AiService {
     const searchDocumentsTool = tool(
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_documents("${query.slice(0, 80)}")`);
-        return this.retrievalService.searchDocuments(query, userId);
+        return this.retrievalService.searchDocuments(
+          this.buildContextualToolQuery(query, history, userMessage),
+          userId,
+        );
       },
       {
         name: 'search_documents',
@@ -71,7 +102,10 @@ export class AiService {
     const searchImagesTool = tool(
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_images("${query.slice(0, 80)}")`);
-        const result = await this.retrievalService.searchImages(query, userId);
+        const result = await this.retrievalService.searchImages(
+          this.buildContextualToolQuery(query, history, userMessage),
+          userId,
+        );
         // Parse every Title/URL pair so we can restore them if the LLM mutates them.
         for (const block of result.split(/\n\n+/)) {
           const titleMatch = block.match(/^Title:\s*(.+)$/m);
@@ -99,7 +133,10 @@ export class AiService {
     const searchWebPagesTool = tool(
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_web_pages("${query.slice(0, 80)}")`);
-        return this.retrievalService.searchWebPages(query, userId);
+        return this.retrievalService.searchWebPages(
+          this.buildContextualToolQuery(query, history, userMessage),
+          userId,
+        );
       },
       {
         name: 'search_web_pages',

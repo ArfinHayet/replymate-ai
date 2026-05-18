@@ -32,6 +32,12 @@ export class WebPage {
   @Column({ type: 'int', default: 0 })
   chunksCreated!: number;
 
+  @Column({ type: 'int', default: 0 })
+  pagesFetched!: number;
+
+  @Column({ type: 'int', default: 0 })
+  pagesFailed!: number;
+
   @CreateDateColumn()
   createdAt!: Date;
 

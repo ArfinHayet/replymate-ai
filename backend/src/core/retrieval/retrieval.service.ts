@@ -89,6 +89,34 @@ export class RetrievalService {
   }
 
   /**
+   * Pre-flight guard across every knowledge source the agent can search.
+   * Without this, web-only ingests can be skipped before search_web_pages runs.
+   */
+  async hasRelevantKnowledge(vector: number[], userId: string): Promise<boolean> {
+    const rows: { distance: string }[] = await this.dataSource.query(
+      `SELECT distance
+       FROM (
+         SELECT (embedding::vector <=> $1::vector) AS distance
+         FROM document_chunks
+         WHERE "userId" = $2
+         UNION ALL
+         SELECT (embedding::vector <=> $1::vector) AS distance
+         FROM web_page_chunks
+         WHERE "userId" = $2
+         UNION ALL
+         SELECT (embedding::vector <=> $1::vector) AS distance
+         FROM images
+         WHERE "userId" = $2
+       ) AS knowledge_distances
+       ORDER BY distance ASC
+       LIMIT 1`,
+      [JSON.stringify(vector), userId],
+    );
+    if (rows.length === 0) return false;
+    return parseFloat(rows[0].distance) < DOC_THRESHOLD;
+  }
+
+  /**
    * MCP tool executor for image knowledge base.
    * Embeds the query, runs pgvector cosine search on the images table,
    * and returns matching image titles + descriptions as a plain string.
