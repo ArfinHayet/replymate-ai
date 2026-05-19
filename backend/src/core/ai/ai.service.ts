@@ -21,6 +21,35 @@ export interface Message {
 const TOOL_QUERY_CONTEXT_TURNS = 6;
 const TOOL_QUERY_CONTEXT_CHAR_LIMIT = 1600;
 
+export function buildContextualToolQuery(
+  toolQuery: string,
+  history: Message[],
+  userMessage: string,
+  retrievalIntent?: string,
+): string {
+  const recentContext = history
+    .slice(-TOOL_QUERY_CONTEXT_TURNS)
+    .map((m) => {
+      const role = m.role === 'user' ? 'User' : 'Assistant';
+      const text = m.parts.map((p) => p.text ?? '').join('').trim();
+      return text ? `${role}: ${text}` : '';
+    })
+    .filter(Boolean)
+    .join('\n')
+    .slice(-TOOL_QUERY_CONTEXT_CHAR_LIMIT);
+
+  if (!recentContext && !retrievalIntent) return toolQuery;
+
+  return [
+    `Tool query: ${toolQuery}`,
+    `Current user question: ${userMessage}`,
+    retrievalIntent ? `Standalone retrieval intent:\n${retrievalIntent}` : '',
+    recentContext ? `Recent conversation context:\n${recentContext}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
@@ -35,25 +64,14 @@ export class AiService {
     toolQuery: string,
     history: Message[],
     userMessage: string,
+    retrievalIntent?: string,
   ): string {
-    const recentContext = history
-      .slice(-TOOL_QUERY_CONTEXT_TURNS)
-      .map((m) => {
-        const role = m.role === 'user' ? 'User' : 'Assistant';
-        const text = m.parts.map((p) => p.text ?? '').join('').trim();
-        return text ? `${role}: ${text}` : '';
-      })
-      .filter(Boolean)
-      .join('\n')
-      .slice(-TOOL_QUERY_CONTEXT_CHAR_LIMIT);
-
-    return recentContext
-      ? [
-          `Tool query: ${toolQuery}`,
-          `Current user question: ${userMessage}`,
-          `Recent conversation context:\n${recentContext}`,
-        ].join('\n\n')
-      : toolQuery;
+    return buildContextualToolQuery(
+      toolQuery,
+      history,
+      userMessage,
+      retrievalIntent,
+    );
   }
 
   /**
@@ -66,6 +84,7 @@ export class AiService {
     history: Message[],
     userMessage: string,
     userId: string,
+    retrievalIntent?: string,
   ): Promise<string> {
     const maxIterations = this.config.get<number>('rag.maxToolIterations') ?? 10;
 
@@ -78,7 +97,7 @@ export class AiService {
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_documents("${query.slice(0, 80)}")`);
         return this.retrievalService.searchDocuments(
-          this.buildContextualToolQuery(query, history, userMessage),
+          this.buildContextualToolQuery(query, history, userMessage, retrievalIntent),
           userId,
         );
       },
@@ -103,7 +122,7 @@ export class AiService {
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_images("${query.slice(0, 80)}")`);
         const result = await this.retrievalService.searchImages(
-          this.buildContextualToolQuery(query, history, userMessage),
+          this.buildContextualToolQuery(query, history, userMessage, retrievalIntent),
           userId,
         );
         // Parse every Title/URL pair so we can restore them if the LLM mutates them.
@@ -134,7 +153,7 @@ export class AiService {
       async ({ query }: { query: string }): Promise<string> => {
         this.logger.log(`Tool: search_web_pages("${query.slice(0, 80)}")`);
         return this.retrievalService.searchWebPages(
-          this.buildContextualToolQuery(query, history, userMessage),
+          this.buildContextualToolQuery(query, history, userMessage, retrievalIntent),
           userId,
         );
       },
