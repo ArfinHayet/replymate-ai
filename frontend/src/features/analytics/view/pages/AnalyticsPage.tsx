@@ -40,7 +40,7 @@ const baseChartOptions = {
         boxWidth: 10,
         boxHeight: 10,
         color: mutedText,
-        font: { family: "Manrope", size: 12, weight: 600 },
+        font: { family: "Inter", size: 12, weight: 600 },
         usePointStyle: true,
       },
     },
@@ -53,8 +53,8 @@ const baseChartOptions = {
       displayColors: false,
       padding: 12,
       titleColor: "#ffffff",
-      titleFont: { family: "Manrope", size: 12, weight: 700 },
-      bodyFont: { family: "Manrope", size: 12, weight: 600 },
+      titleFont: { family: "Inter", size: 12, weight: 700 },
+      bodyFont: { family: "Inter", size: 12, weight: 600 },
     },
   },
 } satisfies ChartOptions;
@@ -65,13 +65,13 @@ const axisOptions = {
     x: {
       border: { display: false },
       grid: { display: false },
-      ticks: { color: mutedText, font: { family: "Manrope", size: 12, weight: 600 } },
+      ticks: { color: mutedText, font: { family: "Inter", size: 12, weight: 600 } },
     },
     y: {
       beginAtZero: true,
       border: { display: false },
       grid: { color: gridLine },
-      ticks: { color: mutedText, precision: 0, font: { family: "Manrope", size: 12, weight: 600 } },
+      ticks: { color: mutedText, precision: 0, font: { family: "Inter", size: 12, weight: 600 } },
     },
   },
 } satisfies ChartOptions<"bar" | "line">;
