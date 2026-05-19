@@ -20,6 +20,15 @@ api.interceptors.request.use((config) => {
 let isRefreshing = false
 let refreshQueue: Array<(token: string) => void> = []
 
+const refreshExcludedPaths = [apiRoutes.auth.login, apiRoutes.auth.signup, apiRoutes.auth.refresh]
+
+function shouldAttemptTokenRefresh(url?: string) {
+  if (!url) return true
+
+  const pathname = url.startsWith('http') ? new URL(url).pathname : url.split('?')[0]
+  return !refreshExcludedPaths.includes(pathname as (typeof refreshExcludedPaths)[number])
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error: unknown) => {
@@ -29,7 +38,7 @@ api.interceptors.response.use(
       | (import('axios').InternalAxiosRequestConfig & { _retry?: boolean })
       | undefined
 
-    if (status === 401 && originalRequest && !originalRequest._retry) {
+    if (status === 401 && originalRequest && !originalRequest._retry && shouldAttemptTokenRefresh(originalRequest.url)) {
       const refreshToken = getRefreshToken()
       if (!refreshToken) {
         clearToken()

@@ -5,7 +5,7 @@ const steps = [
 
 export function UploadSteps() {
   return (
-    <div className="mt-5 bg-white rounded-rm-trip-smooth shadow-rm-trip-card border border-gray-100 p-6">
+    <div className="border-t border-gray-100 pt-5">
       <h3 className="font-rm-trip-heading font-semibold text-rm-trip-text text-sm mb-4 flex items-center gap-2">
         <span className="h-5 w-5 rounded-full bg-rm-trip-brand/10 text-rm-trip-brand flex items-center justify-center text-xs font-bold">
           ?

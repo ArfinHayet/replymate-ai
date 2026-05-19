@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Calendar, ExternalLink, Globe, Loader2, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,7 +27,7 @@ export function WebPagesPage() {
         </button>
       </PageHeader>
 
-      <div className="mx-auto space-y-6 px-8 py-8">
+      <PageContent>
         {vm.error && !vm.loading && (
           <InlineError
             title="Could not load web pages"
@@ -50,6 +51,7 @@ export function WebPagesPage() {
             {
               key: "page",
               label: "Page",
+              className: "w-[46%]",
               render: (page, index) => (
                 <div className="flex min-w-0 items-center gap-3">
                   <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-rm-trip-smooth ${index === 0 ? "bg-rm-trip-brand text-white" : "bg-gray-100 text-rm-trip-text-muted"}`}>
@@ -68,6 +70,7 @@ export function WebPagesPage() {
             {
               key: "chunks",
               label: "Indexed",
+              className: "w-[19%]",
               render: (page) => (
                 <div className="flex flex-col items-start gap-1">
                   <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-rm-trip-brand">{page.chunksCreated} sections</span>
@@ -81,6 +84,7 @@ export function WebPagesPage() {
             {
               key: "date",
               label: "Last Updated",
+              className: "w-[23%]",
               render: (page) => (
                 <div className="flex items-center gap-1.5 text-sm text-rm-trip-text-muted">
                   <Calendar className="h-3.5 w-3.5 text-gray-300" />
@@ -91,8 +95,10 @@ export function WebPagesPage() {
             {
               key: "actions",
               label: "Actions",
+              className: "w-[12%]",
+              headerClassName: "text-right",
               render: (page) => (
-                <div className="flex gap-1">
+                <div className="flex justify-end gap-1">
                   <button onClick={() => void vm.refetchPage(page).then(showResult)} disabled={vm.refetchingId === page.id} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-blue-50 hover:text-rm-trip-brand disabled:opacity-50" title="Refetch">
                     {vm.refetchingId === page.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
                   </button>
@@ -115,7 +121,7 @@ export function WebPagesPage() {
             </div>
           }
         />
-      </div>
+      </PageContent>
 
       <Dialog open={!!vm.deleteTarget} onOpenChange={(open) => !open && vm.cancelDelete()}>
         <DialogContent>
@@ -147,9 +153,9 @@ function showResult(result: { message?: string; errorMessage?: string }) {
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4 shadow-rm-trip-card">
-      <p className="mb-2 text-xs font-bold uppercase tracking-widest text-rm-trip-text-muted">{label}</p>
-      <div className="truncate font-rm-trip-heading text-2xl font-bold text-rm-trip-brand">{value}</div>
+    <div className="min-w-0 rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4">
+      <p className="mb-2 text-xs font-semibold text-rm-trip-text-muted">{label}</p>
+      <div className="min-w-0 truncate font-rm-trip-heading text-xl font-semibold text-rm-trip-brand">{value}</div>
     </div>
   );
 }

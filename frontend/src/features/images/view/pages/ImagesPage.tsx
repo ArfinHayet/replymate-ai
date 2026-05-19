@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Calendar, ImageIcon, Loader2, Pencil, RefreshCw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,7 +32,7 @@ export function ImagesPage() {
         </button>
       </PageHeader>
 
-      <div className="mx-auto space-y-6 px-4 py-6 sm:px-8 sm:py-8">
+      <PageContent>
         {vm.error && !vm.loading && (
           <InlineError
             title="Could not load images"
@@ -106,7 +107,7 @@ export function ImagesPage() {
             </div>
           }
         />
-      </div>
+      </PageContent>
 
       <Dialog open={!!vm.editTarget} onOpenChange={(open) => !open && vm.closeEdit()}>
         <DialogContent className="max-w-md">
@@ -159,9 +160,9 @@ function showResult(result: { message?: string; errorMessage?: string }) {
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4 shadow-rm-trip-card">
-      <p className="mb-2 text-xs font-bold uppercase tracking-widest text-rm-trip-text-muted">{label}</p>
-      <div className="truncate font-rm-trip-heading text-2xl font-bold text-rm-trip-brand">{value}</div>
+    <div className="min-w-0 rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4">
+      <p className="mb-2 text-xs font-semibold text-rm-trip-text-muted">{label}</p>
+      <div className="min-w-0 truncate font-rm-trip-heading text-xl font-semibold text-rm-trip-brand">{value}</div>
     </div>
   );
 }
