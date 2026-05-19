@@ -13,6 +13,9 @@
   var apiBase = currentScript.getAttribute("data-api") || "";
   var botName = currentScript.getAttribute("data-name") || "ReplyMate Ai";
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
+  var displayMode = currentScript.getAttribute("data-mode") || "bubble";
+  var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
+  var isPageMode = displayMode === "page";
 
   if (!widgetKey) {
     console.error("[comp-bot widget] Missing data-key attribute");
@@ -131,6 +134,12 @@
     "transform-origin:bottom right;",
     "}",
     "#chat-window.hidden{opacity:0;pointer-events:none;transform:scale(.92) translateY(18px);}",
+    ":host(.compbot-page-mode) #toggle-btn{display:none;}",
+    ":host(.compbot-page-mode) #chat-window{top:0;right:0;bottom:0;left:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform-origin:center;}",
+    ":host(.compbot-page-mode) #minimize-btn{display:none;}",
+    ":host(.compbot-page-mode) #chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
+    ":host(.compbot-page-mode) #input-row{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));}",
+    ":host(.compbot-page-mode) #chat-footer{padding-bottom:calc(9px + env(safe-area-inset-bottom));}",
 
     "#chat-header{",
     "position:relative;padding:18px;flex-shrink:0;overflow:hidden;",
@@ -548,6 +557,9 @@
     // ─── Shadow DOM ────────────────────────────────────────────────────────────
     var host = document.createElement("div");
     host.id = "compbot-widget-host";
+    if (isPageMode) {
+      host.className = "compbot-page-mode";
+    }
 
     var shadow = host.attachShadow({ mode: "open" });
 
@@ -724,6 +736,10 @@
     }
 
     function closeChat() {
+      if (alwaysOpen) {
+        return;
+      }
+
       isOpen = false;
 
       chatWindow.classList.add("hidden");
@@ -814,6 +830,10 @@
         sendMessage();
       }
     });
+
+    if (alwaysOpen) {
+      openChat();
+    }
 
     /*
       Important:

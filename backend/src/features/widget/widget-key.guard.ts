@@ -14,6 +14,20 @@ const LOCALHOST_RE = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 /** Extend Request to carry the resolved owner userId */
 export type WidgetRequest = Request & { widgetUserId: string };
 
+function firstHeaderValue(value: string | string[] | undefined): string | undefined {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function requestOrigin(req: Request): string | undefined {
+  const host = firstHeaderValue(req.headers['x-forwarded-host']) || req.headers.host;
+  if (!host) return undefined;
+
+  const forwardedProto = firstHeaderValue(req.headers['x-forwarded-proto']);
+  const protocol = forwardedProto?.split(',')[0]?.trim() || req.protocol || 'http';
+
+  return `${protocol}://${host}`;
+}
+
 @Injectable()
 export class WidgetKeyGuard implements CanActivate {
   constructor(
@@ -42,6 +56,12 @@ export class WidgetKeyGuard implements CanActivate {
 
     // Localhost bypass for development
     if (LOCALHOST_RE.test(origin)) {
+      req.widgetUserId = keyRecord.userId;
+      return true;
+    }
+
+    // Public chatbot pages are hosted by this API and post back same-origin.
+    if (origin === requestOrigin(req)) {
       req.widgetUserId = keyRecord.userId;
       return true;
     }

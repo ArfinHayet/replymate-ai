@@ -18,6 +18,8 @@ export interface EmbedViewModel {
   apiUrl: string;
   snippetTemplate: string;
   latestSnippet: string;
+  publicChatUrlTemplate: string;
+  latestPublicChatUrl: string;
   loadWidgetKeys(): Promise<EmbedActionResult>;
   loadAllowedDomains(): Promise<EmbedActionResult>;
   setNewLabel(value: string): void;
@@ -26,6 +28,7 @@ export interface EmbedViewModel {
   deleteKey(id: string): Promise<EmbedActionResult>;
   copyKey(key: string): Promise<EmbedActionResult>;
   copyLatestSnippet(): Promise<EmbedActionResult>;
+  copyLatestPublicChatUrl(): Promise<EmbedActionResult>;
   createDomain(): Promise<EmbedActionResult>;
   deleteDomain(id: string): Promise<EmbedActionResult>;
 }

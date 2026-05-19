@@ -99,6 +99,16 @@ export function useEmbedViewModel(): EmbedViewModel {
     }
   };
 
+  const copyLatestPublicChatUrl = async () => {
+    if (!latestKey) return { success: false, errorMessage: "Create a widget key first" };
+    try {
+      await navigator.clipboard.writeText(embedService.createPublicChatUrl(latestKey.key, API_URL));
+      return { success: true, message: "Public chatbot URL copied" };
+    } catch {
+      return { success: false, errorMessage: "Failed to copy public URL" };
+    }
+  };
+
   const createDomain = async () => {
     if (!newDomain.trim()) return { success: false };
     try {
@@ -133,6 +143,10 @@ export function useEmbedViewModel(): EmbedViewModel {
     apiUrl: API_URL,
     snippetTemplate: embedService.createSnippetTemplate(API_URL),
     latestSnippet: latestKey ? embedService.createSnippet(latestKey.key, API_URL) : embedService.createSnippetTemplate(API_URL),
+    publicChatUrlTemplate: embedService.createPublicChatUrlTemplate(API_URL),
+    latestPublicChatUrl: latestKey
+      ? embedService.createPublicChatUrl(latestKey.key, API_URL)
+      : embedService.createPublicChatUrlTemplate(API_URL),
     loadWidgetKeys,
     loadAllowedDomains,
     setNewLabel,
@@ -141,6 +155,7 @@ export function useEmbedViewModel(): EmbedViewModel {
     deleteKey,
     copyKey,
     copyLatestSnippet,
+    copyLatestPublicChatUrl,
     createDomain,
     deleteDomain,
   };

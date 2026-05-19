@@ -38,4 +38,12 @@ export class EmbedService {
   createSnippetTemplate(apiUrl: string) {
     return `<script src="${apiUrl}/widget.js"\n  data-key="YOUR_KEY"\n  data-api="${apiUrl}">\n</script>`;
   }
+
+  createPublicChatUrl(key: string, apiUrl: string) {
+    return `${apiUrl}/widget/${encodeURIComponent(key)}`;
+  }
+
+  createPublicChatUrlTemplate(apiUrl: string) {
+    return `${apiUrl}/widget/YOUR_KEY`;
+  }
 }

@@ -1,4 +1,4 @@
-import { Check, Code2, Copy, Globe, Key, Plus, Trash2 } from "lucide-react";
+import { Check, Code2, Copy, ExternalLink, Globe, Key, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ export function EmbedPage() {
   const vm = useEmbedViewModel();
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
   const [scriptCopied, setScriptCopied] = useState(false);
+  const [publicUrlCopied, setPublicUrlCopied] = useState(false);
 
   const run = async (action: Promise<{ message?: string; errorMessage?: string }>) => {
     const result = await action;
@@ -39,9 +40,22 @@ export function EmbedPage() {
     if (result.errorMessage) toast.error(result.errorMessage);
   };
 
+  const copyPublicUrl = async () => {
+    const result = await vm.copyLatestPublicChatUrl();
+    if (result.message) {
+      setPublicUrlCopied(true);
+      window.setTimeout(() => setPublicUrlCopied(false), 1000);
+      toast.success(result.message);
+    }
+    if (result.errorMessage) toast.error(result.errorMessage);
+  };
+
   return (
     <div className="min-h-screen bg-rm-trip-surface">
-      <PageHeader title="Website Widget" subtitle="Create widget keys and control which websites can use your assistant." />
+      <PageHeader
+        title="Website Widget"
+        subtitle="Create widget keys, embed your assistant, or share a public chatbot URL."
+      />
       <PageContent>
         <div className="mx-auto space-y-6">
           <section className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white">
@@ -130,29 +144,64 @@ export function EmbedPage() {
               )}
 
               {vm.keys.length > 0 && (
-                <div className="rounded-rm-trip-smooth border border-gray-100 bg-gray-50 p-4">
-                  <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex min-w-0 items-center gap-1.5">
-                      <Code2 className="h-3.5 w-3.5 shrink-0 text-rm-trip-text-muted" />
-                      <p className="truncate text-xs font-semibold text-rm-trip-text-muted">
-                        Embed script using your latest widget key
-                      </p>
+                <div className="space-y-3">
+                  <div className="rounded-rm-trip-smooth border border-gray-100 bg-gray-50 p-4">
+                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <Code2 className="h-3.5 w-3.5 shrink-0 text-rm-trip-text-muted" />
+                        <p className="truncate text-xs font-semibold text-rm-trip-text-muted">
+                          Embed script using your latest widget key
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => void copyScript()}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-rm-trip-smooth border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-rm-trip-text-muted shadow-sm transition-all hover:text-rm-trip-brand"
+                      >
+                        {scriptCopied ? (
+                          <Check className="h-3.5 w-3.5 text-rm-trip-brand" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                        {scriptCopied ? "Copied" : "Copy Script"}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => void copyScript()}
-                      className="inline-flex items-center justify-center gap-1.5 rounded-rm-trip-smooth border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-rm-trip-text-muted shadow-sm transition-all hover:text-rm-trip-brand"
-                    >
-                      {scriptCopied ? (
-                        <Check className="h-3.5 w-3.5 text-rm-trip-brand" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5" />
-                      )}
-                      {scriptCopied ? "Copied" : "Copy Script"}
-                    </button>
+                    <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs leading-relaxed text-rm-trip-text">
+                      {vm.latestSnippet}
+                    </pre>
                   </div>
-                  <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs leading-relaxed text-rm-trip-text">
-                    {vm.latestSnippet}
-                  </pre>
+
+                  <div className="rounded-rm-trip-smooth border border-gray-100 bg-gray-50 p-4">
+                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-center gap-1.5">
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-rm-trip-text-muted" />
+                        <p className="truncate text-xs font-semibold text-rm-trip-text-muted">
+                          Public URL for the always-open chatbot page
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => void copyPublicUrl()}
+                        className="inline-flex items-center justify-center gap-1.5 rounded-rm-trip-smooth border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-rm-trip-text-muted shadow-sm transition-all hover:text-rm-trip-brand"
+                      >
+                        {publicUrlCopied ? (
+                          <Check className="h-3.5 w-3.5 text-rm-trip-brand" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                        {publicUrlCopied ? "Copied" : "Copy URL"}
+                      </button>
+                    </div>
+                    <a
+                      href={vm.latestPublicChatUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block break-all font-mono text-xs leading-relaxed text-rm-trip-brand hover:underline"
+                    >
+                      {vm.latestPublicChatUrl}
+                    </a>
+                    <p className="mt-2 text-xs leading-relaxed text-rm-trip-text-muted">
+                      Visitors can open this link directly. The chatbot loads as a full page and starts open.
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
