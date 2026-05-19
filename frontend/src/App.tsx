@@ -6,6 +6,12 @@ import { PrivateRoute } from "@/features/auth/view/components/PrivateRoute";
 
 const LoginPage = lazy(() => import("@/features/auth").then((module) => ({ default: module.LoginPage })));
 const SignupPage = lazy(() => import("@/features/auth").then((module) => ({ default: module.SignupPage })));
+const ForgotPasswordPage = lazy(() =>
+  import("@/features/auth").then((module) => ({ default: module.ForgotPasswordPage })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("@/features/auth").then((module) => ({ default: module.ResetPasswordPage })),
+);
 const AuthCallbackPage = lazy(() =>
   import("@/features/authCallback").then((module) => ({ default: module.AuthCallbackPage })),
 );
@@ -39,6 +45,9 @@ export default function App() {
           {/* Public routes - no sidebar */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/users/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/users/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* Protected routes - inside sidebar layout */}
