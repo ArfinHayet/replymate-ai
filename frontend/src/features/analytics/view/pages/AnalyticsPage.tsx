@@ -139,7 +139,7 @@ export function AnalyticsPage() {
         </section>
 
         <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
-          <ChartPanel title="Activity This Week" subtitle="Chats and content additions by day">
+          <ChartPanel title="Activity This Week" subtitle="New conversations and content additions by day">
             {vm.loading ? <ChartSkeleton /> : <LineChart data={vm.activityByDay} />}
           </ChartPanel>
 
