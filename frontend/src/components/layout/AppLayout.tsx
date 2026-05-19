@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Building2,
@@ -11,7 +12,6 @@ import {
   Images,
   LogOut,
   MessageSquare,
-  MoreHorizontal,
   UserRound,
   X
 } from 'lucide-react'
@@ -31,19 +31,59 @@ const navItems = [
   { to: '/profile', icon: UserRound, label: 'Profile' }
 ]
 
-const mobilePrimaryItems = navItems.filter((item) =>
-  ['/chat', '/upload', '/pdfs', '/company'].includes(item.to)
-)
-const mobileMoreItems = navItems.filter((item) => !mobilePrimaryItems.includes(item))
+const MOBILE_DRAWER_WIDTH = 320
+const EDGE_SWIPE_ZONE = 32
+const SWIPE_CLOSE_DISTANCE = 88
+const SWIPE_CLOSE_VELOCITY = 520
+
+interface AppLayoutContextValue {
+  openMobileMenu: () => void
+}
+
+const AppLayoutContext = createContext<AppLayoutContextValue | null>(null)
+
+export function useAppLayout () {
+  const context = useContext(AppLayoutContext)
+
+  if (!context) {
+    return {
+      openMobileMenu: () => {}
+    }
+  }
+
+  return context
+}
 
 export function AppLayout () {
   const navigate = useNavigate()
   const logoutViewModel = useLogoutViewModel()
-  const [moreOpen, setMoreOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  const openMobileMenu = useCallback(() => {
+    setMobileMenuOpen(true)
+  }, [])
+
+  const closeMobileMenu = useCallback(() => {
+    setMobileMenuOpen(false)
+  }, [])
+
+  const layoutContext = useMemo(
+    () => ({
+      openMobileMenu
+    }),
+    [openMobileMenu]
+  )
 
   const handleLogout = () => {
     logoutViewModel.logout()
+    closeMobileMenu()
     navigate('/login', { replace: true })
+  }
+
+  const handleDrawerDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    if (info.offset.x < -SWIPE_CLOSE_DISTANCE || info.velocity.x < -SWIPE_CLOSE_VELOCITY) {
+      closeMobileMenu()
+    }
   }
 
   return (
@@ -93,34 +133,76 @@ export function AppLayout () {
         </div>
       </aside>
 
-      {moreOpen && (
-        <div className='fixed inset-0 z-40 bg-black/20 backdrop-blur-[2px] md:hidden' onClick={() => setMoreOpen(false)}>
-          <div
-            className='absolute inset-x-3 bottom-20 rounded-rm-trip-smooth border border-gray-100 bg-white p-2 shadow-rm-trip-lift'
+      {!mobileMenuOpen && (
+        <motion.div
+          className='fixed inset-y-0 left-0 z-40 w-8 touch-pan-y md:hidden'
+          drag='x'
+          dragConstraints={{ left: 0, right: EDGE_SWIPE_ZONE }}
+          dragElastic={0.25}
+          dragMomentum={false}
+          onDragStart={openMobileMenu}
+          aria-hidden='true'
+        />
+      )}
+
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            className='fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-[3px] md:hidden'
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            onClick={closeMobileMenu}
+          >
+          <motion.div
+            className='flex h-full w-80 max-w-[86vw] flex-col rounded-r-[28px] bg-white shadow-[16px_0_60px_rgba(15,23,42,0.18)]'
+            initial={{ x: -MOBILE_DRAWER_WIDTH }}
+            animate={{ x: 0 }}
+            exit={{ x: -MOBILE_DRAWER_WIDTH }}
+            transition={{ type: 'spring', stiffness: 420, damping: 36, mass: 0.9 }}
+            drag='x'
+            dragConstraints={{ left: -MOBILE_DRAWER_WIDTH, right: 0 }}
+            dragElastic={{ left: 0.08, right: 0 }}
+            dragMomentum={false}
+            onDragEnd={handleDrawerDragEnd}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className='flex items-center justify-between px-2 py-2'>
-              <p className='text-sm font-semibold text-rm-trip-text'>More</p>
+            <div className='flex items-center justify-between border-b border-gray-100 px-5 py-5'>
+              <div className='flex min-w-0 items-center gap-3'>
+                <div className='flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rm-trip-brand/10'>
+                  <img src='/favicon.svg' alt='Logo' className='h-7 w-7' />
+                </div>
+                <div className='min-w-0'>
+                  <p className='truncate font-rm-trip-heading text-base font-semibold leading-none text-rm-trip-text'>
+                    ReplyMate AI
+                  </p>
+                  <p className='mt-1 truncate text-xs font-medium text-rm-trip-text-muted'>
+                    Workspace menu
+                  </p>
+                </div>
+              </div>
               <button
                 type='button'
-                onClick={() => setMoreOpen(false)}
-                className='flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text'
+                onClick={closeMobileMenu}
+                aria-label='Close menu'
+                className='flex h-9 w-9 items-center justify-center rounded-xl text-rm-trip-text-muted transition-all hover:bg-gray-50 hover:text-rm-trip-text'
               >
                 <X className='h-4 w-4' />
               </button>
             </div>
-            <nav className='grid grid-cols-2 gap-1'>
-              {mobileMoreItems.map(({ to, icon: Icon, label }) => (
+            <nav className='flex flex-1 flex-col gap-1.5 overflow-y-auto p-4'>
+              {navItems.map(({ to, icon: Icon, label }) => (
                 <NavLink
                   key={to}
                   to={to}
                   end={to === '/images'}
-                  onClick={() => setMoreOpen(false)}
+                  onClick={closeMobileMenu}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-2 rounded-rm-trip-smooth px-3 py-2.5 text-sm font-medium transition-all',
+                      'flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-all',
                       isActive
-                        ? 'bg-rm-trip-brand text-white'
+                        ? 'bg-rm-trip-brand text-white shadow-rm-trip-card'
                         : 'text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text'
                     )
                   }
@@ -130,53 +212,24 @@ export function AppLayout () {
                 </NavLink>
               ))}
             </nav>
-          </div>
-        </div>
-      )}
+            <div className='border-t border-gray-100 p-4'>
+              <button
+                onClick={handleLogout}
+                className='flex w-full items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold text-rm-trip-text-muted transition-all hover:bg-red-50 hover:text-rm-trip-state-error'
+              >
+                <LogOut className='h-4 w-4 shrink-0' />
+                Sign out
+              </button>
+            </div>
+          </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <div className='fixed inset-x-0 bottom-0 z-40 border-t border-gray-100 bg-white/95 px-2 py-2 shadow-[0_-8px_24px_rgba(15,23,42,0.08)] backdrop-blur md:hidden'>
-        <nav className='grid grid-cols-5 items-center gap-1'>
-          {mobilePrimaryItems.map(({ to, icon: Icon, label }) => (
-            <NavLink
-              key={to}
-              to={to}
-              aria-label={label}
-              title={label}
-              className={({ isActive }) =>
-                cn(
-                  'flex min-w-0 flex-col items-center justify-center gap-1 rounded-rm-trip-smooth px-1.5 py-2 text-[10px] font-medium leading-none transition-all',
-                  isActive
-                    ? 'bg-rm-trip-brand text-white'
-                    : 'text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text'
-                )
-              }
-            >
-              <Icon className='h-4 w-4 shrink-0' />
-              <span className='w-full truncate text-center'>
-                {label}
-              </span>
-            </NavLink>
-          ))}
-          <button
-            type='button'
-            onClick={() => setMoreOpen((open) => !open)}
-            aria-label='More'
-            title='More'
-            className={cn(
-              'flex min-w-0 flex-col items-center justify-center gap-1 rounded-rm-trip-smooth px-1.5 py-2 text-[10px] font-medium leading-none transition-all',
-              moreOpen ? 'bg-rm-trip-brand text-white' : 'text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text'
-            )}
-          >
-            <MoreHorizontal className='h-4 w-4 shrink-0' />
-            <span className='w-full truncate text-center'>
-              More
-            </span>
-          </button>
-        </nav>
-      </div>
-
-      <main className='flex-1 overflow-auto min-h-0 pb-20 md:pb-0'>
-        <Outlet />
+      <main className='flex-1 overflow-auto min-h-0'>
+        <AppLayoutContext.Provider value={layoutContext}>
+          <Outlet />
+        </AppLayoutContext.Provider>
       </main>
     </div>
   )
