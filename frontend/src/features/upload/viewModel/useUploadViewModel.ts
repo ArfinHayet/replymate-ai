@@ -8,7 +8,7 @@ import type { UploadActionResult, UploadViewModel } from "./UploadViewModel";
 
 export function useUploadViewModel(): UploadViewModel {
   const uploadService = useMemo(() => createUploadService(), []);
-  const [activeTab, setActiveTab] = useState<ActiveUploadTab>("pdf");
+  const [activeTab, setActiveTab] = useState<ActiveUploadTab>("url");
 
   const [pdfState, setPdfState] = useState<UploadState>("idle");
   const [pdfProgress, setPdfProgress] = useState(0);

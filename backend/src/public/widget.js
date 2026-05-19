@@ -12,6 +12,7 @@
   var widgetKey = currentScript.getAttribute("data-key") || "";
   var apiBase = currentScript.getAttribute("data-api") || "";
   var botName = currentScript.getAttribute("data-name") || "ReplyMate Ai";
+  var brandName = "ReplyMate Ai";
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
@@ -647,7 +648,7 @@
     // Footer
     var footer = document.createElement("div");
     footer.id = "chat-footer";
-    footer.innerHTML = "Powered by <span>" + botName + "</span>";
+    footer.innerHTML = "Powered by <span>" + brandName + "</span>";
 
     chatWindow.appendChild(header);
     chatWindow.appendChild(messages);
