@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useUploadViewModel } from "../../viewModel/useUploadViewModel";
 import type { UploadActionResult } from "../../viewModel/UploadViewModel";
@@ -43,10 +44,10 @@ export function UploadPage() {
         title="Add Content"
         subtitle="Upload documents, web pages, and images your assistant can use."
       />
-      <div className="px-4 py-8 sm:px-8">
+      <PageContent>
         <UploadTabs activeTab={viewModel.activeTab} onChange={viewModel.setActiveTab} />
 
-        <div className="bg-white rounded-rm-trip-smooth shadow-rm-trip-card border border-gray-100 overflow-hidden">
+        <div className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white">
           {viewModel.activeTab === "pdf" && (
             <PdfUploadPanel viewModel={viewModel} onUpload={() => void uploadPdf()} onFileResult={showActionResult} />
           )}
@@ -68,7 +69,7 @@ export function UploadPage() {
         </div>
 
         <UploadSteps />
-      </div>
+      </PageContent>
     </div>
   );
 }

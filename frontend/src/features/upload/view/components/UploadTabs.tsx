@@ -15,7 +15,7 @@ interface UploadTabsProps {
 
 export function UploadTabs({ activeTab, onChange }: UploadTabsProps) {
   return (
-    <div className="flex gap-1 mb-6 bg-white rounded-rm-trip-smooth p-1 shadow-rm-trip-card border border-gray-100 w-fit">
+    <div className="flex gap-1 mb-6 bg-white rounded-rm-trip-smooth p-1 border border-gray-100 w-fit">
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -23,7 +23,7 @@ export function UploadTabs({ activeTab, onChange }: UploadTabsProps) {
           className={cn(
             "flex items-center justify-center gap-1 py-1.5 px-3 rounded-[0.4rem] text-xs font-semibold transition-all duration-200",
             activeTab === tab.id
-              ? "bg-rm-trip-brand text-white shadow-rm-trip-card"
+              ? "bg-rm-trip-brand text-white"
               : "text-rm-trip-text-muted hover:text-rm-trip-text hover:bg-gray-50",
           )}
         >

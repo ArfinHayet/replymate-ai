@@ -67,7 +67,7 @@
   --rm-trip-btn: 0.75rem;
   --rm-trip-tight: 0.25rem;
 
-  --rm-trip-smooth: 0.75rem;
+  --rm-trip-smooth: 0.5rem;
   --rm-trip-pill: 9999px;
 
   --rm-trip-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 8px 24px rgba(15, 23, 42, 0.04);
@@ -312,5 +312,5 @@ textarea:focus-visible {
 input[type="text"],
 input[type="password"],
 input[type="email"] {
-  border-radius: 0.75rem; /* = rounded-xl */
+  border-radius: var(--rm-trip-smooth);
 }

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Calendar, ExternalLink, Globe, Loader2, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { DataTable } from "@/components/ui/DataTable";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,7 +27,7 @@ export function WebPagesPage() {
         </button>
       </PageHeader>
 
-      <div className="mx-auto space-y-6 px-8 py-8">
+      <PageContent>
         {vm.error && !vm.loading && (
           <InlineError
             title="Could not load web pages"
@@ -115,7 +116,7 @@ export function WebPagesPage() {
             </div>
           }
         />
-      </div>
+      </PageContent>
 
       <Dialog open={!!vm.deleteTarget} onOpenChange={(open) => !open && vm.cancelDelete()}>
         <DialogContent>
@@ -147,9 +148,9 @@ function showResult(result: { message?: string; errorMessage?: string }) {
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4 shadow-rm-trip-card">
-      <p className="mb-2 text-xs font-bold uppercase tracking-widest text-rm-trip-text-muted">{label}</p>
-      <div className="truncate font-rm-trip-heading text-2xl font-bold text-rm-trip-brand">{value}</div>
+    <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4">
+      <p className="mb-2 text-xs font-semibold text-rm-trip-text-muted">{label}</p>
+      <div className="truncate font-rm-trip-heading text-xl font-semibold text-rm-trip-brand">{value}</div>
     </div>
   );
 }

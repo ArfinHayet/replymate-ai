@@ -37,7 +37,7 @@ export function LoginPage() {
 
   return (
     <AuthSurface>
-      <div className="w-full max-w-md rounded-rm-trip-smooth border border-white/80 bg-white/95 p-7 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur sm:p-9">
+      <div className="w-full max-w-[19rem] rounded-rm-trip-smooth border border-white/80 bg-white/95 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur sm:max-w-md sm:p-9">
         <AuthBrandHeader title="Sign in to ReplyMate AI" subtitle="Manage your business content and assistant settings." />
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
@@ -78,7 +78,7 @@ export function LoginPage() {
               ) : (
                 <span />
               )}
-              <Link to="/users/forgot-password" className="font-semibold text-rm-trip-highlight hover:underline">
+              <Link to="/users/forgot-password" className="shrink-0 font-semibold text-rm-trip-highlight hover:underline">
                 Forgot password?
               </Link>
             </div>

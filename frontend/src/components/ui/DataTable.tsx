@@ -28,14 +28,14 @@ export function DataTable<T>({
   rowClassName,
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white shadow-rm-trip-card">
+    <div className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white">
       <table className="w-full border-collapse">
         <thead>
           <tr className="border-b border-gray-100 bg-gray-50/80">
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-6 py-3.5 text-left text-xs font-bold uppercase tracking-widest text-rm-trip-text-muted"
+                className="px-6 py-3.5 text-left text-xs font-semibold text-rm-trip-text-muted"
               >
                 {col.label}
               </th>

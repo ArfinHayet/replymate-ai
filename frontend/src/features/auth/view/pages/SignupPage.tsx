@@ -29,7 +29,7 @@ export function SignupPage() {
   if (viewModel.done) {
     return (
       <AuthSurface>
-        <div className="w-full max-w-md rounded-rm-trip-smooth border border-white/80 bg-white/95 p-7 text-center shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur sm:p-9">
+        <div className="w-full max-w-[19rem] rounded-rm-trip-smooth border border-white/80 bg-white/95 p-6 text-center shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur sm:max-w-md sm:p-9">
           <div className="mb-4 flex justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-rm-trip-smooth bg-emerald-50">
               <CheckCircle2 className="h-8 w-8 text-rm-trip-success" />
@@ -53,7 +53,7 @@ export function SignupPage() {
 
   return (
     <AuthSurface>
-      <div className="w-full max-w-md rounded-rm-trip-smooth border border-white/80 bg-white/95 p-7 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur sm:p-9">
+      <div className="w-full max-w-[19rem] rounded-rm-trip-smooth border border-white/80 bg-white/95 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur sm:max-w-md sm:p-9">
         <AuthBrandHeader title="Create your ReplyMate AI account" subtitle="Set up your business assistant workspace." />
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">

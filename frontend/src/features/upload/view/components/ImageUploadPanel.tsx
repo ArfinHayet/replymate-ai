@@ -16,7 +16,7 @@ export function ImageUploadPanel({ viewModel, onSave, onFileResult }: ImageUploa
       <div>
         <h2 className="font-rm-trip-heading font-semibold text-rm-trip-text text-base mb-0.5">Upload Image</h2>
         <p className="text-rm-trip-text-muted text-xs">
-          PNG, JPG, WEBP · max 10 MB · Title and description are auto-generated
+          PNG, JPG, WEBP | max 10 MB | Title and description are auto-generated
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export function ImageUploadPanel({ viewModel, onSave, onFileResult }: ImageUploa
         />
         {viewModel.imgPreview ? (
           <div className="flex flex-col items-center gap-3">
-            <img src={viewModel.imgPreview} alt="Preview" className="max-h-52 rounded-lg object-contain mx-auto shadow-sm" />
+            <img src={viewModel.imgPreview} alt="Preview" className="max-h-52 rounded-rm-trip-smooth object-contain mx-auto shadow-sm" />
             <p className="text-xs text-rm-trip-text-muted">{viewModel.selectedImg?.name}</p>
             {(viewModel.imgState === "idle" || viewModel.imgState === "error") && (
               <span className="text-xs text-violet-600 font-medium">Click to change image</span>
@@ -82,7 +82,7 @@ export function ImageUploadPanel({ viewModel, onSave, onFileResult }: ImageUploa
       {(viewModel.imgState === "ready" || viewModel.imgState === "saving" || viewModel.imgState === "success") && (
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-rm-trip-text-muted uppercase tracking-wide">Title</label>
+            <label className="text-xs font-semibold text-rm-trip-text-muted">Title</label>
             <input
               type="text"
               value={viewModel.imgTitle}
@@ -93,7 +93,7 @@ export function ImageUploadPanel({ viewModel, onSave, onFileResult }: ImageUploa
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-rm-trip-text-muted uppercase tracking-wide">Description</label>
+            <label className="text-xs font-semibold text-rm-trip-text-muted">Description</label>
             <textarea
               value={viewModel.imgDesc}
               onChange={(event) => viewModel.setImgDesc(event.target.value)}
@@ -110,7 +110,7 @@ export function ImageUploadPanel({ viewModel, onSave, onFileResult }: ImageUploa
         <SuccessBanner>
           <div>
             <p className="font-semibold text-emerald-800 text-sm">{viewModel.imgResult.title}</p>
-            <p className="text-xs text-emerald-700 mt-0.5">Saved · ID: {viewModel.imgResult.id.slice(0, 8)}...</p>
+            <p className="text-xs text-emerald-700 mt-0.5">Saved to your workspace</p>
           </div>
         </SuccessBanner>
       )}
@@ -124,7 +124,7 @@ export function ImageUploadPanel({ viewModel, onSave, onFileResult }: ImageUploa
             className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
           >
             <Save className="h-4 w-4" />
-            Save to Knowledge Base
+            Save image
           </button>
         )}
         {viewModel.imgState === "saving" && (

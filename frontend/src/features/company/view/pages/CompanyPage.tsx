@@ -1,5 +1,6 @@
 import { Plus, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
+import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { InlineError } from "@/components/ui/InlineError";
 import { useCompanyViewModel } from "../../viewModel/useCompanyViewModel";
@@ -59,7 +60,7 @@ export function CompanyPage() {
         </div>
       </PageHeader>
 
-      <div className="mx-auto px-8 py-8 space-y-6">
+      <PageContent>
         {viewModel.error && !viewModel.loading && (
           <InlineError
             title="Could not load company profile"
@@ -76,7 +77,7 @@ export function CompanyPage() {
           onEdit={viewModel.openEdit}
           onDelete={viewModel.requestDelete}
         />
-      </div>
+      </PageContent>
 
       <CompanyFormDialog
         open={viewModel.formOpen}

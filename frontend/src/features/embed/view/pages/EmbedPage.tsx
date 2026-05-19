@@ -1,6 +1,7 @@
 import { Code2, Copy, Globe, Key, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
+import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { InlineError } from "@/components/ui/InlineError";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,9 +19,9 @@ export function EmbedPage() {
   return (
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader title="Website Widget" subtitle="Create widget keys and control which websites can use your assistant." />
-      <div className="px-4 py-8 sm:px-8">
+      <PageContent>
         <div className="mx-auto space-y-6">
-          <section className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white shadow-rm-trip-card">
+          <section className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white">
             <SectionHeader icon={<Key className="h-3.5 w-3.5 text-rm-trip-brand" />} title="Widget Keys" />
             <div className="space-y-5 p-6">
               <div className="flex flex-col gap-2 sm:flex-row">
@@ -80,14 +81,14 @@ export function EmbedPage() {
                               <button
                                 title="Copy embed snippet"
                                 onClick={() => void run(vm.copySnippet(item.key))}
-                                className="flex h-7 w-7 items-center justify-center rounded-lg text-rm-trip-text-muted hover:bg-rm-trip-brand/10 hover:text-rm-trip-brand"
+                                className="flex h-7 w-7 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-rm-trip-brand/10 hover:text-rm-trip-brand"
                               >
                                 <Copy className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 title="Delete key"
                                 onClick={() => void run(vm.deleteKey(item.id))}
-                                className="flex h-7 w-7 items-center justify-center rounded-lg text-rm-trip-text-muted hover:bg-red-50 hover:text-rm-trip-state-error"
+                                className="flex h-7 w-7 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-red-50 hover:text-rm-trip-state-error"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
@@ -116,7 +117,7 @@ export function EmbedPage() {
             </div>
           </section>
 
-          <section className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white shadow-rm-trip-card">
+          <section className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white">
             <SectionHeader icon={<Globe className="h-3.5 w-3.5 text-rm-trip-brand" />} title="Allowed Domains" />
             <div className="space-y-5 p-6">
               <p className="text-sm leading-relaxed text-rm-trip-text-muted">
@@ -171,7 +172,7 @@ export function EmbedPage() {
                           <td className="px-4 py-3">
                             <button
                               onClick={() => void run(vm.deleteDomain(domain.id))}
-                              className="ml-auto flex h-7 w-7 items-center justify-center rounded-lg text-rm-trip-text-muted hover:bg-red-50 hover:text-rm-trip-state-error"
+                              className="ml-auto flex h-7 w-7 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-red-50 hover:text-rm-trip-state-error"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -185,7 +186,7 @@ export function EmbedPage() {
             </div>
           </section>
         </div>
-      </div>
+      </PageContent>
     </div>
   );
 }
@@ -193,7 +194,7 @@ export function EmbedPage() {
 function SectionHeader({ icon, title }: { icon: ReactNode; title: string }) {
   return (
     <div className="flex items-center gap-2 border-b border-gray-100 px-6 py-4">
-      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rm-trip-brand/10">{icon}</div>
+      <div className="flex h-7 w-7 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand/10">{icon}</div>
       <h2 className="font-rm-trip-heading text-sm font-semibold text-rm-trip-text">{title}</h2>
     </div>
   );
@@ -201,7 +202,7 @@ function SectionHeader({ icon, title }: { icon: ReactNode; title: string }) {
 
 function Th({ children }: { children?: ReactNode }) {
   return (
-    <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
+    <th className="px-4 py-2.5 text-left text-xs font-semibold text-rm-trip-text-muted">
       {children}
     </th>
   );
