@@ -347,9 +347,13 @@
 
     "@media(max-width:480px){",
     "#toggle-btn{right:18px;bottom:18px;width:58px;height:58px;}",
-    "#chat-window{right:12px;bottom:88px;width:calc(100vw - 24px);height:calc(100vh - 110px);border-radius:22px;}",
+    "#toggle-btn.open{display:none;}",
+    "#chat-window{top:0;right:0;bottom:0;left:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform-origin:center;}",
+    "#chat-window.hidden{transform:translateY(100%);}",
+    "#chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
     "#messages{padding:14px 12px;}",
-    "#input-row{padding:12px;}",
+    "#input-row{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));}",
+    "#chat-footer{padding-bottom:calc(9px + env(safe-area-inset-bottom));}",
     "}"
   ].join("");
 
