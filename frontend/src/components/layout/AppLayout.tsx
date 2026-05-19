@@ -15,7 +15,6 @@ import {
   X
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { Toaster } from '@/components/ui/sonner'
 import { useLogoutViewModel } from '@/features/auth/viewModel/useLogoutViewModel'
 
 const navItems = [
@@ -139,9 +138,11 @@ export function AppLayout () {
             <NavLink
               key={to}
               to={to}
+              aria-label={label}
+              title={label}
               className={({ isActive }) =>
                 cn(
-                  'flex min-w-0 flex-col items-center gap-1 rounded-rm-trip-smooth px-1.5 py-2 text-[11px] font-medium transition-all',
+                  'group relative flex min-w-0 items-center justify-center rounded-rm-trip-smooth px-1.5 py-3 text-[11px] font-medium transition-all',
                   isActive
                     ? 'bg-rm-trip-brand text-white'
                     : 'text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text'
@@ -149,19 +150,25 @@ export function AppLayout () {
               }
             >
               <Icon className='h-4 w-4 shrink-0' />
-              <span className='max-w-full truncate'>{label}</span>
+              <span className='pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-rm-trip-smooth bg-gray-950 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-rm-trip-card transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100'>
+                {label}
+              </span>
             </NavLink>
           ))}
           <button
             type='button'
             onClick={() => setMoreOpen((open) => !open)}
+            aria-label='More'
+            title='More'
             className={cn(
-              'flex min-w-0 flex-col items-center gap-1 rounded-rm-trip-smooth px-1.5 py-2 text-[11px] font-medium transition-all',
+              'group relative flex min-w-0 items-center justify-center rounded-rm-trip-smooth px-1.5 py-3 text-[11px] font-medium transition-all',
               moreOpen ? 'bg-rm-trip-brand text-white' : 'text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text'
             )}
           >
             <MoreHorizontal className='h-4 w-4 shrink-0' />
-            <span>More</span>
+            <span className='pointer-events-none absolute bottom-full left-1/2 z-50 mb-2 -translate-x-1/2 whitespace-nowrap rounded-rm-trip-smooth bg-gray-950 px-2 py-1 text-xs font-semibold text-white opacity-0 shadow-rm-trip-card transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100'>
+              More
+            </span>
           </button>
         </nav>
       </div>
@@ -169,8 +176,6 @@ export function AppLayout () {
       <main className='flex-1 overflow-auto min-h-0 pb-20 md:pb-0'>
         <Outlet />
       </main>
-
-      <Toaster />
     </div>
   )
 }

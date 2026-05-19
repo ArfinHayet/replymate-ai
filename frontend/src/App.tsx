@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
+import { Toaster } from "@/components/ui/sonner";
 import { PrivateRoute } from "@/features/auth/view/components/PrivateRoute";
 
 const LoginPage = lazy(() => import("@/features/auth").then((module) => ({ default: module.LoginPage })));
@@ -57,6 +58,7 @@ export default function App() {
           </Route>
         </Routes>
       </Suspense>
+      <Toaster />
     </BrowserRouter>
   );
 }

@@ -167,9 +167,9 @@ export function PdfsPage() {
 
 function Stat({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4">
+    <div className="min-w-0 rounded-rm-trip-smooth border border-gray-100 bg-white px-5 py-4">
       <p className="mb-2 text-xs font-semibold text-rm-trip-text-muted">{label}</p>
-      <div className="truncate font-rm-trip-heading text-xl font-semibold text-rm-trip-brand">{value}</div>
+      <div className="min-w-0 truncate font-rm-trip-heading text-xl font-semibold text-rm-trip-brand">{value}</div>
     </div>
   );
 }
