@@ -21,6 +21,7 @@ const ChatHistoryPage = lazy(() =>
 );
 const EmbedPage = lazy(() => import("@/features/embed").then((module) => ({ default: module.EmbedPage })));
 const ProfilePage = lazy(() => import("@/features/profile").then((module) => ({ default: module.ProfilePage })));
+const AnalyticsPage = lazy(() => import("@/features/analytics").then((module) => ({ default: module.AnalyticsPage })));
 
 function RouteFallback() {
   return (
@@ -54,6 +55,7 @@ export default function App() {
               <Route path="/chat-history" element={<ChatHistoryPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/embed" element={<EmbedPage />} />
+              <Route path="/analytics" element={<AnalyticsPage />} />
             </Route>
           </Route>
         </Routes>

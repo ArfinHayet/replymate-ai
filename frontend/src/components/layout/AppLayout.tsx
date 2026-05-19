@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Building2,
+  ChartColumn,
   Code2,
   FileUp,
   Files,
@@ -24,6 +25,7 @@ const navItems = [
   { to: '/web-pages', icon: Globe, label: 'Web Pages' },
   { to: '/images', icon: Images, label: 'Images' },
   { to: '/company', icon: Building2, label: 'Company' },
+  { to: '/analytics', icon: ChartColumn, label: 'Analytics' },
   { to: '/chat-history', icon: History, label: 'Chat History' },
   { to: '/embed', icon: Code2, label: 'Website Widget' },
   { to: '/profile', icon: UserRound, label: 'Profile' }
