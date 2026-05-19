@@ -36,6 +36,7 @@ const HIGHEST_PRIORITY_SEGMENTS = [
   'help',
   'support',
   'cancellation',
+  'category',
 ];
 const HIGH_PRIORITY_SEGMENTS = [
   'refund',
@@ -61,10 +62,13 @@ const LOW_PRIORITY_SEGMENTS = [
   'news',
   'article',
   'articles',
-  'category',
   'tag',
   'archive',
   'search',
+  'wp-json',
+  'password',
+  'signin',
+  'signup'
 ];
 const JSON_CONTENT_KEYS = new Set([
   'payload',
