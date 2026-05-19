@@ -25,7 +25,7 @@ export function ChatInputBar({
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
-            placeholder="Ask a question about your documents..."
+            placeholder="Ask a question ..."
             rows={1}
             disabled={loading}
             style={{ minHeight: "44px", maxHeight: "200px" }}

@@ -29,14 +29,6 @@ export function PageHeader({ title, subtitle, children }: PageHeaderProps) {
         </div>
       </header>
 
-      {children && (
-        <div className="border-b border-gray-100 bg-rm-trip-surface px-4 py-3 md:hidden">
-          <div className="rounded-2xl border border-gray-100 bg-white p-3 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2.5">{children}</div>
-          </div>
-        </div>
-      )}
-
       <header className="sticky top-0 z-10 hidden min-h-16 shrink-0 flex-col gap-3 border-b border-gray-100 bg-white/95 px-4 py-3 backdrop-blur md:flex md:flex-row md:items-center md:justify-between md:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-rm-trip-smooth bg-rm-trip-brand shadow-rm-trip-card">

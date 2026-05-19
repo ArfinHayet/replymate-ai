@@ -1,5 +1,4 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { AnimatePresence, motion, type PanInfo } from 'framer-motion'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Building2,
@@ -30,11 +29,6 @@ const navItems = [
   { to: '/embed', icon: Code2, label: 'Website Widget' },
   { to: '/profile', icon: UserRound, label: 'Profile' }
 ]
-
-const MOBILE_DRAWER_WIDTH = 320
-const EDGE_SWIPE_ZONE = 32
-const SWIPE_CLOSE_DISTANCE = 88
-const SWIPE_CLOSE_VELOCITY = 520
 
 interface AppLayoutContextValue {
   openMobileMenu: () => void
@@ -78,12 +72,6 @@ export function AppLayout () {
     logoutViewModel.logout()
     closeMobileMenu()
     navigate('/login', { replace: true })
-  }
-
-  const handleDrawerDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    if (info.offset.x < -SWIPE_CLOSE_DISTANCE || info.velocity.x < -SWIPE_CLOSE_VELOCITY) {
-      closeMobileMenu()
-    }
   }
 
   return (
@@ -133,39 +121,10 @@ export function AppLayout () {
         </div>
       </aside>
 
-      {!mobileMenuOpen && (
-        <motion.div
-          className='fixed inset-y-0 left-0 z-40 w-8 touch-pan-y md:hidden'
-          drag='x'
-          dragConstraints={{ left: 0, right: EDGE_SWIPE_ZONE }}
-          dragElastic={0.25}
-          dragMomentum={false}
-          onDragStart={openMobileMenu}
-          aria-hidden='true'
-        />
-      )}
-
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            className='fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-[3px] md:hidden'
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18, ease: 'easeOut' }}
-            onClick={closeMobileMenu}
-          >
-          <motion.div
+      {mobileMenuOpen && (
+        <div className='fixed inset-0 z-50 bg-slate-950/35 backdrop-blur-[3px] md:hidden' onClick={closeMobileMenu}>
+          <div
             className='flex h-full w-80 max-w-[86vw] flex-col rounded-r-[28px] bg-white shadow-[16px_0_60px_rgba(15,23,42,0.18)]'
-            initial={{ x: -MOBILE_DRAWER_WIDTH }}
-            animate={{ x: 0 }}
-            exit={{ x: -MOBILE_DRAWER_WIDTH }}
-            transition={{ type: 'spring', stiffness: 420, damping: 36, mass: 0.9 }}
-            drag='x'
-            dragConstraints={{ left: -MOBILE_DRAWER_WIDTH, right: 0 }}
-            dragElastic={{ left: 0.08, right: 0 }}
-            dragMomentum={false}
-            onDragEnd={handleDrawerDragEnd}
             onClick={(event) => event.stopPropagation()}
           >
             <div className='flex items-center justify-between border-b border-gray-100 px-5 py-5'>
@@ -221,10 +180,9 @@ export function AppLayout () {
                 Sign out
               </button>
             </div>
-          </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </div>
+        </div>
+      )}
 
       <main className='flex-1 overflow-auto min-h-0'>
         <AppLayoutContext.Provider value={layoutContext}>
