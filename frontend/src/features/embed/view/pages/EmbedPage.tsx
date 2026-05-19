@@ -1,5 +1,6 @@
-import { Code2, Copy, Globe, Key, Plus, Trash2 } from "lucide-react";
+import { Check, Code2, Copy, Globe, Key, Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -9,10 +10,32 @@ import { useEmbedViewModel } from "../../viewModel/useEmbedViewModel";
 
 export function EmbedPage() {
   const vm = useEmbedViewModel();
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+  const [scriptCopied, setScriptCopied] = useState(false);
 
   const run = async (action: Promise<{ message?: string; errorMessage?: string }>) => {
     const result = await action;
     if (result.message) toast.success(result.message);
+    if (result.errorMessage) toast.error(result.errorMessage);
+  };
+
+  const copyKey = async (id: string, key: string) => {
+    const result = await vm.copyKey(key);
+    if (result.message) {
+      setCopiedKeyId(id);
+      window.setTimeout(() => setCopiedKeyId(null), 1000);
+      toast.success(result.message);
+    }
+    if (result.errorMessage) toast.error(result.errorMessage);
+  };
+
+  const copyScript = async () => {
+    const result = await vm.copyLatestSnippet();
+    if (result.message) {
+      setScriptCopied(true);
+      window.setTimeout(() => setScriptCopied(false), 1000);
+      toast.success(result.message);
+    }
     if (result.errorMessage) toast.error(result.errorMessage);
   };
 
@@ -35,7 +58,8 @@ export function EmbedPage() {
                 />
                 <button
                   onClick={() => void run(vm.createKey())}
-                  className="flex items-center justify-center gap-1.5 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-semibold text-white shadow-rm-trip-card"
+                  disabled={!vm.newLabel.trim()}
+                  className="flex items-center justify-center gap-1.5 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-semibold text-white shadow-rm-trip-card disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Create
@@ -79,11 +103,15 @@ export function EmbedPage() {
                           <td className="px-4 py-3">
                             <div className="flex justify-end gap-1">
                               <button
-                                title="Copy key"
-                                onClick={() => void run(vm.copyKey(item.key))}
+                                title={copiedKeyId === item.id ? "Copied" : "Copy key"}
+                                onClick={() => void copyKey(item.id, item.key)}
                                 className="flex h-7 w-7 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-rm-trip-brand/10 hover:text-rm-trip-brand"
                               >
-                                <Copy className="h-3.5 w-3.5" />
+                                {copiedKeyId === item.id ? (
+                                  <Check className="h-3.5 w-3.5 text-rm-trip-brand" />
+                                ) : (
+                                  <Copy className="h-3.5 w-3.5" />
+                                )}
                               </button>
                               <button
                                 title="Delete key"
@@ -111,11 +139,15 @@ export function EmbedPage() {
                       </p>
                     </div>
                     <button
-                      onClick={() => void run(vm.copyLatestSnippet())}
+                      onClick={() => void copyScript()}
                       className="inline-flex items-center justify-center gap-1.5 rounded-rm-trip-smooth border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-rm-trip-text-muted shadow-sm transition-all hover:text-rm-trip-brand"
                     >
-                      <Copy className="h-3.5 w-3.5" />
-                      Copy Script
+                      {scriptCopied ? (
+                        <Check className="h-3.5 w-3.5 text-rm-trip-brand" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                      {scriptCopied ? "Copied" : "Copy Script"}
                     </button>
                   </div>
                   <pre className="overflow-x-auto whitespace-pre-wrap break-all font-mono text-xs leading-relaxed text-rm-trip-text">

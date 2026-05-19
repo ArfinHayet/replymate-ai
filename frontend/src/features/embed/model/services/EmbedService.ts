@@ -12,7 +12,7 @@ export class EmbedService {
   }
 
   createWidgetKey(label: string) {
-    return this.repository.createWidgetKey(label.trim() || "My Widget");
+    return this.repository.createWidgetKey(label.trim());
   }
 
   deleteWidgetKey(id: string) {

@@ -52,6 +52,8 @@ export function useEmbedViewModel(): EmbedViewModel {
   }, [loadAllowedDomains, loadWidgetKeys]);
 
   const createKey = async () => {
+    if (!newLabel.trim()) return { success: false, errorMessage: "Add a label before creating a widget key" };
+
     try {
       const created = await embedService.createWidgetKey(newLabel);
       setKeys((prev) => [created, ...prev]);
