@@ -72,12 +72,28 @@ export function useEmbedViewModel(): EmbedViewModel {
     }
   };
 
-  const copySnippet = async (key: string) => {
+  const latestKey = useMemo(
+    () =>
+      [...keys].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0],
+    [keys],
+  );
+
+  const copyKey = async (key: string) => {
     try {
-      await navigator.clipboard.writeText(embedService.createSnippet(key, API_URL));
-      return { success: true, message: "Snippet copied to clipboard" };
+      await navigator.clipboard.writeText(key);
+      return { success: true, message: "Widget key copied" };
     } catch {
-      return { success: false, errorMessage: "Failed to copy" };
+      return { success: false, errorMessage: "Failed to copy key" };
+    }
+  };
+
+  const copyLatestSnippet = async () => {
+    if (!latestKey) return { success: false, errorMessage: "Create a widget key first" };
+    try {
+      await navigator.clipboard.writeText(embedService.createSnippet(latestKey.key, API_URL));
+      return { success: true, message: "Embed script copied" };
+    } catch {
+      return { success: false, errorMessage: "Failed to copy script" };
     }
   };
 
@@ -114,13 +130,15 @@ export function useEmbedViewModel(): EmbedViewModel {
     domainsError,
     apiUrl: API_URL,
     snippetTemplate: embedService.createSnippetTemplate(API_URL),
+    latestSnippet: latestKey ? embedService.createSnippet(latestKey.key, API_URL) : embedService.createSnippetTemplate(API_URL),
     loadWidgetKeys,
     loadAllowedDomains,
     setNewLabel,
     setNewDomain,
     createKey,
     deleteKey,
-    copySnippet,
+    copyKey,
+    copyLatestSnippet,
     createDomain,
     deleteDomain,
   };

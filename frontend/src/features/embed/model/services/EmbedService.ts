@@ -32,7 +32,7 @@ export class EmbedService {
   }
 
   createSnippet(key: string, apiUrl: string) {
-    return `<script src="${apiUrl}/widget.js" data-key="${key}" data-api="${apiUrl}"></script>`;
+    return `<script src="${apiUrl}/widget.js"\n  data-key="${key}"\n  data-api="${apiUrl}">\n</script>`;
   }
 
   createSnippetTemplate(apiUrl: string) {
