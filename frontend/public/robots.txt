@@ -9,3 +9,5 @@ Allow: /
 
 User-agent: LinkedInBot
 Allow: /
+
+Sitemap: https://comp-bot-sntj.vercel.app/sitemap.xml
