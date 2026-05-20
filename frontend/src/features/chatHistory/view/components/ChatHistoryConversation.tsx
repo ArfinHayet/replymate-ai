@@ -14,7 +14,10 @@ export function ChatHistoryConversation({ selectedSession, onBack }: ChatHistory
       {selectedSession ? (
         <>
           <ChatHistoryConversationHeader session={selectedSession} onBack={onBack} />
-          <ChatHistoryMessageList messages={selectedSession.messages} />
+          <ChatHistoryMessageList
+            sessionId={selectedSession.sessionId}
+            messages={selectedSession.messages}
+          />
         </>
       ) : (
         <ChatHistoryEmptySelection />

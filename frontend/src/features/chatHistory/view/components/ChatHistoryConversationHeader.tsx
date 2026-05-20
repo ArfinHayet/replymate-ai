@@ -8,6 +8,14 @@ interface ChatHistoryConversationHeaderProps {
 }
 
 export function ChatHistoryConversationHeader({ session, onBack }: ChatHistoryConversationHeaderProps) {
+  const fullLastMessageTime = new Date(session.lastMessageAt).toLocaleString([], {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   return (
     <div className="sticky top-0 z-20 border-b border-gray-100 bg-white/95 px-4 py-3 shadow-sm backdrop-blur sm:px-5 sm:py-4">
       <div className="flex items-center justify-between gap-4">
@@ -32,7 +40,7 @@ export function ChatHistoryConversationHeader({ session, onBack }: ChatHistoryCo
                 <MessageSquare className="h-3.5 w-3.5" />
                 {session.messageCount} messages
               </span>
-              <span className="inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1" title={fullLastMessageTime}>
                 <Clock className="h-3.5 w-3.5" />
                 {formatRelativeTime(session.lastMessageAt)}
               </span>
