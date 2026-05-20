@@ -1,12 +1,12 @@
 # SupportMate Ai
 
 <p align="center">
-  <img src="https://comp-bot-sntj.vercel.app/favicon.svg/" alt="SupportMate Ai logo" width="96" height="96" />
+  <img src="https://www.supportmate.online/favicon.svg/" alt="SupportMate Ai logo" width="96" height="96" />
 </p>
 
 SupportMate Ai is a knowledge-based AI chatbot builder. It lets you upload PDFs, add images, and ingest website URLs into a private knowledge base, then chat with that knowledge from the dashboard or embed the assistant directly on your own website.
 
-Live app: https://comp-bot-sntj.vercel.app/
+Live app: https://www.supportmate.online/
 
 ## What SupportMate Ai Does
 
