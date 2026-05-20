@@ -131,26 +131,26 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-rm-trip-surface text-rm-trip-text">
-      <header className="sticky top-0 z-30 border-b border-gray-200/80 bg-white/95 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <a href="#" className="inline-flex items-center gap-2" aria-label="ReplyMate home">
-            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rm-trip-brand text-sm font-bold text-white">R</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand text-sm font-bold text-white shadow-rm-trip-card">R</span>
             <span className="font-rm-trip-heading text-lg font-bold">ReplyMate</span>
           </a>
 
           <nav className="hidden items-center gap-6 md:flex">
-            <a href="#how" className="text-sm font-semibold text-rm-trip-text-muted hover:text-rm-trip-text">Workflow</a>
-            <a href="#screenshots" className="text-sm font-semibold text-rm-trip-text-muted hover:text-rm-trip-text">Screenshots</a>
-            <a href="#features" className="text-sm font-semibold text-rm-trip-text-muted hover:text-rm-trip-text">Features</a>
-            <a href="#testimonials" className="text-sm font-semibold text-rm-trip-text-muted hover:text-rm-trip-text">Customers</a>
-            <a href="#pricing" className="text-sm font-semibold text-rm-trip-text-muted hover:text-rm-trip-text">Pricing</a>
+            <a href="#how" className="rounded-rm-trip-smooth px-2 py-1 text-sm font-semibold text-rm-trip-text-muted transition-all duration-150 hover:bg-gray-50 hover:text-rm-trip-text">Workflow</a>
+            <a href="#screenshots" className="rounded-rm-trip-smooth px-2 py-1 text-sm font-semibold text-rm-trip-text-muted transition-all duration-150 hover:bg-gray-50 hover:text-rm-trip-text">Screenshots</a>
+            <a href="#features" className="rounded-rm-trip-smooth px-2 py-1 text-sm font-semibold text-rm-trip-text-muted transition-all duration-150 hover:bg-gray-50 hover:text-rm-trip-text">Features</a>
+            <a href="#testimonials" className="rounded-rm-trip-smooth px-2 py-1 text-sm font-semibold text-rm-trip-text-muted transition-all duration-150 hover:bg-gray-50 hover:text-rm-trip-text">Customers</a>
+            <a href="#pricing" className="rounded-rm-trip-smooth px-2 py-1 text-sm font-semibold text-rm-trip-text-muted transition-all duration-150 hover:bg-gray-50 hover:text-rm-trip-text">Pricing</a>
           </nav>
 
           <div className="flex items-center gap-2">
-            <Link to="/login" className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-rm-trip-text hover:border-gray-300">
+            <Link to="/login" className="rounded-rm-trip-smooth border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-rm-trip-text transition-all duration-150 hover:border-gray-300 hover:bg-gray-50">
               Sign in
             </Link>
-            <a href="#cta" className="hidden rounded-xl bg-rm-trip-brand px-3 py-2 text-sm font-semibold text-white hover:bg-rm-trip-brand-dark sm:inline-flex">
+            <a href="#cta" className="hidden rounded-rm-trip-smooth bg-rm-trip-brand px-3 py-2 text-sm font-semibold text-white shadow-rm-trip-card transition-all duration-150 hover:bg-rm-trip-brand-dark sm:inline-flex">
               Book demo
             </a>
           </div>
@@ -162,7 +162,7 @@ export function LandingPage() {
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(37,99,235,0.18),transparent_35%),radial-gradient(circle_at_90%_10%,rgba(20,184,166,0.16),transparent_30%)]" />
           <div className="relative mx-auto grid w-full max-w-7xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:items-center lg:px-8 lg:py-24">
             <div>
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-rm-trip-brand">
+              <p className="mb-4 inline-flex items-center gap-2 rounded-full border [border-color:var(--rm-trip-brand-light)] [background-color:var(--rm-trip-brand-light)] px-3 py-1 text-xs font-bold uppercase tracking-[0.12em] text-rm-trip-brand">
                 <Sparkles className="h-3.5 w-3.5" />
                 AI chatbot for support and sales
               </p>
@@ -175,25 +175,25 @@ export function LandingPage() {
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <a href="#cta" className="inline-flex items-center gap-2 rounded-xl bg-rm-trip-brand px-5 py-3 text-sm font-bold text-white shadow-rm-trip-card hover:bg-rm-trip-brand-dark">
+                <a href="#cta" className="inline-flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-5 py-3 text-sm font-bold text-white shadow-rm-trip-card transition-all duration-150 hover:bg-rm-trip-brand-dark">
                   Book live demo
                   <ArrowRight className="h-4 w-4" />
                 </a>
-                <a href="#screenshots" className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-rm-trip-text hover:border-gray-300">
+                <a href="#screenshots" className="inline-flex items-center gap-2 rounded-rm-trip-smooth border border-gray-200 bg-white px-5 py-3 text-sm font-bold text-rm-trip-text transition-all duration-150 hover:border-gray-300 hover:bg-gray-50">
                   View product
                 </a>
               </div>
 
               <div className="mt-8 grid max-w-xl grid-cols-1 gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-rm-trip-card">
+                <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-4 py-3 shadow-rm-trip-card">
                   <p className="text-base font-bold">&lt; 5 sec</p>
                   <p className="text-xs font-semibold text-rm-trip-text-muted">typical AI first reply</p>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-rm-trip-card">
+                <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-4 py-3 shadow-rm-trip-card">
                   <p className="text-base font-bold">24/7</p>
                   <p className="text-xs font-semibold text-rm-trip-text-muted">automated coverage</p>
                 </div>
-                <div className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-rm-trip-card">
+                <div className="rounded-rm-trip-smooth border border-gray-100 bg-white px-4 py-3 shadow-rm-trip-card">
                   <p className="text-base font-bold">CRM</p>
                   <p className="text-xs font-semibold text-rm-trip-text-muted">ready lead handoff</p>
                 </div>
@@ -201,7 +201,7 @@ export function LandingPage() {
             </div>
 
             <div className="relative mx-auto w-full max-w-xl">
-              <div className="rounded-3xl border border-gray-200 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.18)]">
+              <div className="rounded-rm-trip-smooth border border-gray-100 bg-white shadow-rm-trip-lift">
                 <div className="flex items-center gap-3 border-b border-gray-100 p-4">
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
                   <div>
@@ -210,10 +210,10 @@ export function LandingPage() {
                   </div>
                 </div>
                 <div className="space-y-3 bg-rm-trip-surface px-4 py-4">
-                  <div className="max-w-[86%] rounded-2xl rounded-bl-md border border-gray-200 bg-white px-3 py-2 text-sm">Hi, I can help with plans, integrations, or account setup.</div>
-                  <div className="ml-auto max-w-[86%] rounded-2xl rounded-br-md bg-rm-trip-brand px-3 py-2 text-sm font-medium text-white">Can it qualify leads from our pricing page?</div>
-                  <div className="max-w-[86%] rounded-2xl rounded-bl-md border border-gray-200 bg-white px-3 py-2 text-sm">Yes. I can ask custom questions, score fit, and send hot leads to your CRM.</div>
-                  <div className="max-w-[86%] rounded-2xl rounded-bl-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-900">Lead score updated: 92. Routed to Sales.</div>
+                  <div className="max-w-[86%] rounded-rm-trip-smooth rounded-bl-md border border-gray-100 bg-white px-3 py-2 text-sm">Hi, I can help with plans, integrations, or account setup.</div>
+                  <div className="ml-auto max-w-[86%] rounded-rm-trip-smooth rounded-br-md bg-rm-trip-brand px-3 py-2 text-sm font-medium text-white">Can it qualify leads from our pricing page?</div>
+                  <div className="max-w-[86%] rounded-rm-trip-smooth rounded-bl-md border border-gray-100 bg-white px-3 py-2 text-sm">Yes. I can ask custom questions, score fit, and send hot leads to your CRM.</div>
+                  <div className="max-w-[86%] rounded-rm-trip-smooth rounded-bl-md border [border-color:var(--rm-trip-brand-light)] [background-color:var(--rm-trip-brand-light)] px-3 py-2 text-sm text-rm-trip-brand">Lead score updated: 92. Routed to Sales.</div>
                 </div>
                 <div className="flex items-center justify-between border-t border-gray-100 px-4 py-3 text-sm text-rm-trip-text-muted">
                   <span>Ask anything...</span>
@@ -221,34 +221,34 @@ export function LandingPage() {
                 </div>
               </div>
 
-              <div className="absolute -left-4 top-8 rounded-2xl border border-blue-100 bg-white px-3 py-2 shadow-rm-trip-card">
+              <div className="absolute -left-4 top-8 rounded-rm-trip-smooth border [border-color:var(--rm-trip-brand-light)] bg-white px-3 py-2 shadow-rm-trip-card">
                 <p className="inline-flex items-center gap-1 text-xs font-semibold text-rm-trip-text-muted">
                   <Zap className="h-3.5 w-3.5 text-rm-trip-brand" />
                   Intent detected
                 </p>
-                <p className="mt-1 text-sm font-bold">Sales qualified</p>
+                <p className="mt-1 text-sm font-bold text-rm-trip-brand">Sales qualified</p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="border-y border-gray-200 bg-white">
+        <section className="border-y border-gray-100 bg-white">
           <div className="mx-auto grid w-full max-w-7xl grid-cols-2 gap-4 px-4 py-8 sm:grid-cols-4 sm:px-6 lg:px-8">
-            <div className="rounded-xl border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">10k+</p><p className="text-xs font-semibold text-rm-trip-text-muted">monthly conversations</p></div>
-            <div className="rounded-xl border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">31%</p><p className="text-xs font-semibold text-rm-trip-text-muted">more qualified demos</p></div>
-            <div className="rounded-xl border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">42%</p><p className="text-xs font-semibold text-rm-trip-text-muted">fewer repeat tickets</p></div>
-            <div className="rounded-xl border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">99.9%</p><p className="text-xs font-semibold text-rm-trip-text-muted">target uptime</p></div>
+            <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">10k+</p><p className="text-xs font-semibold text-rm-trip-text-muted">monthly conversations</p></div>
+            <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">31%</p><p className="text-xs font-semibold text-rm-trip-text-muted">more qualified demos</p></div>
+            <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">42%</p><p className="text-xs font-semibold text-rm-trip-text-muted">fewer repeat tickets</p></div>
+            <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface px-4 py-3 text-center"><p className="text-lg font-bold">99.9%</p><p className="text-xs font-semibold text-rm-trip-text-muted">target uptime</p></div>
           </div>
         </section>
 
         <section className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <p className="text-center text-xs font-bold uppercase tracking-[0.14em] text-rm-trip-text-muted">Built for teams using</p>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3 text-sm font-bold text-rm-trip-text-muted">
-            <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5">Slack</span>
-            <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5">HubSpot</span>
-            <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5">Intercom</span>
-            <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5">Zendesk</span>
-            <span className="rounded-full border border-gray-200 bg-white px-3 py-1.5">Salesforce</span>
+            <span className="rounded-full border border-gray-100 bg-white px-3 py-1.5">Slack</span>
+            <span className="rounded-full border border-gray-100 bg-white px-3 py-1.5">HubSpot</span>
+            <span className="rounded-full border border-gray-100 bg-white px-3 py-1.5">Intercom</span>
+            <span className="rounded-full border border-gray-100 bg-white px-3 py-1.5">Zendesk</span>
+            <span className="rounded-full border border-gray-100 bg-white px-3 py-1.5">Salesforce</span>
           </div>
         </section>
 
@@ -258,14 +258,14 @@ export function LandingPage() {
             <h2 className="mt-3 font-rm-trip-heading text-3xl font-bold sm:text-4xl">A clearer view of the chatbot workspace</h2>
           </div>
           <div className="grid gap-4 lg:grid-cols-2">
-            <figure className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card lg:row-span-2">
-              <img src="/landing/img/screenshot-inbox.svg" alt="ReplyMate shared inbox with AI replies" className="w-full rounded-xl border border-gray-100" />
+            <figure className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card lg:row-span-2">
+              <img src="/landing/img/screenshot-inbox.svg" alt="ReplyMate shared inbox with AI replies" className="w-full rounded-rm-trip-smooth border border-gray-100" />
             </figure>
-            <figure className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card">
-              <img src="/landing/img/screenshot-analytics.svg" alt="ReplyMate analytics dashboard" className="w-full rounded-xl border border-gray-100" />
+            <figure className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card">
+              <img src="/landing/img/screenshot-analytics.svg" alt="ReplyMate analytics dashboard" className="w-full rounded-rm-trip-smooth border border-gray-100" />
             </figure>
-            <figure className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card">
-              <img src="/landing/img/screenshot-builder.svg" alt="ReplyMate workflow builder" className="w-full rounded-xl border border-gray-100" />
+            <figure className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card">
+              <img src="/landing/img/screenshot-builder.svg" alt="ReplyMate workflow builder" className="w-full rounded-rm-trip-smooth border border-gray-100" />
             </figure>
           </div>
         </section>
@@ -276,7 +276,7 @@ export function LandingPage() {
             <h2 className="mt-3 font-rm-trip-heading text-3xl font-bold sm:text-4xl">Go live with a smarter chatbot in three steps</h2>
             <div className="mt-8 grid gap-4 md:grid-cols-3">
               {workflowSteps.map((step, index) => (
-                <article key={step.title} className="rounded-2xl border border-gray-200 bg-rm-trip-surface p-6 shadow-rm-trip-card">
+                <article key={step.title} className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-6 shadow-rm-trip-card">
                   <p className="text-3xl font-bold text-rm-trip-brand">{`0${index + 1}`}</p>
                   <h3 className="mt-3 font-rm-trip-heading text-xl font-bold">{step.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-rm-trip-text-muted">{step.desc}</p>
@@ -292,8 +292,8 @@ export function LandingPage() {
             <h2 className="mt-3 font-rm-trip-heading text-3xl font-bold sm:text-4xl">Everything a customer-facing chatbot needs</h2>
           </div>
           <div className="grid gap-4 lg:grid-cols-3">
-            <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-rm-trip-card">
-              <div className="inline-flex rounded-xl bg-blue-50 p-2 text-rm-trip-brand"><MessageCircle className="h-5 w-5" /></div>
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
+              <div className="inline-flex rounded-rm-trip-smooth [background-color:var(--rm-trip-brand-light)] p-2 text-rm-trip-brand"><MessageCircle className="h-5 w-5" /></div>
               <p className="mt-4 text-xl font-bold">Instant answer engine</p>
               <ul className="mt-4 space-y-2 text-sm text-rm-trip-text-muted">
                 <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-rm-trip-brand" />Answers from approved knowledge</li>
@@ -302,8 +302,8 @@ export function LandingPage() {
               </ul>
             </article>
 
-            <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-rm-trip-card">
-              <div className="inline-flex rounded-xl bg-teal-50 p-2 text-rm-trip-accent"><Funnel className="h-5 w-5" /></div>
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
+              <div className="inline-flex rounded-rm-trip-smooth [background-color:var(--rm-trip-accent-light)] p-2 text-rm-trip-accent"><Funnel className="h-5 w-5" /></div>
               <p className="mt-4 text-xl font-bold">Lead qualification</p>
               <ul className="mt-4 space-y-2 text-sm text-rm-trip-text-muted">
                 <li className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 text-rm-trip-accent" />Custom discovery flows</li>
@@ -312,7 +312,7 @@ export function LandingPage() {
               </ul>
             </article>
 
-            <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-rm-trip-card">
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
               <p className="text-xl font-bold">Platform essentials</p>
               <ul className="mt-4 space-y-3 text-sm text-rm-trip-text-muted">
                 <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-rm-trip-brand" />Role-based access</li>
@@ -339,8 +339,8 @@ export function LandingPage() {
                 <p className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-rm-trip-brand" />Approval rules for sensitive replies</p>
               </div>
             </div>
-            <div className="rounded-2xl border border-gray-200 bg-rm-trip-surface p-5 shadow-rm-trip-card">
-              <div className="mb-3 flex items-center justify-between rounded-xl border border-gray-200 bg-white p-3"><span className="text-xs font-semibold text-rm-trip-text-muted">Live operations</span><strong className="text-sm">Healthy</strong></div>
+            <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-5 shadow-rm-trip-card">
+              <div className="mb-3 flex items-center justify-between rounded-rm-trip-smooth border border-gray-100 bg-white p-3"><span className="text-xs font-semibold text-rm-trip-text-muted">Live operations</span><strong className="text-sm">Healthy</strong></div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between"><span>Unanswered questions</span><strong>12</strong></div>
                 <div className="flex justify-between"><span>Qualified leads waiting</span><strong>31</strong></div>
@@ -356,21 +356,21 @@ export function LandingPage() {
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-rm-trip-brand">Customers</p>
               <h2 className="mt-3 font-rm-trip-heading text-3xl font-bold sm:text-4xl">Support teams get speed without losing control</h2>
               <div className="mt-6 grid gap-4">
-                <figure className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card">
+                <figure className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card">
                   <blockquote className="text-sm leading-6 text-rm-trip-text-muted">ReplyMate cut repetitive tickets in half and still gives our agents clean context when a human needs to step in.</blockquote>
                   <p className="mt-3 text-sm font-bold">Maya Chen, Support Lead</p>
                 </figure>
-                <figure className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card">
+                <figure className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card">
                   <blockquote className="text-sm leading-6 text-rm-trip-text-muted">Lead routing surprised us. Demo requests land in HubSpot with the whole conversation attached.</blockquote>
                   <p className="mt-3 text-sm font-bold">Eli Novak, Growth Manager</p>
                 </figure>
               </div>
             </div>
-            <aside className="rounded-2xl border border-gray-200 bg-white p-5 shadow-rm-trip-card">
+            <aside className="rounded-rm-trip-smooth border border-gray-100 bg-white p-5 shadow-rm-trip-card">
               <div className="space-y-3">
-                <div className="rounded-xl border border-gray-200 bg-rm-trip-surface p-3"><p className="text-xs font-semibold text-rm-trip-text-muted">Conversations handled</p><p className="text-xl font-bold">42,891</p></div>
-                <div className="rounded-xl border border-gray-200 bg-rm-trip-surface p-3"><p className="text-xs font-semibold text-rm-trip-text-muted">Average first reply</p><p className="text-xl font-bold">3.2 sec</p></div>
-                <div className="rounded-xl border border-blue-200 bg-blue-50 p-3"><p className="text-xs font-semibold text-blue-700">Qualified leads</p><p className="text-xl font-bold text-blue-900">1,248</p></div>
+                <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-3"><p className="text-xs font-semibold text-rm-trip-text-muted">Conversations handled</p><p className="text-xl font-bold">42,891</p></div>
+                <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-3"><p className="text-xs font-semibold text-rm-trip-text-muted">Average first reply</p><p className="text-xl font-bold">3.2 sec</p></div>
+                <div className="rounded-rm-trip-smooth border [border-color:var(--rm-trip-brand-light)] [background-color:var(--rm-trip-brand-light)] p-3"><p className="text-xs font-semibold text-rm-trip-brand">Qualified leads</p><p className="text-xl font-bold text-rm-trip-brand">1,248</p></div>
               </div>
             </aside>
           </div>
@@ -378,17 +378,17 @@ export function LandingPage() {
 
         <section className="bg-white py-16">
           <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 sm:px-6 lg:grid-cols-3 lg:px-8">
-            <article className="rounded-2xl border border-gray-200 bg-rm-trip-surface p-5">
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-5">
               <Lock className="h-5 w-5 text-rm-trip-brand" />
               <p className="mt-3 text-sm font-bold">Access control</p>
               <p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Role-based permissions for agents, admins, and reviewers.</p>
             </article>
-            <article className="rounded-2xl border border-gray-200 bg-rm-trip-surface p-5">
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-5">
               <FileText className="h-5 w-5 text-rm-trip-brand" />
               <p className="mt-3 text-sm font-bold">Source limits</p>
               <p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Answer only from approved docs, pages, and policies.</p>
             </article>
-            <article className="rounded-2xl border border-gray-200 bg-rm-trip-surface p-5">
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-5">
               <BarChart3 className="h-5 w-5 text-rm-trip-brand" />
               <p className="mt-3 text-sm font-bold">Audit history</p>
               <p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Track edits, escalations, training changes, and outcomes.</p>
@@ -406,16 +406,16 @@ export function LandingPage() {
               <article
                 key={plan.name}
                 className={plan.highlighted
-                  ? "rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-rm-trip-card"
-                  : "rounded-2xl border border-gray-200 bg-white p-6 shadow-rm-trip-card"}
+                  ? "rounded-rm-trip-smooth border [border-color:var(--rm-trip-brand-light)] [background-color:var(--rm-trip-brand-light)] p-6 shadow-rm-trip-card"
+                  : "rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card"}
               >
-                <p className={plan.highlighted ? "text-sm font-bold text-blue-700" : "text-sm font-bold text-rm-trip-text-muted"}>{plan.name}</p>
-                <p className={plan.highlighted ? "mt-2 text-4xl font-bold text-blue-900" : "mt-2 text-4xl font-bold"}>{plan.price}</p>
-                <p className={plan.highlighted ? "mt-1 text-sm text-blue-800/80" : "mt-1 text-sm text-rm-trip-text-muted"}>{plan.subtitle}</p>
-                <ul className={plan.highlighted ? "mt-5 space-y-2 text-sm text-blue-900/80" : "mt-5 space-y-2 text-sm text-rm-trip-text-muted"}>
+                <p className={plan.highlighted ? "text-sm font-bold text-rm-trip-brand" : "text-sm font-bold text-rm-trip-text-muted"}>{plan.name}</p>
+                <p className={plan.highlighted ? "mt-2 text-4xl font-bold text-rm-trip-text" : "mt-2 text-4xl font-bold"}>{plan.price}</p>
+                <p className={plan.highlighted ? "mt-1 text-sm text-rm-trip-text-muted" : "mt-1 text-sm text-rm-trip-text-muted"}>{plan.subtitle}</p>
+                <ul className={plan.highlighted ? "mt-5 space-y-2 text-sm text-rm-trip-brand/80" : "mt-5 space-y-2 text-sm text-rm-trip-text-muted"}>
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-2">
-                      <Check className={plan.highlighted ? "h-4 w-4 text-blue-700" : "h-4 w-4 text-rm-trip-brand"} />
+                      <Check className={plan.highlighted ? "h-4 w-4 text-rm-trip-brand" : "h-4 w-4 text-rm-trip-brand"} />
                       {feature}
                     </li>
                   ))}
@@ -425,10 +425,10 @@ export function LandingPage() {
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card"><Clock3 className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Always available</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Help visitors across every time zone.</p></article>
-            <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card"><FileText className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Knowledge grounded</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Keep answers aligned with your docs.</p></article>
-            <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card"><Users className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Team handoff</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Route complex chats with context.</p></article>
-            <article className="rounded-2xl border border-gray-200 bg-white p-4 shadow-rm-trip-card"><BarChart3 className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Actionable trends</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">See topics driving conversion.</p></article>
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card"><Clock3 className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Always available</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Help visitors across every time zone.</p></article>
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card"><FileText className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Knowledge grounded</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Keep answers aligned with your docs.</p></article>
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card"><Users className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Team handoff</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">Route complex chats with context.</p></article>
+            <article className="rounded-rm-trip-smooth border border-gray-100 bg-white p-4 shadow-rm-trip-card"><BarChart3 className="h-5 w-5 text-rm-trip-brand" /><p className="mt-3 text-sm font-bold">Actionable trends</p><p className="mt-1 text-xs leading-5 text-rm-trip-text-muted">See topics driving conversion.</p></article>
           </div>
         </section>
 
@@ -438,7 +438,7 @@ export function LandingPage() {
             <h2 className="mt-3 font-rm-trip-heading text-3xl font-bold sm:text-4xl">Questions before launch</h2>
             <div className="mt-6 grid gap-3">
               {faqs.map((item) => (
-                <details key={item.q} className="rounded-xl border border-gray-200 bg-rm-trip-surface p-4">
+                <details key={item.q} className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-4">
                   <summary className="cursor-pointer text-sm font-bold">{item.q}</summary>
                   <p className="mt-2 text-sm leading-6 text-rm-trip-text-muted">{item.a}</p>
                 </details>
@@ -449,7 +449,7 @@ export function LandingPage() {
 
         <section id="cta" className="pb-16">
           <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="grid gap-6 rounded-3xl border border-gray-200 bg-white p-6 shadow-rm-trip-lift lg:grid-cols-[1.4fr_1fr] lg:p-8">
+            <div className="grid gap-6 rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-lift lg:grid-cols-[1.4fr_1fr] lg:p-8">
               <div>
                 <h2 className="font-rm-trip-heading text-3xl font-bold">See your chatbot on your site</h2>
                 <p className="mt-3 max-w-2xl text-sm leading-6 text-rm-trip-text-muted">
@@ -459,19 +459,19 @@ export function LandingPage() {
                 <form className="mt-6 grid gap-3 sm:grid-cols-2" onSubmit={handleSubmit}>
                   <label className="text-sm font-semibold text-rm-trip-text">
                     Full name
-                    <input type="text" value={form.fullName} onChange={(e) => updateField("fullName", e.target.value)} placeholder="Alex Morgan" className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight" />
+                    <input type="text" value={form.fullName} onChange={(e) => updateField("fullName", e.target.value)} placeholder="Alex Morgan" className="mt-1 w-full rounded-rm-trip-smooth border border-gray-100 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight" />
                   </label>
                   <label className="text-sm font-semibold text-rm-trip-text">
                     Work email
-                    <input type="email" value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="alex@company.com" className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight" />
+                    <input type="email" value={form.email} onChange={(e) => updateField("email", e.target.value)} placeholder="alex@company.com" className="mt-1 w-full rounded-rm-trip-smooth border border-gray-100 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight" />
                   </label>
                   <label className="text-sm font-semibold text-rm-trip-text">
                     Website
-                    <input type="url" value={form.website} onChange={(e) => updateField("website", e.target.value)} placeholder="https://company.com" className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight" />
+                    <input type="url" value={form.website} onChange={(e) => updateField("website", e.target.value)} placeholder="https://company.com" className="mt-1 w-full rounded-rm-trip-smooth border border-gray-100 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight" />
                   </label>
                   <label className="text-sm font-semibold text-rm-trip-text">
                     Main goal
-                    <select value={form.goal} onChange={(e) => updateField("goal", e.target.value)} className="mt-1 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight">
+                    <select value={form.goal} onChange={(e) => updateField("goal", e.target.value)} className="mt-1 w-full rounded-rm-trip-smooth border border-gray-100 bg-white px-3 py-2.5 text-sm outline-none focus-rm-trip-highlight">
                       <option value="">Choose one option</option>
                       {goalOptions.map((goal) => (
                         <option key={goal.value} value={goal.value}>{goal.label}</option>
@@ -480,7 +480,7 @@ export function LandingPage() {
                   </label>
 
                   <div className="sm:col-span-2">
-                    <button type="submit" disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-rm-trip-brand px-5 py-3 text-sm font-bold text-white hover:bg-rm-trip-brand-dark disabled:opacity-70">
+                    <button type="submit" disabled={submitting} className="inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-5 py-3 text-sm font-bold text-white shadow-rm-trip-card transition-all duration-150 hover:bg-rm-trip-brand-dark disabled:opacity-70">
                       {submitting ? "Submitting..." : "Request demo"}
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -496,18 +496,18 @@ export function LandingPage() {
                 {success && <p className="mt-3 text-sm font-semibold text-rm-trip-success">{success}</p>}
               </div>
 
-              <div className="rounded-2xl border border-gray-200 bg-rm-trip-surface p-4">
+              <div className="rounded-rm-trip-smooth border border-gray-100 bg-rm-trip-surface p-4">
                 <p className="text-xs font-bold uppercase tracking-[0.08em] text-rm-trip-text-muted">Demo preview</p>
                 <div className="mt-4 space-y-3">
-                  <div className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="rounded-rm-trip-smooth border border-gray-100 bg-white p-3">
                     <p className="text-xs font-semibold text-rm-trip-text-muted">New visitor</p>
                     <p className="mt-1 text-sm">{form.website.trim() ? `Can ${form.website.trim()} reduce repetitive support questions?` : "What plan is best for a 12-person support team?"}</p>
                   </div>
-                  <div className="rounded-xl border border-blue-200 bg-blue-50 p-3">
-                    <p className="text-xs font-semibold text-blue-700">Suggested next action</p>
-                    <p className="mt-1 text-sm font-bold text-blue-900">{selectedGoalLabel}</p>
+                  <div className="rounded-rm-trip-smooth border [border-color:var(--rm-trip-brand-light)] [background-color:var(--rm-trip-brand-light)] p-3">
+                    <p className="text-xs font-semibold text-rm-trip-brand">Suggested next action</p>
+                    <p className="mt-1 text-sm font-bold text-rm-trip-brand">{selectedGoalLabel}</p>
                   </div>
-                  <div className="rounded-xl border border-gray-200 bg-white p-3">
+                  <div className="rounded-rm-trip-smooth border border-gray-100 bg-white p-3">
                     <p className="inline-flex items-center gap-2 text-xs font-semibold text-rm-trip-text-muted">
                       <ShieldCheck className="h-4 w-4 text-rm-trip-brand" />
                       Secure handoff and audit-ready workflows
@@ -520,11 +520,11 @@ export function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-gray-200 bg-white">
+      <footer className="border-t border-gray-100 bg-white">
         <div className="mx-auto grid w-full max-w-7xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-4 lg:px-8">
           <div>
             <div className="inline-flex items-center gap-2">
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rm-trip-brand text-sm font-bold text-white">R</span>
+              <span className="flex h-9 w-9 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand text-sm font-bold text-white">R</span>
               <span className="font-rm-trip-heading text-lg font-bold">ReplyMate</span>
             </div>
             <p className="mt-4 text-sm text-rm-trip-text-muted">AI chat support for modern teams.</p>
@@ -558,3 +558,4 @@ export function LandingPage() {
     </div>
   );
 }
+
