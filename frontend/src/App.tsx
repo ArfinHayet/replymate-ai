@@ -1,9 +1,10 @@
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { Toaster } from "@/components/ui/sonner";
 import { PrivateRoute } from "@/features/auth/view/components/PrivateRoute";
 
+const LandingPage = lazy(() => import("@/features/landing").then((module) => ({ default: module.LandingPage })));
 const LoginPage = lazy(() => import("@/features/auth").then((module) => ({ default: module.LoginPage })));
 const SignupPage = lazy(() => import("@/features/auth").then((module) => ({ default: module.SignupPage })));
 const ForgotPasswordPage = lazy(() =>
@@ -43,6 +44,7 @@ export default function App() {
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Public routes - no sidebar */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/users/forgot-password" element={<ForgotPasswordPage />} />
@@ -53,7 +55,6 @@ export default function App() {
           {/* Protected routes - inside sidebar layout */}
           <Route element={<PrivateRoute />}>
             <Route element={<AppLayout />}>
-              <Route index element={<Navigate to="/chat" replace />} />
               <Route path="/upload" element={<UploadPage />} />
               <Route path="/pdfs" element={<PdfsPage />} />
               <Route path="/web-pages" element={<WebPagesPage />} />
