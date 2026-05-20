@@ -36,6 +36,7 @@ interface AppLayoutContextValue {
 
 const AppLayoutContext = createContext<AppLayoutContextValue | null>(null)
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAppLayout () {
   const context = useContext(AppLayoutContext)
 

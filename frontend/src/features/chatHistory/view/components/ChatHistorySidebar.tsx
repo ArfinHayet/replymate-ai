@@ -26,8 +26,8 @@ export function ChatHistorySidebar({
   onRetry,
 }: ChatHistorySidebarProps) {
   return (
-    <aside className="flex min-h-0 flex-col border-b border-gray-100 bg-white lg:border-b-0 lg:border-r">
-      <div className="border-b border-gray-100 p-4">
+    <aside className="flex h-full min-h-0 flex-col bg-white lg:border-r lg:border-gray-100">
+      <div className="sticky top-0 z-10 border-b border-gray-100 bg-white/95 p-4 backdrop-blur">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-rm-trip-text-muted" />
           <input
@@ -39,7 +39,7 @@ export function ChatHistorySidebar({
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+      <div className="min-h-0 flex-1 overflow-y-auto p-2.5 sm:p-2">
         {loading && (
           <div className="px-4 py-12 text-center">
             <p className="text-sm font-semibold text-rm-trip-text-muted">Loading sessions...</p>
@@ -63,8 +63,9 @@ export function ChatHistorySidebar({
               <button
                 key={session.sessionId}
                 onClick={() => onSelectSession(session.sessionId)}
+                type="button"
                 className={cn(
-                  "flex w-full items-center gap-3 rounded-rm-trip-smooth px-3 py-3 text-left transition-all",
+                  "mb-1 flex w-full touch-manipulation items-center gap-3 rounded-rm-trip-smooth px-3 py-3.5 text-left transition-all active:scale-[0.99]",
                   isSelected ? "bg-rm-trip-brand text-white shadow-rm-trip-card" : "text-rm-trip-text hover:bg-gray-50",
                 )}
               >

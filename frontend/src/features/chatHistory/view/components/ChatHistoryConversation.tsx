@@ -5,14 +5,15 @@ import { ChatHistoryMessageList } from "./ChatHistoryMessageList";
 
 interface ChatHistoryConversationProps {
   selectedSession: ChatSession | undefined;
+  onBack: () => void;
 }
 
-export function ChatHistoryConversation({ selectedSession }: ChatHistoryConversationProps) {
+export function ChatHistoryConversation({ selectedSession, onBack }: ChatHistoryConversationProps) {
   return (
-    <section className="flex min-h-0 flex-col bg-rm-trip-surface">
+    <section className="flex h-full min-h-0 flex-1 flex-col bg-rm-trip-surface">
       {selectedSession ? (
         <>
-          <ChatHistoryConversationHeader session={selectedSession} />
+          <ChatHistoryConversationHeader session={selectedSession} onBack={onBack} />
           <ChatHistoryMessageList messages={selectedSession.messages} />
         </>
       ) : (

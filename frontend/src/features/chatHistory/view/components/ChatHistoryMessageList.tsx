@@ -18,13 +18,14 @@ export function ChatHistoryMessageList({ messages }: ChatHistoryMessageListProps
   });
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-8">
-      <div className="mx-auto flex max-w-4xl flex-col gap-5">
+    <div className="min-h-0 flex-1 overflow-y-auto [overscroll-behavior-y:contain] [-webkit-overflow-scrolling:touch]">
+      <div className="mx-auto w-full max-w-4xl px-3 py-4 sm:px-6 sm:py-5 lg:px-8">
+        <div className="flex flex-col gap-4 sm:gap-5">
         {orderedMessages.map((message) => (
-          <div key={message.id} className={cn("flex items-end gap-3", message.role === "user" && "flex-row-reverse")}>
+          <div key={message.id} className={cn("flex items-end gap-2.5 sm:gap-3", message.role === "user" && "flex-row-reverse")}>
             <div
               className={cn(
-                "flex h-9 w-9 shrink-0 items-center justify-center rounded-rm-trip-smooth border shadow-sm",
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-rm-trip-smooth border shadow-sm sm:h-9 sm:w-9",
                 message.role === "user"
                   ? "border-rm-trip-brand bg-rm-trip-brand text-white"
                   : "border-gray-100 bg-white",
@@ -37,10 +38,10 @@ export function ChatHistoryMessageList({ messages }: ChatHistoryMessageListProps
               )}
             </div>
 
-            <div className={cn("flex max-w-[78%] flex-col gap-1 sm:max-w-[68%]", message.role === "user" && "items-end")}>
+            <div className={cn("flex max-w-[88%] flex-col gap-1 sm:max-w-[72%]", message.role === "user" && "items-end")}>
               <div
                 className={cn(
-                  "rounded-rm-trip-smooth px-4 py-3 text-sm leading-relaxed shadow-sm",
+                  "rounded-rm-trip-smooth px-3.5 py-2.5 text-[13.5px] leading-relaxed shadow-sm sm:px-4 sm:py-3 sm:text-sm",
                   message.role === "user"
                     ? "bg-rm-trip-brand text-white"
                     : "border border-gray-100 bg-white text-rm-trip-text",
@@ -60,6 +61,7 @@ export function ChatHistoryMessageList({ messages }: ChatHistoryMessageListProps
             </div>
           </div>
         ))}
+        </div>
       </div>
     </div>
   );
