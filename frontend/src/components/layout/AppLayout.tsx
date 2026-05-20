@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import {
   Building2,
@@ -53,6 +53,18 @@ export function AppLayout () {
   const navigate = useNavigate()
   const logoutViewModel = useLogoutViewModel()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+  useEffect(() => {
+    const existing = document.getElementById('replymate-widget-script')
+    if (existing) return
+
+    const script = document.createElement('script')
+    script.id = 'replymate-widget-script'
+    script.src = 'http://localhost:3000/widget.js'
+    script.setAttribute('data-key', 'wk_8488cd3447f942748c0736f45a4411f2')
+    script.setAttribute('data-api', 'http://localhost:3000')
+    document.body.appendChild(script)
+  }, [])
 
   const openMobileMenu = useCallback(() => {
     setMobileMenuOpen(true)

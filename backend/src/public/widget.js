@@ -11,8 +11,8 @@
 
   var widgetKey = currentScript.getAttribute("data-key") || "";
   var apiBase = currentScript.getAttribute("data-api") || "";
-  var botName = currentScript.getAttribute("data-name") || "SupportMate Ai";
-  var brandName = "SupportMate Ai";
+  var botName = currentScript.getAttribute("data-name") || "AI Assistant";
+  var brandName = currentScript.getAttribute("data-brand") || botName;
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
@@ -50,7 +50,7 @@
     fl.id = "compbot-fonts";
     fl.rel = "stylesheet";
     fl.href =
-      "https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&display=swap";
+      "https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap";
     document.head.appendChild(fl);
   }
 
@@ -88,18 +88,18 @@
     ":host{",
     "all:initial;",
     "--rm-trip-brand:#2563eb;",
-    "--rm-trip-brand-soft:#eff6ff;",
-    "--rm-trip-brand-light:#60a5fa;",
+    "--rm-trip-brand-soft:#dbeafe;",
+    "--rm-trip-brand-light:#1d4ed8;",
     "--rm-trip-accent:#14b8a6;",
     "--rm-trip-accent-soft:#ecfeff;",
-    "--rm-trip-surface:#f8f9fa;",
+    "--rm-trip-surface:#f6f8fb;",
     "--rm-trip-card:#ffffff;",
-    "--rm-trip-border:#e5e7eb;",
-    "--rm-trip-text:#111827;",
-    "--rm-trip-muted:#6b7280;",
+    "--rm-trip-border:#e2e8f0;",
+    "--rm-trip-text:#0f172a;",
+    "--rm-trip-muted:#64748b;",
     "--rm-trip-success:#16a34a;",
     "--rm-trip-error:#dc2626;",
-    'font-family:"Manrope",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;',
+    'font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;',
     "}",
 
     "*{box-sizing:border-box;}",
@@ -107,7 +107,7 @@
     "#toggle-btn{",
     "position:fixed;bottom:28px;right:28px;z-index:2147483647;",
     "width:62px;height:62px;border-radius:999px;",
-    "background:linear-gradient(135deg,var(--rm-trip-brand) 0%,var(--rm-trip-brand-light) 100%);",
+    "background:var(--rm-trip-brand);",
     "border:1px solid rgba(37,99,235,.18);",
     "cursor:pointer;",
     "display:flex;align-items:center;justify-content:center;",
@@ -127,7 +127,7 @@
     "width:390px;max-width:calc(100vw - 32px);",
     "height:570px;max-height:calc(100vh - 130px);",
     "display:flex;flex-direction:column;overflow:hidden;",
-    "border-radius:24px;",
+    "border-radius:18px;",
     "background:#ffffff;",
     "border:1px solid var(--rm-trip-border);",
     "box-shadow:0 26px 90px rgba(17,24,39,.16);",
@@ -144,7 +144,7 @@
 
     "#chat-header{",
     "position:relative;padding:18px;flex-shrink:0;overflow:hidden;",
-    "background:linear-gradient(135deg,#eff6ff 0%,#ffffff 52%,#ecfeff 100%);",
+    "background:#ffffff;",
     "border-bottom:1px solid var(--rm-trip-border);",
     "}",
     "#chat-header::before{",
@@ -163,7 +163,7 @@
     "#header-inner{position:relative;z-index:1;display:flex;align-items:center;gap:12px;}",
     "#bot-avatar{",
     "width:44px;height:44px;border-radius:16px;flex-shrink:0;",
-    "background:linear-gradient(135deg,var(--rm-trip-brand),var(--rm-trip-accent));",
+    "background:var(--rm-trip-brand);",
     "display:flex;align-items:center;justify-content:center;",
     "box-shadow:0 10px 24px rgba(37,99,235,.22);",
     "}",
@@ -206,7 +206,7 @@
     ".msg{",
     "max-width:84%;padding:11px 14px;border-radius:18px;",
     "font-size:13.5px;line-height:1.58;word-break:break-word;",
-    'font-family:"Manrope",system-ui,sans-serif;',
+    'font-family:"Inter",system-ui,sans-serif;',
     "animation:msg-in .28s ease both;",
     "}",
     "@keyframes msg-in{",
@@ -216,7 +216,7 @@
 
     ".msg.user{",
     "align-self:flex-end;border-bottom-right-radius:6px;",
-    "background:linear-gradient(135deg,var(--rm-trip-brand),#3b82f6);",
+    "background:var(--rm-trip-brand);",
     "color:#ffffff;font-weight:600;",
     "box-shadow:0 8px 22px rgba(37,99,235,.24);",
     "}",
@@ -271,7 +271,7 @@
     "border-radius:16px;",
     "padding:12px 14px;",
     "font-size:13.5px;",
-    'font-family:"Manrope",system-ui,sans-serif;',
+    'font-family:"Inter",system-ui,sans-serif;',
     "font-weight:600;",
     "color:var(--rm-trip-text);",
     "outline:none;",
@@ -295,7 +295,7 @@
 
     "#send-btn{",
     "width:46px;height:46px;flex-shrink:0;border:none;border-radius:16px;cursor:pointer;",
-    "background:linear-gradient(135deg,var(--rm-trip-brand),var(--rm-trip-accent));",
+    "background:var(--rm-trip-brand);",
     "display:flex;align-items:center;justify-content:center;",
     "transition:transform .24s ease,box-shadow .24s ease,background .24s ease;",
     "box-shadow:0 8px 20px rgba(37,99,235,.24);",
@@ -312,9 +312,10 @@
     "padding:7px 0 9px;text-align:center;font-size:10.5px;",
     "color:#94a3b8;letter-spacing:.03em;flex-shrink:0;",
     "background:#ffffff;border-top:1px solid #f1f5f9;",
-    'font-family:"Manrope",system-ui,sans-serif;',
+    'font-family:"Inter",system-ui,sans-serif;',
     "}",
-    "#chat-footer span{color:var(--rm-trip-brand);font-weight:800;}",
+    "#chat-footer a{color:var(--rm-trip-brand);font-weight:800;text-decoration:none;}",
+    "#chat-footer a:hover{text-decoration:underline;}",
 
     ".msg.bot p{margin:0 0 6px;}",
     ".msg.bot p:last-child{margin-bottom:0;}",
@@ -357,9 +358,11 @@
 
     "@media(max-width:480px){",
     "#toggle-btn{right:18px;bottom:18px;width:58px;height:58px;}",
-    "#toggle-btn.open{display:none;}",
-    "#chat-window{top:0;right:0;bottom:0;left:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform-origin:center;}",
-    "#chat-window.hidden{transform:translateY(100%);}",
+    "#chat-window{right:12px;bottom:86px;width:calc(100vw - 24px);max-width:none;height:min(72vh,620px);max-height:calc(100vh - 104px);border-radius:16px;transform-origin:bottom right;}",
+    "#chat-window.hidden{transform:scale(.95) translateY(14px);}",
+    ":host(.compbot-page-mode) #toggle-btn.open{display:none;}",
+    ":host(.compbot-page-mode) #chat-window{top:0;right:0;bottom:0;left:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform-origin:center;}",
+    ":host(.compbot-page-mode) #chat-window.hidden{transform:translateY(100%);}",
     "#chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
     "#messages{padding:14px 12px;}",
     "#input-row{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));}",
@@ -648,7 +651,8 @@
     // Footer
     var footer = document.createElement("div");
     footer.id = "chat-footer";
-    footer.innerHTML = "Powered by <span>" + brandName + "</span>";
+    footer.innerHTML =
+      'Powered by <a href="https://supportmate.online" target="_blank" rel="noopener noreferrer">SupportMate</a>';
 
     chatWindow.appendChild(header);
     chatWindow.appendChild(messages);

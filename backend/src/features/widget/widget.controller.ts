@@ -75,7 +75,7 @@ export class WidgetController {
   ) {
     const apiBase = requestOrigin(req);
     const keyRecord = await this.widgetKeyService.findByKey(key);
-    const botName = keyRecord?.label || 'SupportMate Ai';
+    const botName = keyRecord?.label || 'AI Assistant';
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
@@ -89,21 +89,28 @@ export class WidgetController {
       html,
       body {
         margin: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-        background: #ffffff;
+        min-height: 100%;
+        background: #f6f8fb;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+      }
+
+      .widget-preview-note {
+        margin: 0;
+        padding: 14px 16px;
+        font-size: 13px;
+        color: #64748b;
       }
     </style>
   </head>
   <body>
+    <p class="widget-preview-note">Widget preview for ${escapeHtml(botName)}</p>
     <script
       src="${escapeHtml(apiBase)}/widget.js"
       data-key="${escapeHtml(key)}"
       data-api="${escapeHtml(apiBase)}"
       data-name="${escapeHtml(botName)}"
-      data-mode="page"
-      data-open="true">
+      data-mode="bubble"
+      data-open="false">
     </script>
   </body>
 </html>`);
