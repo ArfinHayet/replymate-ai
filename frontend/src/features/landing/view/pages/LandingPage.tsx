@@ -79,7 +79,7 @@ const faqs = [
   },
   {
     q: "Does it work with our CRM?",
-    a: "Yes. ReplyMate is built for lead capture, qualification tags, notes, and CRM routing workflows.",
+    a: "Yes. SupportMate is built for lead capture, qualification tags, notes, and CRM routing workflows.",
   },
 ];
 
@@ -112,12 +112,12 @@ const css = `
   --success:        #16a34a;
   --error:          #dc2626;
 
-  /* dark hero palette */
-  --hero-bg:        #07101f;
-  --hero-card:      #0e1c30;
-  --hero-border:    rgba(255,255,255,0.08);
-  --hero-text:      rgba(255,255,255,0.92);
-  --hero-muted:     rgba(255,255,255,0.55);
+  /* light hero palette */
+  --hero-bg:        #f8fbff;
+  --hero-card:      #ffffff;
+  --hero-border:    rgba(15,23,42,0.10);
+  --hero-text:      #0f172a;
+  --hero-muted:     #64748b;
 
   --radius-sm:   8px;
   --radius:      14px;
@@ -205,15 +205,15 @@ body {
   content: '';
   position: absolute; inset: 0; pointer-events: none;
   background:
-    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(37,99,235,0.28) 0%, transparent 55%),
-    radial-gradient(ellipse 45% 40% at 90% 10%, rgba(20,184,166,0.18) 0%, transparent 45%),
-    radial-gradient(ellipse 50% 60% at 55% 95%, rgba(37,99,235,0.14) 0%, transparent 50%);
+    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(37,99,235,0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 45% 40% at 90% 10%, rgba(20,184,166,0.12) 0%, transparent 45%),
+    radial-gradient(ellipse 50% 60% at 55% 95%, rgba(37,99,235,0.10) 0%, transparent 50%);
 }
 /* dot grid */
 .hero::after {
   content: '';
   position: absolute; inset: 0; pointer-events: none;
-  background-image: radial-gradient(rgba(255,255,255,0.065) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(15,23,42,0.06) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 .hero-inner {
@@ -228,11 +228,11 @@ body {
 .hero-badge {
   display: inline-flex; align-items: center; gap: 6px; margin-bottom: 22px;
   padding: 5px 13px; border-radius: var(--radius-pill);
-  background: rgba(37,99,235,0.18); border: 1px solid rgba(37,99,235,0.35);
+  background: var(--brand-light); border: 1px solid rgba(37,99,235,0.28);
   font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: #93b4fd;
+  color: var(--brand);
 }
-.hero-badge svg { color: #7ca3fc; }
+.hero-badge svg { color: var(--brand); }
 
 .hero-h1 {
   font-family: var(--font-display);
@@ -244,7 +244,7 @@ body {
 
 .hero-sub {
   font-size: 17px; line-height: 1.7; color: var(--hero-muted);
-  font-weight: 300; max-width: 500px; margin-bottom: 36px;
+  font-weight: 400; max-width: 500px; margin-bottom: 36px;
 }
 
 .hero-ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 44px; }
@@ -264,17 +264,17 @@ body {
 .hero-btn-outline {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 13px 22px; border-radius: var(--radius-sm);
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: var(--hero-text);
+  background: #fff; border: 1px solid var(--border-strong); color: var(--text);
   font-family: var(--font-body); font-size: 15px; font-weight: 500;
   text-decoration: none; cursor: pointer; transition: all 0.16s;
 }
-.hero-btn-outline:hover { background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.24); }
+.hero-btn-outline:hover { background: var(--surface); border-color: var(--brand-light); }
 
 .hero-stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
 .hero-stat {
-  background: rgba(255,255,255,0.05); border: 1px solid var(--hero-border);
+  background: #fff; border: 1px solid var(--hero-border);
   border-radius: var(--radius-sm); padding: 14px 16px;
-  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-xs);
 }
 .hero-stat strong { display: block; font-family: var(--font-display); font-size: 20px; font-weight: 700; color: var(--hero-text); letter-spacing: -0.5px; }
 .hero-stat span { font-size: 11.5px; color: var(--hero-muted); font-weight: 500; }
@@ -302,12 +302,12 @@ body {
 .chat-card-head-text p:last-child  { font-size: 11.5px; color: var(--hero-muted); }
 .chat-msgs {
   padding: 16px; display: flex; flex-direction: column; gap: 10px;
-  background: rgba(0,0,0,0.15);
+  background: var(--surface);
 }
 .msg-bot {
-  max-width: 88%; background: rgba(255,255,255,0.07); border: 1px solid var(--hero-border);
+  max-width: 88%; background: #fff; border: 1px solid var(--hero-border);
   border-radius: 12px 12px 12px 4px; padding: 10px 14px;
-  font-size: 13.5px; color: var(--hero-text); line-height: 1.5;
+  font-size: 13.5px; color: var(--text); line-height: 1.5;
 }
 .msg-user {
   max-width: 88%; align-self: flex-end;
@@ -316,14 +316,14 @@ body {
   font-size: 13.5px; line-height: 1.5; font-weight: 500;
 }
 .msg-tag {
-  max-width: 88%; background: rgba(37,99,235,0.18); border: 1px solid rgba(37,99,235,0.3);
+  max-width: 88%; background: var(--brand-light); border: 1px solid rgba(37,99,235,0.28);
   border-radius: 12px 12px 12px 4px; padding: 10px 14px;
-  font-size: 13px; color: #93b4fd; font-weight: 500;
+  font-size: 13px; color: var(--brand); font-weight: 600;
 }
 .chat-input-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px; border-top: 1px solid var(--hero-border);
-  font-size: 13px; color: var(--hero-muted);
+  font-size: 13px; color: var(--text-muted);
 }
 .intent-badge {
   position: absolute; left: -18px; top: 32px;
@@ -703,9 +703,9 @@ export function LandingPage() {
       {/* ── NAV ── */}
       <header className="nav">
         <div className="nav-inner">
-          <a href="#" className="logo" aria-label="ReplyMate home">
-            <span className="logo-mark">R</span>
-            <span className="logo-name">ReplyMate</span>
+          <a href="#" className="logo" aria-label="SupportMate home">
+            <span className="logo-mark">S</span>
+            <span className="logo-name">SupportMate</span>
           </a>
           <nav className="nav-links">
             <a href="#how">Workflow</a>
@@ -738,7 +738,7 @@ export function LandingPage() {
                 The AI teammate that turns <span className="accent">visitors</span> into customers
               </h1>
               <p className="hero-sub">
-                ReplyMate answers questions instantly, qualifies high-intent leads, shields your team from repetitive
+                SupportMate answers questions instantly, qualifies high-intent leads, shields your team from repetitive
                 tickets, and hands off every conversation with full context attached.
               </p>
               <div className="hero-ctas">
@@ -770,7 +770,7 @@ export function LandingPage() {
                 <div className="chat-card-head">
                   <span className="online-dot" />
                   <div className="chat-card-head-text">
-                    <p>ReplyMate Assistant</p>
+                    <p>SupportMate Assistant</p>
                     <p>Online now</p>
                   </div>
                 </div>
@@ -837,7 +837,7 @@ export function LandingPage() {
             <h2 className="section-h2">A clearer view of the chatbot workspace</h2>
             <div className="screenshots-grid">
               <figure className="ss-card tall" style={{ margin: 0 }}>
-                <img src="/landing/img/screenshot-inbox.svg" alt="ReplyMate shared inbox with AI replies" />
+                <img src="/landing/img/screenshot-inbox.svg" alt="SupportMate shared inbox with AI replies" />
               </figure>
               <figure className="ss-card" style={{ margin: 0 }}>
                 <img src="/landing/img/screenshot-analytics.svg" alt="Analytics dashboard" />
@@ -1006,7 +1006,7 @@ export function LandingPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
                   <figure className="quote-card" style={{ margin: 0 }}>
                     <blockquote>
-                      "ReplyMate cut our repetitive tickets in half and still gives agents clean context whenever a
+                      "SupportMate cut our repetitive tickets in half and still gives agents clean context whenever a
                       human needs to step in."
                     </blockquote>
                     <cite>Maya Chen — Support Lead</cite>
@@ -1144,7 +1144,7 @@ export function LandingPage() {
               <div className="cta-left">
                 <h2 className="cta-h">See your chatbot on your site</h2>
                 <p className="cta-sub">
-                  Share your website and we'll show exactly how ReplyMate can answer questions, qualify leads, and route
+                  Share your website and we'll show exactly how SupportMate can answer questions, qualify leads, and route
                   conversations for your team.
                 </p>
                 <form className="rm-form" onSubmit={onSubmit}>
@@ -1232,8 +1232,8 @@ export function LandingPage() {
         <div className="footer-inner">
           <div className="footer-brand">
             <div className="logo" style={{ pointerEvents: "none" }}>
-              <span className="logo-mark">R</span>
-              <span className="logo-name">ReplyMate</span>
+              <span className="logo-mark">S</span>
+              <span className="logo-name">SupportMate</span>
             </div>
             <p>AI chat support for modern teams.</p>
           </div>
@@ -1287,10 +1287,11 @@ export function LandingPage() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} ReplyMate, Inc. All rights reserved.</span>
+          <span>© {new Date().getFullYear()} SupportMate, Inc. All rights reserved.</span>
           <span>Privacy · Terms</span>
         </div>
       </footer>
     </>
   );
 }
+
