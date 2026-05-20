@@ -75,7 +75,7 @@ export class WidgetController {
   ) {
     const apiBase = requestOrigin(req);
     const keyRecord = await this.widgetKeyService.findByKey(key);
-    const botName = keyRecord?.label || 'ReplyMate Ai';
+    const botName = keyRecord?.label || 'SupportMate Ai';
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');

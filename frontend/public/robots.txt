@@ -10,4 +10,4 @@ Allow: /
 User-agent: LinkedInBot
 Allow: /
 
-Sitemap: https://comp-bot-sntj.vercel.app/sitemap.xml
+Sitemap: https://www.supportmate.online/sitemap.xml

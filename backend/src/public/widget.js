@@ -11,8 +11,8 @@
 
   var widgetKey = currentScript.getAttribute("data-key") || "";
   var apiBase = currentScript.getAttribute("data-api") || "";
-  var botName = currentScript.getAttribute("data-name") || "ReplyMate Ai";
-  var brandName = "ReplyMate Ai";
+  var botName = currentScript.getAttribute("data-name") || "SupportMate Ai";
+  var brandName = "SupportMate Ai";
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";

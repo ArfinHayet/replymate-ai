@@ -74,7 +74,7 @@ export function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-rm-trip-surface">
-      <PageHeader title="Profile" subtitle="Your ReplyMate AI account and workspace identity." />
+      <PageHeader title="Profile" subtitle="Your SupportMate AI account and workspace identity." />
       <PageContent>
         <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="min-w-0 rounded-rm-trip-smooth border border-gray-100 bg-white p-5 shadow-rm-trip-card sm:p-6">
@@ -86,7 +86,7 @@ export function ProfilePage() {
                   Active account
                 </div>
                 <h2 className="truncate font-rm-trip-heading text-2xl font-bold text-rm-trip-text">
-                  {vm.profile.displayName || "ReplyMate user"}
+                  {vm.profile.displayName || "SupportMate user"}
                 </h2>
                 <p className="mt-1 truncate text-sm font-medium text-rm-trip-text-muted">{vm.profile.email}</p>
               </div>
@@ -105,7 +105,7 @@ export function ProfilePage() {
         <section className="rounded-rm-trip-smooth border border-gray-100 bg-white shadow-rm-trip-card">
           <div className="border-b border-gray-100 px-5 py-4 sm:px-6">
             <h3 className="font-rm-trip-heading text-base font-semibold text-rm-trip-text">Account Details</h3>
-            <p className="mt-1 text-sm text-rm-trip-text-muted">Information used to identify your ReplyMate workspace user.</p>
+            <p className="mt-1 text-sm text-rm-trip-text-muted">Information used to identify your SupportMate workspace user.</p>
           </div>
 
           <dl className="divide-y divide-gray-100 border-t border-gray-100">

@@ -82,7 +82,7 @@ export function AppLayout () {
           <img src='/favicon.svg' alt='Logo' className='h-9 w-9' />
           <div className='min-w-0'>
             <p className='truncate font-rm-trip-heading text-sm font-semibold text-rm-trip-text leading-none'>
-              ReplyMate AI
+              SupportMate AI
             </p>
             <p className='mt-0.5 truncate text-xs text-rm-trip-text-muted'>
               AI support for your business
@@ -135,7 +135,7 @@ export function AppLayout () {
                 </div>
                 <div className='min-w-0'>
                   <p className='truncate font-rm-trip-heading text-base font-semibold leading-none text-rm-trip-text'>
-                    ReplyMate AI
+                    SupportMate AI
                   </p>
                   <p className='mt-1 truncate text-xs font-medium text-rm-trip-text-muted'>
                     Workspace menu
