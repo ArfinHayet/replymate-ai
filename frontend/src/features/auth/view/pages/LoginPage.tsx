@@ -38,7 +38,7 @@ export function LoginPage() {
   return (
     <AuthSurface>
       <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-white/80 sm:bg-white/95 sm:p-9 sm:shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:backdrop-blur">
-        <AuthBrandHeader title="Sign in to ReplyMate AI" subtitle="Manage your business content and assistant settings." />
+        <AuthBrandHeader title="Sign in to SupportMate AI" subtitle="Manage your business content and assistant settings." />
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
           <div>

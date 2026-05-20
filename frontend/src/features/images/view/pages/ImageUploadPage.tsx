@@ -24,7 +24,7 @@ export function ImageUploadPage() {
 
   return (
     <div className="min-h-screen bg-rm-trip-surface">
-      <PageHeader title="Upload Image" subtitle="ReplyMate AI drafts a title and description you can review before saving." />
+      <PageHeader title="Upload Image" subtitle="SupportMate AI drafts a title and description you can review before saving." />
       <PageContent className="max-w-3xl">
         <div className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white">
           <ImageUploadPanel

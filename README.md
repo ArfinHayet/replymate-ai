@@ -1,16 +1,16 @@
-# ReplyMate Ai
+# SupportMate Ai
 
 <p align="center">
-  <img src="https://comp-bot-sntj.vercel.app/favicon.svg/" alt="ReplyMate Ai logo" width="96" height="96" />
+  <img src="https://comp-bot-sntj.vercel.app/favicon.svg/" alt="SupportMate Ai logo" width="96" height="96" />
 </p>
 
-ReplyMate Ai is a knowledge-based AI chatbot builder. It lets you upload PDFs, add images, and ingest website URLs into a private knowledge base, then chat with that knowledge from the dashboard or embed the assistant directly on your own website.
+SupportMate Ai is a knowledge-based AI chatbot builder. It lets you upload PDFs, add images, and ingest website URLs into a private knowledge base, then chat with that knowledge from the dashboard or embed the assistant directly on your own website.
 
 Live app: https://comp-bot-sntj.vercel.app/
 
-## What ReplyMate Ai Does
+## What SupportMate Ai Does
 
-ReplyMate Ai turns your business content into a website-ready AI assistant.
+SupportMate Ai turns your business content into a website-ready AI assistant.
 
 - Upload PDF files and ask questions based on their content.
 - Add images with AI-generated titles and descriptions so they can be used as knowledge.
@@ -25,7 +25,7 @@ ReplyMate Ai turns your business content into a website-ready AI assistant.
 
 1. Create an account and sign in.
 2. Add knowledge by uploading PDFs, saving images, or ingesting website URLs.
-3. ReplyMate Ai reads that content and prepares it for AI search.
+3. SupportMate Ai reads that content and prepares it for AI search.
 4. Ask questions in the chat page, or let website visitors ask questions through the embedded widget.
 5. The assistant searches your knowledge base and answers from the information you provided.
 
@@ -35,7 +35,7 @@ If the answer is not available in your uploaded knowledge, the assistant is desi
 
 ### Knowledge Base
 
-The knowledge base is the content ReplyMate Ai uses to answer questions.
+The knowledge base is the content SupportMate Ai uses to answer questions.
 
 You can add:
 
@@ -47,13 +47,13 @@ Each user has their own knowledge base, so uploaded content and chat results sta
 
 ### PDF Uploads
 
-Upload a PDF from the dashboard. ReplyMate Ai extracts the readable text, breaks it into searchable sections, and stores it as knowledge for future answers.
+Upload a PDF from the dashboard. SupportMate Ai extracts the readable text, breaks it into searchable sections, and stores it as knowledge for future answers.
 
 You can also view, rename, and delete PDFs after upload.
 
 ### URL Ingestion
 
-Paste one or more URLs into the web pages section. ReplyMate Ai fetches the page content and adds it to your knowledge base.
+Paste one or more URLs into the web pages section. SupportMate Ai fetches the page content and adds it to your knowledge base.
 
 This is useful when your chatbot needs to answer from public pages such as:
 
@@ -67,19 +67,19 @@ You can also refetch a saved web page later if the original page changes.
 
 ### Image Knowledge
 
-ReplyMate Ai can analyze uploaded images and suggest a title and description. Once saved, those details become part of the knowledge base.
+SupportMate Ai can analyze uploaded images and suggest a title and description. Once saved, those details become part of the knowledge base.
 
 This helps the assistant answer questions about visual items such as products, screenshots, designs, or reference images.
 
 ### Chat
 
-The chat page lets you test your assistant before embedding it on a website. Ask questions naturally, and ReplyMate Ai will search your uploaded knowledge to generate an answer.
+The chat page lets you test your assistant before embedding it on a website. Ask questions naturally, and SupportMate Ai will search your uploaded knowledge to generate an answer.
 
 The app also stores chat history, making it easier to review past conversations and understand what users are asking.
 
 ### Website Embed
 
-ReplyMate Ai can be embedded on any approved website with a small script tag.
+SupportMate Ai can be embedded on any approved website with a small script tag.
 
 From the Embed page:
 

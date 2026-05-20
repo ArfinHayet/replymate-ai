@@ -8,7 +8,7 @@ export function AuthBrandHeader({ title, subtitle }: AuthBrandHeaderProps) {
     <div className="mb-7 text-center">
       <div className="mb-4 flex justify-center">
         <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-rm-trip-smooth bg-white shadow-rm-trip-glow ring-1 ring-gray-100">
-          <img src="/favicon.svg" alt="ReplyMate AI" className="h-10 w-10" />
+          <img src="/favicon.svg" alt="SupportMate AI" className="h-10 w-10" />
         </div>
       </div>
       <h1 className="font-rm-trip-heading text-2xl font-bold text-rm-trip-text">{title}</h1>
