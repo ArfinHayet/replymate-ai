@@ -545,18 +545,34 @@ body {
   display: flex; flex-direction: column; height: 100%;
 }
 .plan-card.featured {
-  background: var(--brand); border-color: transparent;
-  box-shadow: var(--shadow-brand);
+  background: #fff;
+  border: 2px solid var(--brand);
+  box-shadow: 0 16px 40px rgba(37,99,235,0.22);
+  transform: translateY(-4px);
+  position: relative;
+}
+.plan-card.featured::before {
+  content: "Most popular";
+  position: absolute;
+  top: -12px;
+  right: 20px;
+  background: var(--brand);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 .plan-name { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 8px; }
-.plan-card.featured .plan-name { color: rgba(255,255,255,0.65); }
+.plan-card.featured .plan-name { color: var(--brand); }
 .plan-price {
   font-family: var(--font-display); font-size: 56px; font-weight: 800; line-height: 1;
   letter-spacing: -2px; color: var(--text); margin-bottom: 6px;
 }
-.plan-card.featured .plan-price { color: #fff; }
+.plan-card.featured .plan-price { color: var(--brand); }
 .plan-sub { font-size: 13px; color: var(--text-faint); margin-bottom: 24px; font-weight: 400; }
-.plan-card.featured .plan-sub { color: rgba(255,255,255,0.6); }
+.plan-card.featured .plan-sub { color: var(--text-muted); }
 .plan-feats { list-style: none; display: flex; flex-direction: column; gap: 10px; flex: 1; }
 .plan-feats li { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--text-muted); }
 .plan-feats li.unavailable {
@@ -564,11 +580,8 @@ body {
   text-decoration: line-through;
   text-decoration-thickness: 1.25px;
 }
-.plan-card.featured .plan-feats li { color: rgba(255,255,255,0.85); }
-.plan-card.featured .plan-feats li.unavailable { color: rgba(255,255,255,0.55); }
 .plan-feats .ck { color: var(--brand); flex-shrink: 0; }
 .plan-feats li.unavailable .ck { color: var(--text-faint); }
-.plan-card.featured .ck { color: rgba(255,255,255,0.9); }
 .plan-cta {
   display: flex; align-items: center; justify-content: center; gap: 6px;
   width: 100%; margin-top: 24px; padding: 11px;
@@ -581,9 +594,9 @@ body {
 }
 .plan-cta-outline:hover { background: var(--surface); }
 .plan-cta-solid {
-  background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2); color: #fff;
+  background: var(--brand); border: 1px solid var(--brand); color: #fff;
 }
-.plan-cta-solid:hover { background: rgba(255,255,255,0.22); }
+.plan-cta-solid:hover { background: var(--brand-dark); border-color: var(--brand-dark); }
 
 .pricing-mini { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
 @media (max-width: 900px) { .pricing-mini { grid-template-columns: repeat(2,1fr); } }
