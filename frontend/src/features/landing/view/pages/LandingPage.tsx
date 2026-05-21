@@ -22,28 +22,28 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
-/* ─────────────────────────── data ─────────────────────────── */
+/* --------------------------- data --------------------------- */
 type CtaFormState = { fullName: string; email: string; website: string; goal: string };
 
 const goalOptions = [
-  { value: "support", label: "Reduce support tickets" },
-  { value: "sales", label: "Qualify more leads" },
-  { value: "onboarding", label: "Improve onboarding" },
-  { value: "other", label: "Something else" },
+  { value: "support", label: "Deflect repetitive questions" },
+  { value: "sales", label: "Launch our website widget" },
+  { value: "onboarding", label: "Improve answer quality" },
+  { value: "other", label: "Set up our knowledge base" },
 ];
 
 const workflowSteps = [
   {
-    title: "Train from your content",
-    desc: "Import docs, FAQs, and product pages so the assistant speaks with current business context.",
+    title: "Add business knowledge",
+    desc: "Upload PDFs, markdown files, web pages, and images so answers are grounded in approved sources.",
   },
   {
-    title: "Set rules and handoffs",
-    desc: "Define escalation paths, lead questions, and routing rules without custom automation code.",
+    title: "Configure your workspace",
+    desc: "Set company profile context, review content sources, and prepare widget keys and allowed domains.",
   },
   {
-    title: "Improve with insights",
-    desc: "Track unanswered questions and conversion trends so every conversation makes the bot sharper.",
+    title: "Deploy and improve",
+    desc: "Embed the widget or share a public chat URL, then monitor analytics and chat history to keep improving.",
   },
 ];
 
@@ -51,15 +51,15 @@ const pricingPlans = [
   {
     name: "Starter",
     price: "$49",
-    subtitle: "per month · perfect for small teams.",
-    features: ["1 chatbot workspace", "1,000 monthly conversations", "Email support"],
+    subtitle: "per month - best for small support teams.",
+    features: ["1 workspace", "2,000 monthly messages", "PDF, URL, and markdown ingestion"],
     highlighted: false,
   },
   {
     name: "Growth",
     price: "$149",
-    subtitle: "per month · for support & sales teams.",
-    features: ["5 chatbot workspaces", "10,000 monthly conversations", "CRM routing and analytics", "Priority support"],
+    subtitle: "per month - for multi-team operations.",
+    features: ["5 workspaces", "20,000 monthly messages", "Analytics and chat history", "Widget key and domain controls"],
     highlighted: true,
   },
 ];
@@ -67,25 +67,25 @@ const pricingPlans = [
 const faqs = [
   {
     q: "How fast can we launch?",
-    a: "Most teams can connect docs, configure handoff rules, and place the widget on their site in a single afternoon.",
+    a: "Most teams can upload content, generate a widget key, and embed SupportMate on their site in a single afternoon.",
   },
   {
-    q: "Can it hand off to humans?",
-    a: "Yes. Conversations can route to support, sales, or a shared inbox based on intent and custom rules.",
+    q: "What content can we train it with?",
+    a: "SupportMate supports PDFs, markdown files, website URLs, and images so your assistant can answer from your own material.",
   },
   {
-    q: "Will it make up answers?",
-    a: "You can restrict answers to approved knowledge sources and route low-confidence questions to human review.",
+    q: "Can we control where the widget runs?",
+    a: "Yes. You can manage widget keys and set allowed domains so only approved origins can load your assistant.",
   },
   {
-    q: "Does it work with our CRM?",
-    a: "Yes. SupportMate is built for lead capture, qualification tags, notes, and CRM routing workflows.",
+    q: "How do we improve response quality over time?",
+    a: "Use chat history and analytics to review conversations, add missing sources, and refresh indexed web pages.",
   },
 ];
 
-/* ─────────────────────────── styles ─────────────────────────── */
+/* --------------------------- styles --------------------------- */
 const css = `
-/* ── reset & root ─────────────────────────────────────────── */
+/* -- reset & root ------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -142,7 +142,7 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* ── HEADER ────────────────────────────────────────────────── */
+/* -- HEADER -------------------------------------------------- */
 .nav {
   position: sticky; top: 0; z-index: 100;
   background: rgba(255,255,255,0.82);
@@ -192,7 +192,7 @@ body {
 }
 .btn-primary:hover { background: var(--brand-dark); }
 
-/* ── HERO ───────────────────────────────────────────────────── */
+/* -- HERO ----------------------------------------------------- */
 .hero {
   background: var(--hero-bg);
   position: relative; overflow: hidden;
@@ -343,7 +343,7 @@ body {
 .hero-left > *:nth-child(5) { animation-delay: 0.38s; }
 .hero-right { animation: fadeUp 0.55s cubic-bezier(.22,.68,0,1.2) 0.32s backwards; }
 
-/* ── METRICS STRIP ─────────────────────────────────────────── */
+/* -- METRICS STRIP ------------------------------------------- */
 .metrics-strip {
   background: #fff; border-bottom: 1px solid var(--border);
 }
@@ -363,7 +363,7 @@ body {
 .metric-cell span { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-top: 2px; display: block; }
 @media (max-width: 700px) { .metrics-inner { grid-template-columns: repeat(2,1fr); } }
 
-/* ── INTEGRATIONS ──────────────────────────────────────────── */
+/* -- INTEGRATIONS -------------------------------------------- */
 .integrations-bar {
   max-width: 1180px; margin: 0 auto;
   padding: 28px 28px; display: flex; align-items: center; flex-wrap: wrap; gap: 14px;
@@ -377,7 +377,7 @@ body {
 }
 .int-pill:hover { border-color: var(--brand); color: var(--brand); background: var(--brand-light); }
 
-/* ── SECTION SCAFFOLDING ───────────────────────────────────── */
+/* -- SECTION SCAFFOLDING ------------------------------------- */
 .section { max-width: 1180px; margin: 0 auto; padding: 80px 28px; }
 .section-white { background: #fff; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 
@@ -389,7 +389,7 @@ body {
 }
 .section-sub { font-size: 16px; line-height: 1.68; color: var(--text-muted); font-weight: 300; max-width: 540px; margin-top: 12px; }
 
-/* ── SCREENSHOTS ───────────────────────────────────────────── */
+/* -- SCREENSHOTS --------------------------------------------- */
 .screenshots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 36px; }
 @media (max-width: 768px) { .screenshots-grid { grid-template-columns: 1fr; } }
 .ss-card {
@@ -400,7 +400,7 @@ body {
 .ss-card.tall { grid-row: span 2; }
 .ss-card img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); display: block; }
 
-/* ── WORKFLOW ──────────────────────────────────────────────── */
+/* -- WORKFLOW ------------------------------------------------ */
 .workflow-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 40px; }
 @media (max-width: 768px) { .workflow-grid { grid-template-columns: 1fr; } }
 .wf-card {
@@ -423,7 +423,7 @@ body {
 .wf-h { font-family: var(--font-display); font-size: 17px; font-weight: 700; letter-spacing: -0.2px; margin-bottom: 8px; }
 .wf-p { font-size: 13.5px; line-height: 1.65; color: var(--text-muted); font-weight: 400; }
 
-/* ── FEATURES ──────────────────────────────────────────────── */
+/* -- FEATURES ------------------------------------------------ */
 .features-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
 @media (max-width: 900px) { .features-grid { grid-template-columns: 1fr; } }
 .feat-card {
@@ -446,7 +446,7 @@ body {
 .plat-list li { display: flex; align-items: center; gap: 10px; font-size: 13.5px; color: var(--text-muted); }
 .plat-list .pi { color: var(--brand); flex-shrink: 0; }
 
-/* ── COMMAND CENTER ────────────────────────────────────────── */
+/* -- COMMAND CENTER ------------------------------------------ */
 .cmd-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 48px; align-items: center; }
 @media (max-width: 900px) { .cmd-grid { grid-template-columns: 1fr; } }
 .cmd-points { display: flex; flex-direction: column; gap: 11px; margin-top: 22px; }
@@ -478,7 +478,7 @@ body {
 .live-row span { color: var(--text-muted); }
 .live-row strong { font-weight: 700; font-family: var(--font-display); font-size: 15px; }
 
-/* ── TESTIMONIALS ──────────────────────────────────────────── */
+/* -- TESTIMONIALS -------------------------------------------- */
 .test-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: start; }
 @media (max-width: 900px) { .test-grid { grid-template-columns: 1fr; } }
 .quote-card {
@@ -504,7 +504,7 @@ body {
 .stat-block .sbv { font-family: var(--font-display); font-size: 26px; font-weight: 800; letter-spacing: -0.5px; margin-top: 4px; }
 .stat-block.hi .sbv { color: var(--brand); }
 
-/* ── TRUST ROW ─────────────────────────────────────────────── */
+/* -- TRUST ROW ----------------------------------------------- */
 .trust-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
 @media (max-width: 700px) { .trust-grid { grid-template-columns: 1fr; } }
 .trust-card {
@@ -516,7 +516,7 @@ body {
 .trust-card h4 { font-family: var(--font-display); font-size: 14px; font-weight: 700; margin: 10px 0 5px; }
 .trust-card p { font-size: 12.5px; color: var(--text-muted); line-height: 1.55; }
 
-/* ── PRICING ───────────────────────────────────────────────── */
+/* -- PRICING ------------------------------------------------- */
 .pricing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; }
 @media (max-width: 700px) { .pricing-grid { grid-template-columns: 1fr; } }
 .plan-card {
@@ -567,7 +567,7 @@ body {
 .pmini h4 { font-family: var(--font-display); font-size: 13.5px; font-weight: 700; margin: 10px 0 4px; }
 .pmini p { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
 
-/* ── FAQ ───────────────────────────────────────────────────── */
+/* -- FAQ ----------------------------------------------------- */
 .faq-list { display: flex; flex-direction: column; gap: 10px; margin-top: 32px; }
 .faq-item {
   background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden;
@@ -584,7 +584,7 @@ body {
 .faq-item:not([open]) .faq-close { display: none; }
 .faq-answer { padding: 0 22px 18px; font-size: 14px; line-height: 1.72; color: var(--text-muted); font-weight: 300; }
 
-/* ── CTA SECTION ───────────────────────────────────────────── */
+/* -- CTA SECTION --------------------------------------------- */
 .cta-wrap { max-width: 1180px; margin: 0 auto; padding: 64px 28px 80px; }
 .cta-box {
   background: #fff; border: 1px solid var(--border); border-radius: var(--radius-lg);
@@ -640,7 +640,7 @@ body {
 .preview-action .pt { font-size: 14px; font-weight: 700; color: var(--brand); }
 .preview-trust { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 14px; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-muted); font-weight: 500; }
 
-/* ── FOOTER ────────────────────────────────────────────────── */
+/* -- FOOTER -------------------------------------------------- */
 .footer { background: #fff; border-top: 1px solid var(--border); }
 .footer-inner {
   max-width: 1180px; margin: 0 auto;
@@ -663,7 +663,7 @@ body {
 }
 `;
 
-/* ─────────────────────────── component ─────────────────────────── */
+/* --------------------------- component --------------------------- */
 export function LandingPage() {
   const [form, setForm] = useState<CtaFormState>({ fullName: "", email: "", website: "", goal: "" });
   const [submitting, setSubmitting] = useState(false);
@@ -697,7 +697,7 @@ export function LandingPage() {
     <>
       <style dangerouslySetInnerHTML={{ __html: css }} />
 
-      {/* ── NAV ── */}
+      {/* -- NAV -- */}
       <header className="nav">
         <div className="nav-inner">
           <a href="#" className="logo" aria-label="SupportMate home">
@@ -716,48 +716,48 @@ export function LandingPage() {
               Sign in
             </Link>
             <a href="#cta" className="btn-primary">
-              Book demo
+              Book walkthrough
             </a>
           </div>
         </div>
       </header>
 
       <main>
-        {/* ── HERO ── */}
+        {/* -- HERO -- */}
         <section className="hero">
           <div className="hero-inner">
             <div className="hero-left">
               <div className="hero-badge">
                 <Sparkles size={12} />
-                AI chatbot for support &amp; sales
+                AI support assistant for your knowledge base
               </div>
               <h1 className="hero-h1">
-                The AI teammate that turns <span className="accent">visitors</span> into customers
+                A grounded AI assistant for your <span className="accent">support content</span>
               </h1>
               <p className="hero-sub">
-                SupportMate answers questions instantly, qualifies high-intent leads, shields your team from repetitive
-                tickets, and hands off every conversation with full context attached.
+                SupportMate answers from your approved documents and pages, powers your website widget, and gives your
+                team full visibility with analytics and conversation history.
               </p>
               <div className="hero-ctas">
                 <a href="#cta" className="hero-btn-main">
-                  Book live demo <ArrowRight size={16} />
+                  Get a workspace walkthrough <ArrowRight size={16} />
                 </a>
                 <a href="#screenshots" className="hero-btn-outline">
-                  View product
+                  See the dashboard
                 </a>
               </div>
               <div className="hero-stats">
                 <div className="hero-stat">
-                  <strong>&lt; 5 sec</strong>
-                  <span>typical AI first reply</span>
+                  <strong>4</strong>
+                  <span>content types supported</span>
                 </div>
                 <div className="hero-stat">
-                  <strong>24 / 7</strong>
-                  <span>automated coverage</span>
+                  <strong>1 script</strong>
+                  <span>to embed your widget</span>
                 </div>
                 <div className="hero-stat">
-                  <strong>CRM</strong>
-                  <span>ready lead handoff</span>
+                  <strong>Live</strong>
+                  <span>analytics and chat history</span>
                 </div>
               </div>
             </div>
@@ -772,66 +772,66 @@ export function LandingPage() {
                   </div>
                 </div>
                 <div className="chat-msgs">
-                  <div className="msg-bot">Hi, I can help with plans, integrations, or account setup.</div>
-                  <div className="msg-user">Can it qualify leads from our pricing page?</div>
+                  <div className="msg-bot">Hi, I can help using your uploaded docs and indexed website pages.</div>
+                  <div className="msg-user">Can I add our help center and product PDFs?</div>
                   <div className="msg-bot">
-                    Yes — I can ask custom questions, score fit, and send hot leads straight to your CRM.
+                    Yes. Add URLs, PDFs, markdown, and images in Add Content, then ask questions from Chat.
                   </div>
-                  <div className="msg-tag">⚡ Lead score: 92 · Routed to Sales</div>
+                  <div className="msg-tag">Indexed source match: 5 sections</div>
                 </div>
                 <div className="chat-input-bar">
-                  <span>Ask anything…</span>
+                  <span>Ask about your knowledge base...</span>
                   <Send size={14} color="var(--brand)" />
                 </div>
               </div>
               <div className="intent-badge">
                 <div className="ib-label">
                   <Zap size={11} color="var(--brand)" />
-                  Intent detected
+                  Source status
                 </div>
-                <div className="ib-value">Sales qualified</div>
+                <div className="ib-value">Grounded answer</div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── METRICS ── */}
+        {/* -- METRICS -- */}
         <div className="metrics-strip">
           <div className="metrics-inner">
             <div className="metric-cell">
-              <strong>10k+</strong>
-              <span>monthly conversations</span>
+              <strong>PDF + Markdown</strong>
+              <span>document ingestion</span>
             </div>
             <div className="metric-cell">
-              <strong>31%</strong>
-              <span>more qualified demos</span>
+              <strong>Web Crawl</strong>
+              <span>URL indexing and refetch</span>
             </div>
             <div className="metric-cell">
-              <strong>42%</strong>
-              <span>fewer repeat tickets</span>
+              <strong>Widget Keys</strong>
+              <span>embed and domain control</span>
             </div>
             <div className="metric-cell">
-              <strong>99.9%</strong>
-              <span>target uptime</span>
+              <strong>Analytics</strong>
+              <span>sessions, sources, sections</span>
             </div>
           </div>
         </div>
 
-        {/* ── INTEGRATIONS ── */}
+        {/* -- INTEGRATIONS -- */}
         <div className="integrations-bar">
-          <span className="integrations-label">Works with</span>
-          {["Slack", "HubSpot", "Intercom", "Zendesk", "Salesforce"].map((n) => (
+          <span className="integrations-label">Built for</span>
+          {["PDFs", "Markdown", "Web Pages", "Images", "Website Widget"].map((n) => (
             <span key={n} className="int-pill">
               {n}
             </span>
           ))}
         </div>
 
-        {/* ── SCREENSHOTS ── */}
+        {/* -- SCREENSHOTS -- */}
         <section id="screenshots">
           <div className="section">
             <p className="eyebrow">Screenshots</p>
-            <h2 className="section-h2">A clearer view of the chatbot workspace</h2>
+            <h2 className="section-h2">A practical workspace for support operations</h2>
             <div className="screenshots-grid">
               <figure className="ss-card tall" style={{ margin: 0 }}>
                 <img src="/landing/img/screenshot-inbox.svg" alt="SupportMate shared inbox with AI replies" />
@@ -846,11 +846,11 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ── WORKFLOW ── */}
+        {/* -- WORKFLOW -- */}
         <div className="section-white" id="how">
           <div className="section">
             <p className="eyebrow">Workflow</p>
-            <h2 className="section-h2">Go live with a smarter chatbot in three steps</h2>
+            <h2 className="section-h2">Set up, deploy, and improve in three clear steps</h2>
             <div className="workflow-grid">
               {workflowSteps.map((s, i) => (
                 <article key={s.title} className="wf-card">
@@ -863,13 +863,13 @@ export function LandingPage() {
           </div>
         </div>
 
-        {/* ── FEATURES ── */}
+        {/* -- FEATURES -- */}
         <section id="features">
           <div className="section">
             <div style={{ textAlign: "center", marginBottom: 40 }}>
               <p className="eyebrow eyebrow-center">Features</p>
               <h2 className="section-h2" style={{ maxWidth: 540, margin: "0 auto" }}>
-                Everything a customer-facing chatbot needs
+                Everything needed to run a grounded support assistant
               </h2>
             </div>
             <div className="features-grid">
@@ -881,15 +881,15 @@ export function LandingPage() {
                 <ul className="check-list">
                   <li>
                     <Check size={15} className="ci-blue" />
-                    Answers from approved knowledge
+                    Answers from approved content
                   </li>
                   <li>
                     <Check size={15} className="ci-blue" />
-                    Source-aware responses
+                    Chat against indexed documents and pages
                   </li>
                   <li>
                     <Check size={15} className="ci-blue" />
-                    Human handoff when needed
+                    Clear context for manual follow-up
                   </li>
                 </ul>
               </article>
@@ -897,19 +897,19 @@ export function LandingPage() {
                 <div className="feat-icon fi-teal">
                   <Funnel size={20} />
                 </div>
-                <h3 className="feat-h">Lead qualification</h3>
+                <h3 className="feat-h">Content pipeline</h3>
                 <ul className="check-list">
                   <li>
                     <Check size={15} className="ci-teal" />
-                    Custom discovery flows
+                    Upload PDFs, markdown, and images
                   </li>
                   <li>
                     <Check size={15} className="ci-teal" />
-                    Deal notes and tags
+                    Ingest and refetch website URLs
                   </li>
                   <li>
                     <Check size={15} className="ci-teal" />
-                    Calendar and CRM sync
+                    Edit and manage saved sources
                   </li>
                 </ul>
               </article>
@@ -918,11 +918,11 @@ export function LandingPage() {
                 <ul className="plat-list">
                   <li>
                     <ShieldCheck size={16} className="pi" />
-                    Role-based access
+                    Widget keys and allowed domains
                   </li>
                   <li>
                     <Languages size={16} className="pi" />
-                    Multilingual replies
+                    Public chatbot URL for quick sharing
                   </li>
                   <li>
                     <Activity size={16} className="pi" />
@@ -930,11 +930,11 @@ export function LandingPage() {
                   </li>
                   <li>
                     <GitBranch size={16} className="pi" />
-                    Conditional workflows
+                    Web crawl health and source mix
                   </li>
                   <li>
                     <Lock size={16} className="pi" />
-                    Secure data controls
+                    Chat history review tools
                   </li>
                 </ul>
               </article>
@@ -942,29 +942,29 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* ── COMMAND CENTER ── */}
+        {/* -- COMMAND CENTER -- */}
         <div className="section-white">
           <div className="section">
             <div className="cmd-grid">
               <div>
                 <p className="eyebrow">Command center</p>
-                <h2 className="section-h2">Control the whole customer journey from one place</h2>
+                <h2 className="section-h2">Run your assistant from one operational workspace</h2>
                 <p className="section-sub">
-                  Train the AI, approve sensitive answers, watch live conversations, and measure support impact —
-                  without switching tabs.
+                  Manage content, monitor conversations, configure embed settings, and track performance from one
+                  dashboard.
                 </p>
                 <div className="cmd-points">
                   <div className="cmd-pt">
                     <WandSparkles size={16} />
-                    AI answer drafts with source context
+                    Grounded answers from indexed content
                   </div>
                   <div className="cmd-pt">
                     <GitBranch size={16} />
-                    Smart routing by intent and plan
+                    Widget snippet and public URL generation
                   </div>
                   <div className="cmd-pt">
                     <ShieldCheck size={16} />
-                    Approval rules for sensitive replies
+                    Domain allowlist and key management
                   </div>
                 </div>
               </div>
@@ -977,94 +977,94 @@ export function LandingPage() {
                   </span>
                 </div>
                 <div className="live-row">
-                  <span>Unanswered questions</span>
-                  <strong>12</strong>
+                  <span>Indexed sources</span>
+                  <strong>126</strong>
                 </div>
                 <div className="live-row">
-                  <span>Qualified leads waiting</span>
-                  <strong>31</strong>
-                </div>
-                <div className="live-row">
-                  <span>Human handoffs</span>
+                  <span>Active widget keys</span>
                   <strong>8</strong>
+                </div>
+                <div className="live-row">
+                  <span>Crawled pages</span>
+                  <strong>412</strong>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── TESTIMONIALS ── */}
+        {/* -- TESTIMONIALS -- */}
         <section id="testimonials">
           <div className="section">
             <div className="test-grid">
               <div>
                 <p className="eyebrow">Customers</p>
-                <h2 className="section-h2">Support teams get speed without losing control</h2>
+                <h2 className="section-h2">Support teams move faster with better content control</h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 24 }}>
                   <figure className="quote-card" style={{ margin: 0 }}>
                     <blockquote>
-                      "SupportMate cut our repetitive tickets in half and still gives agents clean context whenever a
-                      human needs to step in."
+                      "We uploaded our docs and help center first, then SupportMate started answering with cleaner,
+                      source-backed responses in the same day."
                     </blockquote>
-                    <cite>Maya Chen — Support Lead</cite>
+                    <cite>Maya Chen - Support Lead</cite>
                   </figure>
                   <figure className="quote-card" style={{ margin: 0 }}>
                     <blockquote>
-                      "The lead routing genuinely surprised us. Demo requests land in HubSpot with the whole
-                      conversation already attached."
+                      "Widget key and domain controls made rollout easy across our properties, and analytics shows
+                      exactly where we still need better content."
                     </blockquote>
-                    <cite>Eli Novak — Growth Manager</cite>
+                    <cite>Eli Novak - Operations Manager</cite>
                   </figure>
                 </div>
               </div>
               <div className="stats-panel">
                 <div className="stat-block">
-                  <div className="sbl">Conversations handled</div>
-                  <div className="sbv">42,891</div>
+                  <div className="sbl">Indexed sections</div>
+                  <div className="sbv">5,406</div>
                 </div>
                 <div className="stat-block">
-                  <div className="sbl">Avg. first reply</div>
-                  <div className="sbv">3.2 sec</div>
+                  <div className="sbl">Crawled pages</div>
+                  <div className="sbv">1,284</div>
                 </div>
                 <div className="stat-block hi">
-                  <div className="sbl">Qualified leads</div>
-                  <div className="sbv">1,248</div>
+                  <div className="sbl">Conversations</div>
+                  <div className="sbv">42,891</div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── TRUST ── */}
+        {/* -- TRUST -- */}
         <div className="section-white">
           <div className="section" style={{ paddingTop: 48, paddingBottom: 48 }}>
             <div className="trust-grid">
               <article className="trust-card">
                 <Lock size={20} />
-                <h4>Access control</h4>
-                <p>Role-based permissions for agents, admins, and reviewers.</p>
+                <h4>Domain controls</h4>
+                <p>Allow only approved origins to load your website widget.</p>
               </article>
               <article className="trust-card">
                 <FileText size={20} />
-                <h4>Source limits</h4>
-                <p>Answer only from approved docs, pages, and policies.</p>
+                <h4>Approved sources</h4>
+                <p>Ground responses in your uploaded and indexed business content.</p>
               </article>
               <article className="trust-card">
                 <BarChart3 size={20} />
-                <h4>Audit history</h4>
-                <p>Track edits, escalations, training changes, and outcomes.</p>
+                <h4>Conversation visibility</h4>
+                <p>Review chat history and analytics to improve answers continuously.</p>
               </article>
             </div>
           </div>
         </div>
 
-        {/* ── PRICING ── */}
+        {/* -- PRICING -- */}
         <section id="pricing">
           <div className="section">
             <div style={{ textAlign: "center", marginBottom: 40 }}>
               <p className="eyebrow eyebrow-center">Pricing</p>
               <h2 className="section-h2" style={{ maxWidth: 460, margin: "0 auto" }}>
-                Start lean, scale as conversations grow
+                Choose a plan for your support volume
               </h2>
             </div>
             <div className="pricing-grid">
@@ -1091,32 +1091,32 @@ export function LandingPage() {
               <article className="pmini">
                 <Clock3 size={18} />
                 <h4>Always available</h4>
-                <p>Help visitors across every time zone.</p>
+                <p>Keep your assistant active around the clock.</p>
               </article>
               <article className="pmini">
                 <FileText size={18} />
                 <h4>Knowledge grounded</h4>
-                <p>Keep answers aligned with your docs.</p>
+                <p>Answer from docs, pages, markdown, and images.</p>
               </article>
               <article className="pmini">
                 <Users size={18} />
-                <h4>Team handoff</h4>
-                <p>Route complex chats with full context.</p>
+                <h4>Workspace control</h4>
+                <p>Manage company context, content, and widget keys.</p>
               </article>
               <article className="pmini">
                 <BarChart3 size={18} />
                 <h4>Actionable trends</h4>
-                <p>See topics driving conversion.</p>
+                <p>Track activity, source mix, and crawl health.</p>
               </article>
             </div>
           </div>
         </section>
 
-        {/* ── FAQ ── */}
+        {/* -- FAQ -- */}
         <div className="section-white">
           <div className="section">
             <p className="eyebrow">FAQ</p>
-            <h2 className="section-h2">Questions before launch</h2>
+            <h2 className="section-h2">Questions before rollout</h2>
             <div className="faq-list">
               {faqs.map((item) => (
                 <details key={item.q} className="faq-item">
@@ -1124,7 +1124,7 @@ export function LandingPage() {
                     {item.q}
                     <span className="faq-chevron">
                       <span className="faq-open">+</span>
-                      <span className="faq-close">−</span>
+                      <span className="faq-close">-</span>
                     </span>
                   </summary>
                   <p className="faq-answer">{item.a}</p>
@@ -1134,15 +1134,15 @@ export function LandingPage() {
           </div>
         </div>
 
-        {/* ── CTA ── */}
+        {/* -- CTA -- */}
         <section id="cta">
           <div className="cta-wrap">
             <div className="cta-box">
               <div className="cta-left">
-                <h2 className="cta-h">See your chatbot on your site</h2>
+                <h2 className="cta-h">See SupportMate with your own content</h2>
                 <p className="cta-sub">
-                  Share your website and we'll show exactly how SupportMate can answer questions, qualify leads, and route
-                  conversations for your team.
+                  Share your website and goals, and we will map a setup plan for content ingestion, widget deployment,
+                  and analytics tracking.
                 </p>
                 <form className="rm-form" onSubmit={onSubmit}>
                   <div className="rm-field">
@@ -1187,7 +1187,7 @@ export function LandingPage() {
                     </select>
                   </div>
                   <button type="submit" disabled={submitting} className="btn-submit">
-                    {submitting ? "Submitting…" : "Request demo"}
+                    {submitting ? "Submitting..." : "Request walkthrough"}
                     <ChevronRight size={16} />
                   </button>
                 </form>
@@ -1201,13 +1201,13 @@ export function LandingPage() {
                 {success && <p className="msg-success">{success}</p>}
               </div>
               <div className="cta-right">
-                <p className="preview-label">Demo preview</p>
+                <p className="preview-label">Workspace preview</p>
                 <div className="preview-msg">
                   <div className="pl">New visitor</div>
                   <div className="pt">
                     {form.website.trim()
-                      ? `Can ${form.website.trim()} reduce repetitive support questions?`
-                      : "What plan is best for a 12-person support team?"}
+                      ? `How can ${form.website.trim()} upload support content and launch a widget?`
+                      : "How do we set up grounded support answers from our docs and web pages?"}
                   </div>
                 </div>
                 <div className="preview-action">
@@ -1216,7 +1216,7 @@ export function LandingPage() {
                 </div>
                 <div className="preview-trust">
                   <ShieldCheck size={15} color="var(--brand)" />
-                  Secure handoff and audit-ready workflows
+                  Domain controls and grounded response workflows
                 </div>
               </div>
             </div>
@@ -1224,7 +1224,7 @@ export function LandingPage() {
         </section>
       </main>
 
-      {/* ── FOOTER ── */}
+      {/* -- FOOTER -- */}
       <footer className="footer">
         <div className="footer-inner">
           <div className="footer-brand">
@@ -1232,7 +1232,7 @@ export function LandingPage() {
               <img src="/favicon.svg" alt="SupportMate logo" className="logo-mark" />
               <span className="logo-name">SupportMate</span>
             </div>
-            <p>AI chat support for modern teams.</p>
+            <p>Grounded AI support for modern teams.</p>
           </div>
           <div className="footer-col">
             <h5>Product</h5>
@@ -1244,7 +1244,7 @@ export function LandingPage() {
                 <a href="#pricing">Pricing</a>
               </li>
               <li>
-                <a href="#cta">Book demo</a>
+                <a href="#cta">Book walkthrough</a>
               </li>
             </ul>
           </div>
@@ -1253,15 +1253,15 @@ export function LandingPage() {
             <ul>
               <li className="wi">
                 <Clock3 size={13} />
-                24/7 automation
+                24/7 assistant availability
               </li>
               <li className="wi">
                 <Bot size={13} />
-                AI answer engine
+                Grounded answer engine
               </li>
               <li className="wi">
                 <Users size={13} />
-                Human handoff
+                Conversation history review
               </li>
             </ul>
           </div>
@@ -1270,15 +1270,15 @@ export function LandingPage() {
             <ul>
               <li className="wi">
                 <Lock size={13} />
-                Secure data controls
+                Chat history review tools
               </li>
               <li className="wi">
                 <FileText size={13} />
-                Source restrictions
+                Approved source control
               </li>
               <li className="wi">
                 <ShieldCheck size={13} />
-                Audit-ready workflows
+                Widget domain allowlist
               </li>
             </ul>
           </div>
@@ -1291,4 +1291,5 @@ export function LandingPage() {
     </>
   );
 }
+
 
