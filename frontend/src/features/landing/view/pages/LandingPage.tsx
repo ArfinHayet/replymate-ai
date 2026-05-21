@@ -12,6 +12,7 @@ import {
   GitBranch,
   Languages,
   Lock,
+  Minus,
   MessageCircle,
   Send,
   ShieldCheck,
@@ -23,14 +24,8 @@ import {
 import { Link } from "react-router-dom";
 
 /* --------------------------- data --------------------------- */
-type CtaFormState = { fullName: string; email: string; website: string; goal: string };
-
-const goalOptions = [
-  { value: "support", label: "Deflect repetitive questions" },
-  { value: "sales", label: "Launch our website widget" },
-  { value: "onboarding", label: "Improve answer quality" },
-  { value: "other", label: "Set up our knowledge base" },
-];
+type ContactFormState = { name: string; email: string; subject: string; message: string };
+const CONTACT_EMAIL = "support@replymate.ai";
 
 const workflowSteps = [
   {
@@ -49,17 +44,31 @@ const workflowSteps = [
 
 const pricingPlans = [
   {
-    name: "Starter",
-    price: "$49",
-    subtitle: "per month - best for small support teams.",
-    features: ["1 workspace", "2,000 monthly messages", "PDF, URL, and markdown ingestion"],
+    name: "Free",
+    price: "$0",
+    subtitle: "per month - for getting started.",
+    features: [
+      { label: "10 documents", included: true },
+      { label: "1 website", included: true },
+      { label: "10 photos", included: true },
+      { label: "100 messages", included: true },
+      { label: "Chatbot customization", included: false },
+      { label: "Priority support", included: false },
+    ],
     highlighted: false,
   },
   {
-    name: "Growth",
-    price: "$149",
-    subtitle: "per month - for multi-team operations.",
-    features: ["5 workspaces", "20,000 monthly messages", "Analytics and chat history", "Widget key and domain controls"],
+    name: "Pro",
+    price: "$20 USD",
+    subtitle: "per month - for growing teams.",
+    features: [
+      { label: "100 document uploads", included: true },
+      { label: "10 websites", included: true },
+      { label: "200 photos", included: true },
+      { label: "Unlimited chatting", included: true },
+      { label: "Chatbot customization", included: true },
+      { label: "Priority support", included: true },
+    ],
     highlighted: true,
   },
 ];
@@ -156,14 +165,14 @@ body {
   height: 62px; padding: 0 28px;
   gap: 16px;
 }
-.logo { display: flex; align-items: center; gap: 9px; text-decoration: none; flex-shrink: 0; }
+.logo { display: flex; align-items: center; gap: 9px; text-decoration: none; flex-shrink: 0; min-width: 0; }
 .logo-mark {
   width: 34px; height: 34px; border-radius: 10px;
   display: block;
   object-fit: contain;
   box-shadow: var(--shadow-brand);
 }
-.logo-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
+.logo-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; white-space: nowrap; }
 
 .nav-links { display: flex; align-items: center; gap: 0; }
 @media (max-width: 860px) { .nav-links { display: none; } }
@@ -191,6 +200,17 @@ body {
   font-family: var(--font-body); box-shadow: var(--shadow-brand);
 }
 .btn-primary:hover { background: var(--brand-dark); }
+@media (max-width: 700px) {
+  .nav-inner { height: 58px; padding: 0 14px; gap: 10px; }
+  .logo-name { font-size: 16px; }
+  .nav-actions { margin-left: auto; gap: 6px; }
+  .btn-ghost { padding: 6px 10px; font-size: 12px; }
+  .btn-primary { padding: 6px 11px; font-size: 12px; white-space: nowrap; }
+}
+@media (max-width: 560px) {
+  .btn-ghost { display: none; }
+  .btn-primary { padding: 6px 10px; font-size: 11.5px; }
+}
 
 /* -- HERO ----------------------------------------------------- */
 .hero {
@@ -522,6 +542,7 @@ body {
 .plan-card {
   background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
   padding: 30px; box-shadow: var(--shadow-sm);
+  display: flex; flex-direction: column; height: 100%;
 }
 .plan-card.featured {
   background: var(--brand); border-color: transparent;
@@ -536,10 +557,17 @@ body {
 .plan-card.featured .plan-price { color: #fff; }
 .plan-sub { font-size: 13px; color: var(--text-faint); margin-bottom: 24px; font-weight: 400; }
 .plan-card.featured .plan-sub { color: rgba(255,255,255,0.6); }
-.plan-feats { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.plan-feats { list-style: none; display: flex; flex-direction: column; gap: 10px; flex: 1; }
 .plan-feats li { display: flex; align-items: center; gap: 9px; font-size: 13.5px; color: var(--text-muted); }
+.plan-feats li.unavailable {
+  color: var(--text-faint);
+  text-decoration: line-through;
+  text-decoration-thickness: 1.25px;
+}
 .plan-card.featured .plan-feats li { color: rgba(255,255,255,0.85); }
+.plan-card.featured .plan-feats li.unavailable { color: rgba(255,255,255,0.55); }
 .plan-feats .ck { color: var(--brand); flex-shrink: 0; }
+.plan-feats li.unavailable .ck { color: var(--text-faint); }
 .plan-card.featured .ck { color: rgba(255,255,255,0.9); }
 .plan-cta {
   display: flex; align-items: center; justify-content: center; gap: 6px;
@@ -592,8 +620,8 @@ body {
   display: grid; grid-template-columns: 1.4fr 1fr;
 }
 @media (max-width: 900px) { .cta-box { grid-template-columns: 1fr; } }
-.cta-left { padding: 40px; }
-.cta-right { background: var(--surface); border-left: 1px solid var(--border); padding: 32px; }
+.cta-left { padding: 40px; min-width: 0; }
+.cta-right { background: var(--surface); border-left: 1px solid var(--border); padding: 32px; min-width: 0; }
 @media (max-width: 900px) { .cta-right { border-left: none; border-top: 1px solid var(--border); } }
 .cta-h { font-family: var(--font-display); font-size: 30px; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 10px; }
 .cta-sub { font-size: 14px; line-height: 1.65; color: var(--text-muted); margin-bottom: 26px; font-weight: 300; max-width: 420px; }
@@ -601,12 +629,14 @@ body {
 /* form */
 .rm-form { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .rm-field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 5px; color: var(--text); }
+.rm-field.span-2 { grid-column: 1/-1; }
 .rm-input {
   width: 100%; padding: 10px 13px; border-radius: var(--radius-sm);
   border: 1px solid var(--border-strong); background: var(--surface);
   font-size: 13.5px; color: var(--text); font-family: var(--font-body);
   outline: none; transition: all 0.14s;
 }
+.rm-textarea { min-height: 120px; resize: vertical; }
 .rm-input:focus {
   border-color: var(--brand); background: #fff;
   box-shadow: 0 0 0 3px rgba(37,99,235,0.12);
@@ -630,11 +660,19 @@ body {
 .form-links .muted { color: var(--text-muted); }
 .msg-error   { font-size: 13px; font-weight: 600; color: var(--error); margin-top: 10px; }
 .msg-success { font-size: 13px; font-weight: 600; color: var(--success); margin-top: 10px; }
+@media (max-width: 700px) {
+  .cta-wrap { padding: 48px 14px 64px; }
+  .cta-left { padding: 28px 20px; }
+  .cta-right { padding: 24px 20px; }
+  .cta-h { font-size: 24px; }
+  .rm-form { grid-template-columns: 1fr; }
+  .rm-field.span-2 { grid-column: auto; }
+}
 
 .preview-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-faint); margin-bottom: 14px; }
 .preview-msg { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 13px 15px; margin-bottom: 10px; }
 .preview-msg .pl { font-size: 11px; font-weight: 600; color: var(--text-faint); margin-bottom: 4px; }
-.preview-msg .pt { font-size: 13.5px; color: var(--text); line-height: 1.5; }
+.preview-msg .pt { font-size: 13.5px; color: var(--text); line-height: 1.5; word-break: break-word; }
 .preview-action { background: var(--brand-light); border: 1px solid rgba(37,99,235,0.2); border-radius: var(--radius-sm); padding: 13px 15px; margin-bottom: 10px; }
 .preview-action .pl { font-size: 11px; font-weight: 600; color: rgba(37,99,235,0.6); margin-bottom: 4px; }
 .preview-action .pt { font-size: 14px; font-weight: 700; color: var(--brand); }
@@ -665,17 +703,18 @@ body {
 
 /* --------------------------- component --------------------------- */
 export function LandingPage() {
-  const [form, setForm] = useState<CtaFormState>({ fullName: "", email: "", website: "", goal: "" });
+  const [form, setForm] = useState<ContactFormState>({ name: "", email: "", subject: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const goalLabel = useMemo(
-    () => goalOptions.find((g) => g.value === form.goal)?.label ?? "Book Growth demo",
-    [form.goal],
-  );
+  const messagePreview = useMemo(() => {
+    const content = form.message.trim();
+    if (!content) return "Tell us what you need help with and we will respond by email.";
+    return content.length > 180 ? `${content.slice(0, 177)}...` : content;
+  }, [form.message]);
 
-  function set<K extends keyof CtaFormState>(k: K, v: CtaFormState[K]) {
+  function set<K extends keyof ContactFormState>(k: K, v: ContactFormState[K]) {
     setForm((c) => ({ ...c, [k]: v }));
     setError(null);
     setSuccess(null);
@@ -683,14 +722,21 @@ export function LandingPage() {
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!form.fullName.trim() || !form.email.trim() || !form.website.trim() || !form.goal)
-      return setError("Please complete all fields.");
-    if (!/^https?:\/\/.+/i.test(form.website.trim())) return setError("Website must start with http:// or https://");
+    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
+      return setError("Please fill in your name, email, and message.");
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      return setError("Please enter a valid email address.");
+    }
+    const subject = form.subject.trim() || "New contact request from SupportMate landing page";
+    const body = [`Name: ${form.name.trim()}`, `Email: ${form.email.trim()}`, "", form.message.trim()].join("\n");
+
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 700));
+    await new Promise((r) => setTimeout(r, 300));
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    setSuccess(`Thanks ${form.name.split(" ")[0] || "there"}. Your contact request is ready to send.`);
     setSubmitting(false);
-    setSuccess(`Thanks ${form.fullName.split(" ")[0] || "there"} — your demo request is confirmed!`);
-    setForm({ fullName: "", email: "", website: "", goal: "" });
+    setForm({ name: "", email: "", subject: "", message: "" });
   }
 
   return (
@@ -1075,9 +1121,9 @@ export function LandingPage() {
                   <p className="plan-sub">{p.subtitle}</p>
                   <ul className="plan-feats">
                     {p.features.map((f) => (
-                      <li key={f}>
-                        <Check size={15} className="ck" />
-                        {f}
+                      <li key={f.label} className={f.included ? "" : "unavailable"}>
+                        {f.included ? <Check size={15} className="ck" /> : <Minus size={15} className="ck" />}
+                        {f.label}
                       </li>
                     ))}
                   </ul>
@@ -1139,55 +1185,53 @@ export function LandingPage() {
           <div className="cta-wrap">
             <div className="cta-box">
               <div className="cta-left">
-                <h2 className="cta-h">See SupportMate with your own content</h2>
-                <p className="cta-sub">
-                  Share your website and goals, and we will map a setup plan for content ingestion, widget deployment,
-                  and analytics tracking.
-                </p>
+                <h2 className="cta-h">Contact us</h2>
+                <p className="cta-sub">Send us your questions and we will get back to you by email.</p>
                 <form className="rm-form" onSubmit={onSubmit}>
                   <div className="rm-field">
-                    <label>Full name</label>
+                    <label>Name</label>
                     <input
                       className="rm-input"
                       type="text"
-                      value={form.fullName}
-                      onChange={(e) => set("fullName", e.target.value)}
+                      value={form.name}
+                      onChange={(e) => set("name", e.target.value)}
                       placeholder="Alex Morgan"
+                      required
                     />
                   </div>
                   <div className="rm-field">
-                    <label>Work email</label>
+                    <label>Email</label>
                     <input
                       className="rm-input"
                       type="email"
                       value={form.email}
                       onChange={(e) => set("email", e.target.value)}
                       placeholder="alex@company.com"
+                      required
                     />
                   </div>
-                  <div className="rm-field">
-                    <label>Website</label>
+                  <div className="rm-field span-2">
+                    <label>Subject (optional)</label>
                     <input
                       className="rm-input"
-                      type="url"
-                      value={form.website}
-                      onChange={(e) => set("website", e.target.value)}
-                      placeholder="https://company.com"
+                      type="text"
+                      value={form.subject}
+                      onChange={(e) => set("subject", e.target.value)}
+                      placeholder="How can we help?"
                     />
                   </div>
-                  <div className="rm-field">
-                    <label>Main goal</label>
-                    <select className="rm-input" value={form.goal} onChange={(e) => set("goal", e.target.value)}>
-                      <option value="">Choose one option</option>
-                      {goalOptions.map((g) => (
-                        <option key={g.value} value={g.value}>
-                          {g.label}
-                        </option>
-                      ))}
-                    </select>
+                  <div className="rm-field span-2">
+                    <label>Message</label>
+                    <textarea
+                      className="rm-input rm-textarea"
+                      value={form.message}
+                      onChange={(e) => set("message", e.target.value)}
+                      placeholder="Write your message..."
+                      required
+                    />
                   </div>
                   <button type="submit" disabled={submitting} className="btn-submit">
-                    {submitting ? "Submitting..." : "Request walkthrough"}
+                    {submitting ? "Submitting..." : "Send message"}
                     <ChevronRight size={16} />
                   </button>
                 </form>
@@ -1201,22 +1245,18 @@ export function LandingPage() {
                 {success && <p className="msg-success">{success}</p>}
               </div>
               <div className="cta-right">
-                <p className="preview-label">Workspace preview</p>
+                <p className="preview-label">Contact preview</p>
                 <div className="preview-msg">
-                  <div className="pl">New visitor</div>
-                  <div className="pt">
-                    {form.website.trim()
-                      ? `How can ${form.website.trim()} upload support content and launch a widget?`
-                      : "How do we set up grounded support answers from our docs and web pages?"}
-                  </div>
+                  <div className="pl">Your message</div>
+                  <div className="pt">{messagePreview}</div>
                 </div>
                 <div className="preview-action">
-                  <div className="pl">Suggested next action</div>
-                  <div className="pt">{goalLabel}</div>
+                  <div className="pl">Reply destination</div>
+                  <div className="pt">{form.email.trim() || "your-email@example.com"}</div>
                 </div>
                 <div className="preview-trust">
                   <ShieldCheck size={15} color="var(--brand)" />
-                  Domain controls and grounded response workflows
+                  Messages are prepared for {CONTACT_EMAIL}
                 </div>
               </div>
             </div>
