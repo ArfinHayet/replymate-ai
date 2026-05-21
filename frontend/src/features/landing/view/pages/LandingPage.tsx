@@ -85,32 +85,30 @@ const faqs = [
 
 /* ─────────────────────────── styles ─────────────────────────── */
 const css = `
-@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
-
 /* ── reset & root ─────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
   /* Your exact brand tokens */
-  --brand:          #2563eb;
-  --brand-dark:     #1d4ed8;
-  --brand-light:    #dbeafe;
+  --brand:          var(--rm-trip-brand);
+  --brand-dark:     var(--rm-trip-brand-dark);
+  --brand-light:    var(--rm-trip-brand-light);
   --brand-glow:     rgba(37,99,235,0.22);
 
-  --teal:           #14b8a6;
-  --teal-light:     #ccfbf1;
+  --teal:           var(--rm-trip-accent);
+  --teal-light:     var(--rm-trip-accent-light);
 
-  --surface:        #f6f8fb;
-  --surface-card:   #ffffff;
-  --border:         rgba(0,0,0,0.08);
-  --border-strong:  rgba(0,0,0,0.13);
+  --surface:        var(--rm-trip-surface);
+  --surface-card:   var(--rm-trip-surface-card);
+  --border:         rgba(15,23,42,0.10);
+  --border-strong:  rgba(15,23,42,0.16);
 
-  --text:           #0f172a;
-  --text-muted:     #64748b;
+  --text:           var(--rm-trip-text);
+  --text-muted:     var(--rm-trip-text-muted);
   --text-faint:     #94a3b8;
 
-  --success:        #16a34a;
-  --error:          #dc2626;
+  --success:        var(--rm-trip-state-success);
+  --error:          var(--rm-trip-state-error);
 
   /* light hero palette */
   --hero-bg:        #f8fbff;
@@ -119,19 +117,19 @@ const css = `
   --hero-text:      #0f172a;
   --hero-muted:     #64748b;
 
-  --radius-sm:   8px;
-  --radius:      14px;
-  --radius-lg:   20px;
-  --radius-pill: 9999px;
+  --radius-sm:   var(--rm-trip-smooth);
+  --radius:      calc(var(--rm-trip-smooth) + 6px);
+  --radius-lg:   calc(var(--rm-trip-smooth) + 12px);
+  --radius-pill: var(--rm-trip-pill);
 
-  --shadow-xs:   0 1px 2px rgba(0,0,0,0.06);
-  --shadow-sm:   0 1px 3px rgba(0,0,0,0.07), 0 4px 12px rgba(0,0,0,0.05);
-  --shadow-md:   0 2px 8px rgba(0,0,0,0.08), 0 12px 32px rgba(0,0,0,0.07);
-  --shadow-lg:   0 4px 16px rgba(0,0,0,0.10), 0 24px 56px rgba(0,0,0,0.10);
-  --shadow-brand:0 4px 20px rgba(37,99,235,0.30), 0 1px 3px rgba(37,99,235,0.20);
+  --shadow-xs:   var(--rm-trip-card-shadow);
+  --shadow-sm:   var(--rm-trip-card-shadow);
+  --shadow-md:   var(--rm-trip-lift-shadow);
+  --shadow-lg:   var(--rm-trip-lift-shadow);
+  --shadow-brand:var(--rm-trip-glow-shadow);
 
-  --font-display: 'Bricolage Grotesque', sans-serif;
-  --font-body:    'Plus Jakarta Sans', sans-serif;
+  --font-display: var(--rm-trip-font-heading);
+  --font-body:    var(--rm-trip-font-body);
 }
 
 html { scroll-behavior: smooth; }
@@ -160,11 +158,10 @@ body {
 }
 .logo { display: flex; align-items: center; gap: 9px; text-decoration: none; flex-shrink: 0; }
 .logo-mark {
-  width: 34px; height: 34px; border-radius: 9px;
-  background: var(--brand); color: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-weight: 800; font-size: 16px;
-  box-shadow: var(--shadow-brand); letter-spacing: -0.5px;
+  width: 34px; height: 34px; border-radius: 10px;
+  display: block;
+  object-fit: contain;
+  box-shadow: var(--shadow-brand);
 }
 .logo-name { font-family: var(--font-display); font-size: 18px; font-weight: 700; color: var(--text); letter-spacing: -0.3px; }
 
@@ -704,7 +701,7 @@ export function LandingPage() {
       <header className="nav">
         <div className="nav-inner">
           <a href="#" className="logo" aria-label="SupportMate home">
-            <span className="logo-mark">S</span>
+            <img src="/favicon.svg" alt="SupportMate logo" className="logo-mark" />
             <span className="logo-name">SupportMate</span>
           </a>
           <nav className="nav-links">
@@ -1232,7 +1229,7 @@ export function LandingPage() {
         <div className="footer-inner">
           <div className="footer-brand">
             <div className="logo" style={{ pointerEvents: "none" }}>
-              <span className="logo-mark">S</span>
+              <img src="/favicon.svg" alt="SupportMate logo" className="logo-mark" />
               <span className="logo-name">SupportMate</span>
             </div>
             <p>AI chat support for modern teams.</p>
