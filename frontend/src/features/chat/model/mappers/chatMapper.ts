@@ -16,9 +16,9 @@ export function mapChatResponseToAssistantMessage(response: SendChatResponseDto)
   };
 }
 
-export function createChatErrorMessage(): ChatMessage {
+export function createChatErrorMessage(content = "Something went wrong. Please try again."): ChatMessage {
   return {
     role: "assistant",
-    content: "Something went wrong. Please try again.",
+    content,
   };
 }

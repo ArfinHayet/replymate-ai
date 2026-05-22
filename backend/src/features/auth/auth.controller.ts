@@ -16,17 +16,19 @@ import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { UsageService } from '../usage/usage.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly config: ConfigService,
+    private readonly usageService: UsageService,
   ) {}
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  getMe(@Req() req: Request) {
+  async getMe(@Req() req: Request) {
     const user = req.user as {
       id: string;
       email?: string;
@@ -34,12 +36,14 @@ export class AuthController {
       user_metadata?: { full_name?: string; name?: string; avatar_url?: string };
     };
     const meta = user.user_metadata ?? {};
+    const usage = await this.usageService.ensureCurrentUsage(user.id);
     return {
       id: user.id,
       email: user.email ?? '',
       displayName: meta.full_name ?? meta.name ?? (user.email ?? '').split('@')[0],
       avatarUrl: meta.avatar_url ?? null,
       joinedAt: user.created_at,
+      usage,
     };
   }
 
@@ -169,4 +173,3 @@ export class AuthController {
     return this.authService.refreshToken(body.refresh_token.trim());
   }
 }
-

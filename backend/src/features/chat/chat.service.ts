@@ -9,6 +9,7 @@ import { AiService } from '../../core/ai/ai.service';
 import { CacheService } from '../../core/cache/cache.service';
 import { CompanyService } from '../company/company.service';
 import { RetrievalService } from '../../core/retrieval/retrieval.service';
+import { MessageUsageSnapshot, UsageService } from '../usage/usage.service';
 
 /** Max stored messages loaded per session (10 full turns) */
 const MAX_HISTORY = 20;
@@ -53,6 +54,7 @@ export class ChatService implements OnModuleInit {
     private readonly cacheService: CacheService,
     private readonly companyService: CompanyService,
     private readonly retrievalService: RetrievalService,
+    private readonly usageService: UsageService,
   ) {}
 
   onModuleInit() {
@@ -247,7 +249,8 @@ export class ChatService implements OnModuleInit {
     message: string,
     sessionId: string,
     userId: string,
-  ): Promise<{ answer: string; cached: boolean }> {
+  ): Promise<{ answer: string; cached: boolean; usage: MessageUsageSnapshot }> {
+    const usage = await this.usageService.incrementOrThrow(userId);
     const [history, systemPrompt] = await Promise.all([
       this.loadHistory(sessionId, userId),
       this.buildSystemPrompt(userId),
@@ -263,7 +266,7 @@ export class ChatService implements OnModuleInit {
 
     if (isFollowUp && !retrievalIntent) {
       await this.saveTurn(sessionId, userId, message, CLARIFICATION_MESSAGE);
-      return { answer: CLARIFICATION_MESSAGE, cached: false };
+      return { answer: CLARIFICATION_MESSAGE, cached: false, usage };
     }
 
     // Use the same context-aware query for cache lookup, relevance preflight,
@@ -276,7 +279,7 @@ export class ChatService implements OnModuleInit {
     const cachedAnswer = await this.cacheService.findHit(queryVector, userId);
     if (cachedAnswer) {
       await this.saveTurn(sessionId, userId, message, cachedAnswer);
-      return { answer: cachedAnswer, cached: true };
+      return { answer: cachedAnswer, cached: true, usage };
     }
 
     const hasKnowledge =
@@ -285,7 +288,7 @@ export class ChatService implements OnModuleInit {
     if (!hasKnowledge) {
       this.logger.log('No relevant chunks in KB - returning fallback without calling LLM');
       await this.saveTurn(sessionId, userId, message, this.fallbackMessage);
-      return { answer: this.fallbackMessage, cached: false };
+      return { answer: this.fallbackMessage, cached: false, usage };
     }
 
     let answer: string;
@@ -312,7 +315,7 @@ export class ChatService implements OnModuleInit {
     }
     await Promise.all(tasks);
 
-    return { answer, cached: false };
+    return { answer, cached: false, usage };
   }
 
   private async loadHistory(

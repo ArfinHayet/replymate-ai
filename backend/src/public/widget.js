@@ -12,11 +12,16 @@
   var widgetKey = currentScript.getAttribute("data-key") || "";
   var apiBase = currentScript.getAttribute("data-api") || "";
   var botName = currentScript.getAttribute("data-name") || "AI Assistant";
-  var brandName = currentScript.getAttribute("data-brand") || botName;
+  var brandName = currentScript.getAttribute("data-brand") || "SupportMate Ai";
+  var brandUrl =
+    currentScript.getAttribute("data-brand-url") || "https://supportmateai.online";
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
   var isPageMode = displayMode === "page";
+  var supportMateIconUrl = "https://www.supportmate.online/favicon.svg";
+  var supportMateIconHtml =
+    '<img src="' + supportMateIconUrl + '" alt="" aria-hidden="true">';
 
   if (!widgetKey) {
     console.error("[comp-bot widget] Missing data-key attribute");
@@ -107,19 +112,21 @@
     "#toggle-btn{",
     "position:fixed;bottom:28px;right:28px;z-index:2147483647;",
     "width:62px;height:62px;border-radius:999px;",
-    "background:var(--rm-trip-brand);",
-    "border:1px solid rgba(37,99,235,.18);",
+    "background:transparent;",
+    "border:0;",
     "cursor:pointer;",
     "display:flex;align-items:center;justify-content:center;",
-    "box-shadow:0 16px 38px rgba(37,99,235,.28);",
+    "overflow:hidden;",
+    "box-shadow:0 18px 44px rgba(15,23,42,.24),0 8px 22px rgba(37,99,235,.26);",
     "transition:transform .28s ease,box-shadow .28s ease,background .28s ease,border-color .28s ease;",
     "}",
     "#toggle-btn:hover{",
     "transform:translateY(-3px) scale(1.04);",
-    "box-shadow:0 20px 48px rgba(37,99,235,.36);",
+    "box-shadow:0 24px 56px rgba(15,23,42,.28),0 12px 28px rgba(37,99,235,.34);",
     "}",
     "#toggle-btn svg{width:25px;height:25px;color:#ffffff;}",
-    "#toggle-btn.open{background:#ffffff;border-color:#dbeafe;}",
+    "#toggle-btn img{width:100%;height:100%;display:block;object-fit:cover;transform:scale(1.32);}",
+    "#toggle-btn.open{background:transparent;border-color:transparent;}",
     "#toggle-btn.open svg{color:var(--rm-trip-brand);}",
 
     "#chat-window{",
@@ -136,7 +143,8 @@
     "}",
     "#chat-window.hidden{opacity:0;pointer-events:none;transform:scale(.92) translateY(18px);}",
     ":host(.compbot-page-mode) #toggle-btn{display:none;}",
-    ":host(.compbot-page-mode) #chat-window{top:0;right:0;bottom:0;left:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform-origin:center;}",
+    ":host(.compbot-page-mode) #chat-window{top:0;right:auto;bottom:0;left:50%;width:60vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform:translateX(-50%);transform-origin:center;border-top:0;border-bottom:0;}",
+    ":host(.compbot-page-mode) #chat-window.hidden{transform:translateX(-50%) translateY(18px);}",
     ":host(.compbot-page-mode) #minimize-btn{display:none;}",
     ":host(.compbot-page-mode) #chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
     ":host(.compbot-page-mode) #input-row{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));}",
@@ -163,11 +171,13 @@
     "#header-inner{position:relative;z-index:1;display:flex;align-items:center;gap:12px;}",
     "#bot-avatar{",
     "width:44px;height:44px;border-radius:16px;flex-shrink:0;",
-    "background:var(--rm-trip-brand);",
+    "background:transparent;",
     "display:flex;align-items:center;justify-content:center;",
+    "overflow:hidden;",
     "box-shadow:0 10px 24px rgba(37,99,235,.22);",
     "}",
     "#bot-avatar svg{width:24px;height:24px;color:#ffffff;}",
+    "#bot-avatar img{width:100%;height:100%;display:block;object-fit:cover;transform:scale(1.32);}",
 
     "#header-text{flex:1;min-width:0;}",
     "#bot-name{",
@@ -356,12 +366,13 @@
     "color:#475569;background:#eff6ff;border-radius:0 10px 10px 0;",
     "}",
 
-    "@media(max-width:480px){",
+    "@media(max-width:768px){",
     "#toggle-btn{right:18px;bottom:18px;width:58px;height:58px;}",
-    "#chat-window{right:12px;bottom:86px;width:calc(100vw - 24px);max-width:none;height:min(72vh,620px);max-height:calc(100vh - 104px);border-radius:16px;transform-origin:bottom right;}",
-    "#chat-window.hidden{transform:scale(.95) translateY(14px);}",
+    "#toggle-btn.open{display:none;}",
+    "#chat-window{inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;border:none;transform-origin:center;}",
+    "#chat-window.hidden{transform:translateY(100%);}",
     ":host(.compbot-page-mode) #toggle-btn.open{display:none;}",
-    ":host(.compbot-page-mode) #chat-window{top:0;right:0;bottom:0;left:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform-origin:center;}",
+    ":host(.compbot-page-mode) #chat-window{inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;border:none;transform:none;transform-origin:center;}",
     ":host(.compbot-page-mode) #chat-window.hidden{transform:translateY(100%);}",
     "#chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
     "#messages{padding:14px 12px;}",
@@ -575,7 +586,7 @@
     var toggleBtn = document.createElement("button");
     toggleBtn.id = "toggle-btn";
     toggleBtn.setAttribute("aria-label", "Open chat");
-    toggleBtn.innerHTML = ICON_SPARKLE;
+    toggleBtn.innerHTML = supportMateIconHtml;
     shadow.appendChild(toggleBtn);
 
     // ─── Chat Window ───────────────────────────────────────────────────────────
@@ -594,7 +605,7 @@
 
     var avatar = document.createElement("div");
     avatar.id = "bot-avatar";
-    avatar.innerHTML = ICON_BOT;
+    avatar.innerHTML = supportMateIconHtml;
 
     var headerText = document.createElement("div");
     headerText.id = "header-text";
@@ -651,8 +662,13 @@
     // Footer
     var footer = document.createElement("div");
     footer.id = "chat-footer";
-    footer.innerHTML =
-      'Powered by <a href="https://supportmate.online" target="_blank" rel="noopener noreferrer">SupportMate</a>';
+    var footerLink = document.createElement("a");
+    footerLink.href = brandUrl;
+    footerLink.target = "_blank";
+    footerLink.rel = "noopener noreferrer";
+    footerLink.textContent = brandName;
+    footer.appendChild(document.createTextNode("Powered by "));
+    footer.appendChild(footerLink);
 
     chatWindow.appendChild(header);
     chatWindow.appendChild(messages);
@@ -749,7 +765,7 @@
 
       chatWindow.classList.add("hidden");
       toggleBtn.classList.remove("open");
-      toggleBtn.innerHTML = ICON_SPARKLE;
+      toggleBtn.innerHTML = supportMateIconHtml;
       toggleBtn.setAttribute("aria-label", "Open chat");
     }
 

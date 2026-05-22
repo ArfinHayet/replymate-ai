@@ -84,33 +84,30 @@ export class WidgetController {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>${escapeHtml(botName)}</title>
+    <title>${escapeHtml(botName)} | SupportMate Ai</title>
     <style>
       html,
       body {
         margin: 0;
+        width: 100%;
         min-height: 100%;
+        height: 100%;
         background: #f6f8fb;
         font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
-      }
-
-      .widget-preview-note {
-        margin: 0;
-        padding: 14px 16px;
-        font-size: 13px;
-        color: #64748b;
+        overflow: hidden;
       }
     </style>
   </head>
   <body>
-    <p class="widget-preview-note">Widget preview for ${escapeHtml(botName)}</p>
     <script
       src="${escapeHtml(apiBase)}/widget.js"
       data-key="${escapeHtml(key)}"
       data-api="${escapeHtml(apiBase)}"
       data-name="${escapeHtml(botName)}"
-      data-mode="bubble"
-      data-open="false">
+      data-brand="SupportMate Ai"
+      data-brand-url="https://supportmateai.online"
+      data-mode="page"
+      data-open="true">
     </script>
   </body>
 </html>`);

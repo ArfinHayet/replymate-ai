@@ -7,6 +7,7 @@ import { AiModule } from '../../core/ai/ai.module';
 import { CacheModule } from '../../core/cache/cache.module';
 import { CompanyModule } from '../company/company.module';
 import { RetrievalModule } from '../../core/retrieval/retrieval.module';
+import { UsageModule } from '../usage/usage.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { RetrievalModule } from '../../core/retrieval/retrieval.module';
     CacheModule,
     CompanyModule,
     RetrievalModule,
+    UsageModule,
   ],
   controllers: [ChatController],
   providers: [ChatService],

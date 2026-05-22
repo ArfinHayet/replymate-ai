@@ -5,6 +5,13 @@ import * as path from 'path';
 
 const FALLBACK_MESSAGE =
   "That's outside the scope of what I can help with here. I'm only able to answer questions based on the available knowledge base - feel free to ask me anything related to it!";
+const USAGE_SNAPSHOT = {
+  plan: { id: 1, name: 'free', monthlyLimit: 50 },
+  periodStart: '2026-05-01',
+  periodEnd: '2026-06-01',
+  usedMessages: 1,
+  remainingMessages: 49,
+};
 
 type MockChatRepo = {
   find: jest.Mock;
@@ -46,6 +53,9 @@ function createService() {
   const retrievalService = {
     hasRelevantKnowledge: jest.fn().mockResolvedValue(true),
   };
+  const usageService = {
+    incrementOrThrow: jest.fn().mockResolvedValue(USAGE_SNAPSHOT),
+  };
 
   const service = new ChatService(
     chatRepo as never,
@@ -54,6 +64,7 @@ function createService() {
     cacheService as never,
     companyService as never,
     retrievalService as never,
+    usageService as never,
   );
   service.onModuleInit();
 
@@ -64,6 +75,7 @@ function createService() {
     cacheService,
     companyService,
     retrievalService,
+    usageService,
   };
 }
 
@@ -83,7 +95,7 @@ describe('ChatService', () => {
 
     const result = await service.chat('their office location?', 'session-1', 'user-1');
 
-    expect(result).toEqual({ answer: 'Agent answer', cached: false });
+    expect(result).toEqual({ answer: 'Agent answer', cached: false, usage: USAGE_SNAPSHOT });
 
     const contextualQuery = aiService.embedText.mock.calls[0][0] as string;
     expect(contextualQuery).toContain('Flights Nepal');
@@ -179,6 +191,7 @@ describe('ChatService', () => {
     expect(result).toEqual({
       answer: 'Which company or organization do you mean?',
       cached: false,
+      usage: USAGE_SNAPSHOT,
     });
     expect(aiService.embedText).not.toHaveBeenCalled();
     expect(aiService.runAgenticLoop).not.toHaveBeenCalled();
@@ -198,6 +211,7 @@ describe('ChatService', () => {
     expect(result).toEqual({
       answer: 'Which company or organization do you mean?',
       cached: false,
+      usage: USAGE_SNAPSHOT,
     });
     expect(aiService.embedText).not.toHaveBeenCalled();
   });
@@ -217,6 +231,7 @@ describe('ChatService', () => {
     expect(result).toEqual({
       answer: 'Which company or organization do you mean?',
       cached: false,
+      usage: USAGE_SNAPSHOT,
     });
     expect(aiService.embedText).not.toHaveBeenCalled();
     expect(aiService.runAgenticLoop).not.toHaveBeenCalled();
@@ -268,8 +283,19 @@ describe('ChatService', () => {
 
     const result = await service.chat('what is unrelated?', 'session-1', 'user-1');
 
-    expect(result).toEqual({ answer: FALLBACK_MESSAGE, cached: false });
+    expect(result).toEqual({ answer: FALLBACK_MESSAGE, cached: false, usage: USAGE_SNAPSHOT });
     expect(cacheService.save).not.toHaveBeenCalled();
+  });
+
+  it('does not save or answer when the monthly message quota is exceeded', async () => {
+    const { service, chatRepo, usageService, aiService } = createService();
+    usageService.incrementOrThrow.mockRejectedValue(new Error('quota exceeded'));
+
+    await expect(service.chat('hello', 'session-1', 'user-1')).rejects.toThrow('quota exceeded');
+
+    expect(chatRepo.find).not.toHaveBeenCalled();
+    expect(chatRepo.save).not.toHaveBeenCalled();
+    expect(aiService.embedText).not.toHaveBeenCalled();
   });
 });
 

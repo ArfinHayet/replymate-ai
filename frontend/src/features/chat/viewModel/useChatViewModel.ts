@@ -7,6 +7,7 @@ import {
 import { createChatService } from "../model/services/createChatService";
 import type { ChatMessage } from "../model/entities/ChatMessage";
 import type { ChatViewModel } from "./ChatViewModel";
+import { AxiosError } from "axios";
 
 export function useChatViewModel(): ChatViewModel {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -43,9 +44,16 @@ export function useChatViewModel(): ChatViewModel {
 
     try {
       const response = await chatService.sendMessage(text, sessionId.current);
+      if (response.usage) {
+        window.dispatchEvent(new CustomEvent("supportmate-usage-updated", { detail: response.usage }));
+      }
       setMessages((prev) => [...prev, mapChatResponseToAssistantMessage(response)]);
-    } catch {
-      setMessages((prev) => [...prev, createChatErrorMessage()]);
+    } catch (error) {
+      const message =
+        error instanceof AxiosError
+          ? ((error.response?.data as { message?: string } | undefined)?.message ?? undefined)
+          : undefined;
+      setMessages((prev) => [...prev, createChatErrorMessage(message)]);
     } finally {
       setLoading(false);
     }

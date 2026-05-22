@@ -26,6 +26,9 @@ import { WebPageModule } from './features/web-page/web-page.module';
 import { WhatsappIntegration } from './features/whatsapp/whatsapp-integration.entity';
 import { WhatsappMessageEvent } from './features/whatsapp/whatsapp-message-event.entity';
 import { WhatsappModule } from './features/whatsapp/whatsapp.module';
+import { Plan } from './features/usage/plan.entity';
+import { AiMessageUsage } from './features/usage/ai-message-usage.entity';
+import { UsageModule } from './features/usage/usage.module';
 
 @Module({
   imports: [
@@ -40,7 +43,7 @@ import { WhatsappModule } from './features/whatsapp/whatsapp.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent],
+        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage],
         synchronize: true,
         logging: false,
         extra: {
@@ -61,6 +64,7 @@ import { WhatsappModule } from './features/whatsapp/whatsapp.module';
     ImageModule,
     WebPageModule,
     WhatsappModule,
+    UsageModule,
   ],
 })
 export class AppModule implements OnModuleInit {

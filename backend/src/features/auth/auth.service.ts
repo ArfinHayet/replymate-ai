@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
+import { UsageService } from '../usage/usage.service';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +14,10 @@ export class AuthService {
   private readonly supabaseAdmin: ReturnType<typeof createClient>;
   private readonly supabaseClient: ReturnType<typeof createClient>;
 
-  constructor(private readonly config: ConfigService) {
+  constructor(
+    private readonly config: ConfigService,
+    private readonly usageService: UsageService,
+  ) {
     const url = this.config.getOrThrow<string>('supabase.url');
     const anonKey = this.config.getOrThrow<string>('supabase.anonKey');
     const serviceRoleKey = this.config.getOrThrow<string>('supabase.serviceRoleKey');
@@ -49,6 +53,10 @@ export class AuthService {
     }
 
     this.logger.log(`User signed up: ${email}`);
+    if (data.user?.id) {
+      await this.usageService.ensureCurrentUsage(data.user.id);
+    }
+
     return {
       message:
         'Signup successful. Please check your email to verify your account.',
@@ -94,6 +102,8 @@ export class AuthService {
     }
 
     this.logger.log(`User logged in: ${email}`);
+    const usage = await this.usageService.ensureCurrentUsage(data.user.id);
+
     return {
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
@@ -101,6 +111,7 @@ export class AuthService {
         id: data.user.id,
         email: data.user.email,
       },
+      usage,
     };
   }
 
