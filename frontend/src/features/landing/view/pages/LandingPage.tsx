@@ -410,30 +410,39 @@ body {
 .section-sub { font-size: 16px; line-height: 1.68; color: var(--text-muted); font-weight: 300; max-width: 540px; margin-top: 12px; }
 
 /* -- SCREENSHOTS --------------------------------------------- */
-.screenshots-flow {
+.screenshots-shell {
   margin-top: 36px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 8px);
+  background:
+    radial-gradient(ellipse 65% 45% at 8% 4%, rgba(37,99,235,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 45% 45% at 95% 98%, rgba(20,184,166,0.06) 0%, transparent 60%),
+    #fff;
+}
+.screenshots-flow {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 20px;
 }
 .ss-row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 18px;
+  grid-template-columns: minmax(290px, 0.95fr) minmax(0, 1.25fr);
+  gap: 20px;
   align-items: stretch;
 }
 .ss-media {
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 14px;
+  border-radius: calc(var(--radius) + 4px);
+  padding: 12px;
   box-shadow: var(--shadow-sm);
   overflow: hidden;
-  transition: box-shadow 0.2s, transform 0.2s;
+  transition: box-shadow 0.22s, transform 0.22s;
 }
 .ss-media:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
 }
 .ss-media img {
   width: 100%;
@@ -442,48 +451,81 @@ body {
   display: block;
 }
 .ss-copy {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(145deg, #ffffff 0%, #f4f9ff 100%);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 24px 26px;
+  border-radius: calc(var(--radius) + 4px);
+  padding: 26px 28px;
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
+.ss-copy::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 86px;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand), #60a5fa);
+}
 .ss-step {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--brand);
-  background: var(--brand-light);
+  color: #1e40af;
+  background: #eaf2ff;
   border: 1px solid rgba(37,99,235,0.25);
   border-radius: var(--radius-pill);
-  padding: 4px 10px;
-  margin-bottom: 8px;
+  padding: 4px 6px 4px 4px;
+  margin-bottom: 10px;
 }
-.ss-copy h3 {
+.ss-step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  background: var(--brand);
+  color: #fff;
+}
+.ss-title {
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: clamp(22px, 2.3vw, 30px);
   font-weight: 700;
-  letter-spacing: -0.35px;
+  letter-spacing: -0.45px;
+  line-height: 1.15;
   margin-bottom: 8px;
   color: var(--text);
 }
-.ss-copy p {
+.ss-desc {
   font-size: 14px;
   line-height: 1.6;
   color: var(--text-muted);
 }
+.ss-note {
+  margin-top: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-faint);
+  font-weight: 600;
+}
 .ss-row.reverse .ss-copy { order: 1; }
 .ss-row.reverse .ss-media { order: 2; }
 @media (max-width: 900px) {
+  .screenshots-shell { padding: 12px; }
   .ss-row { grid-template-columns: 1fr; }
   .ss-row.reverse .ss-copy, .ss-row.reverse .ss-media { order: initial; }
   .ss-copy { padding: 20px; }
-  .ss-copy h3 { font-size: 21px; }
 }
 
 /* -- WORKFLOW ------------------------------------------------ */
@@ -961,37 +1003,60 @@ export function LandingPage() {
               Follow the same Z flow your team uses: upload trusted sources, monitor results in one dashboard, then
               refine workflows to improve every reply.
             </p>
-            <div className="screenshots-flow">
-              <article className="ss-row">
-                <div className="ss-copy">
-                  <span className="ss-step">Step 01</span>
-                  <h3>Upload your content</h3>
-                  <p>Add PDFs, markdown files, web pages, and images so answers stay grounded in your sources.</p>
-                </div>
-                <figure className="ss-media" style={{ margin: 0 }}>
-                  <img src="/landing/screenshot-inbox.png" alt="SupportMate shared inbox with AI replies" />
-                </figure>
-              </article>
-              <article className="ss-row reverse">
-                <div className="ss-copy">
-                  <span className="ss-step">Step 02</span>
-                  <h3>Track performance live</h3>
-                  <p>Use the dashboard to review sessions, content coverage, and where responses need improvement.</p>
-                </div>
-                <figure className="ss-media" style={{ margin: 0 }}>
-                  <img src="/landing/screenshot-analytics.png" alt="Analytics dashboard" />
-                </figure>
-              </article>
-              <article className="ss-row">
-                <div className="ss-copy">
-                  <span className="ss-step">Step 03</span>
-                  <h3>Automate your workflows</h3>
-                  <p>Route conversations and qualify leads with rules that turn insights into repeatable actions.</p>
-                </div>
-                <figure className="ss-media" style={{ margin: 0 }}>
-                  <img src="/landing/screenshot-builder.png" alt="Workflow builder" />
-                </figure>
-              </article>
+            <div className="screenshots-shell">
+              <div className="screenshots-flow">
+                <article className="ss-row">
+                  <div className="ss-copy">
+                    <span className="ss-step">
+                      <span className="ss-step-num">01</span>
+                      Setup
+                    </span>
+                    <h3 className="ss-title">Upload your content</h3>
+                    <p className="ss-desc">
+                      Add PDFs, markdown files, web pages, and images so every assistant response stays grounded in
+                      trusted material.
+                    </p>
+                    <p className="ss-note">Knowledge sources: PDFs, markdown, URLs, and images.</p>
+                  </div>
+                  <figure className="ss-media" style={{ margin: 0 }}>
+                    <img src="/landing/screenshot-inbox.png" alt="SupportMate shared inbox with AI replies" />
+                  </figure>
+                </article>
+                <article className="ss-row reverse">
+                  <div className="ss-copy">
+                    <span className="ss-step">
+                      <span className="ss-step-num">02</span>
+                      Insights
+                    </span>
+                    <h3 className="ss-title">Track performance live</h3>
+                    <p className="ss-desc">
+                      Monitor sessions, source coverage, and answer quality from one dashboard to quickly spot where
+                      support needs tuning.
+                    </p>
+                    <p className="ss-note">Real-time visibility for conversations, usage, and content gaps.</p>
+                  </div>
+                  <figure className="ss-media" style={{ margin: 0 }}>
+                    <img src="/landing/screenshot-analytics.png" alt="Analytics dashboard" />
+                  </figure>
+                </article>
+                <article className="ss-row">
+                  <div className="ss-copy">
+                    <span className="ss-step">
+                      <span className="ss-step-num">03</span>
+                      Automation
+                    </span>
+                    <h3 className="ss-title">Automate your workflows</h3>
+                    <p className="ss-desc">
+                      Route conversations, qualify leads, and standardize handoffs with repeatable rules based on what
+                      your team learns.
+                    </p>
+                    <p className="ss-note">Operational playbooks that scale across agents and channels.</p>
+                  </div>
+                  <figure className="ss-media" style={{ margin: 0 }}>
+                    <img src="/landing/screenshot-builder.png" alt="Workflow builder" />
+                  </figure>
+                </article>
+              </div>
             </div>
           </div>
         </section>
