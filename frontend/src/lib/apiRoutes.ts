@@ -31,6 +31,7 @@ export const apiRoutes = {
   },
   payments: {
     checkout: "/payments/checkout",
+    confirm: "/payments/confirm",
     config: "/payments/config",
   },
   upload: {

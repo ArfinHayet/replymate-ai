@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -8,6 +8,23 @@ import { apiRoutes } from "@/lib/apiRoutes";
 type CheckoutResponse = {
   url: string;
   testMode: boolean;
+};
+
+type MessageUsage = {
+  plan: {
+    id: number;
+    name: string;
+    monthlyLimit: number;
+  };
+  periodStart: string;
+  periodEnd: string;
+  usedMessages: number;
+  remainingMessages: number;
+};
+
+type ConfirmCheckoutResponse = {
+  confirmed: boolean;
+  usage: MessageUsage;
 };
 
 type PaymentConfig = {
@@ -20,7 +37,10 @@ export function UpgradePage() {
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<PaymentConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const checkoutSuccess = new URLSearchParams(window.location.search).get("checkout") === "success";
+  const [confirming, setConfirming] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
+  const checkoutSuccess = searchParams.get("checkout") === "success";
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +58,36 @@ export function UpgradePage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!checkoutSuccess || confirmed || confirming) return;
+
+    const confirmCheckout = async () => {
+      setConfirming(true);
+      setError(null);
+
+      try {
+        const response = await api.post<ConfirmCheckoutResponse>(apiRoutes.payments.confirm, {
+          checkout_id: searchParams.get("checkout_id"),
+          order_id: searchParams.get("order_id"),
+          customer_id: searchParams.get("customer_id"),
+          subscription_id: searchParams.get("subscription_id"),
+          product_id: searchParams.get("product_id"),
+          request_id: searchParams.get("request_id"),
+          signature: searchParams.get("signature"),
+        });
+
+        setConfirmed(response.data.confirmed);
+        window.dispatchEvent(new CustomEvent("supportmate-usage-updated", { detail: response.data.usage }));
+      } catch {
+        setError("Payment succeeded, but we could not confirm the plan update. Please contact support with your checkout ID.");
+      } finally {
+        setConfirming(false);
+      }
+    };
+
+    void confirmCheckout();
+  }, [checkoutSuccess, confirmed, confirming, searchParams]);
 
   const startCheckout = async () => {
     setLoading(true);
@@ -58,7 +108,11 @@ export function UpgradePage() {
       <PageContent>
         {checkoutSuccess && (
           <div className="rounded-rm-trip-smooth border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            Checkout completed. Your plan will update as soon as Creem sends the payment webhook.
+            {confirming
+              ? "Checkout completed. Confirming your Premium plan..."
+              : confirmed
+                ? "Checkout completed. Your Premium plan is active."
+                : "Checkout completed. Your plan will update as soon as Creem sends the payment webhook."}
           </div>
         )}
 
