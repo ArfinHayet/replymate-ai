@@ -410,15 +410,81 @@ body {
 .section-sub { font-size: 16px; line-height: 1.68; color: var(--text-muted); font-weight: 300; max-width: 540px; margin-top: 12px; }
 
 /* -- SCREENSHOTS --------------------------------------------- */
-.screenshots-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 36px; }
-@media (max-width: 768px) { .screenshots-grid { grid-template-columns: 1fr; } }
-.ss-card {
-  background: #fff; border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 14px; box-shadow: var(--shadow-sm); overflow: hidden; transition: box-shadow 0.2s;
+.screenshots-flow {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
 }
-.ss-card:hover { box-shadow: var(--shadow-md); }
-.ss-card.tall { grid-row: span 2; }
-.ss-card img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); display: block; }
+.ss-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: stretch;
+}
+.ss-media {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.ss-media:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+.ss-media img {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  display: block;
+}
+.ss-copy {
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 26px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.ss-step {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--brand);
+  background: var(--brand-light);
+  border: 1px solid rgba(37,99,235,0.25);
+  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  margin-bottom: 8px;
+}
+.ss-copy h3 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.35px;
+  margin-bottom: 8px;
+  color: var(--text);
+}
+.ss-copy p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+.ss-row.reverse .ss-copy { order: 1; }
+.ss-row.reverse .ss-media { order: 2; }
+@media (max-width: 900px) {
+  .ss-row { grid-template-columns: 1fr; }
+  .ss-row.reverse .ss-copy, .ss-row.reverse .ss-media { order: initial; }
+  .ss-copy { padding: 20px; }
+  .ss-copy h3 { font-size: 21px; }
+}
 
 /* -- WORKFLOW ------------------------------------------------ */
 .workflow-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 40px; }
@@ -891,16 +957,41 @@ export function LandingPage() {
           <div className="section">
             <p className="eyebrow">Screenshots</p>
             <h2 className="section-h2">A practical workspace for support operations</h2>
-            <div className="screenshots-grid">
-              <figure className="ss-card tall" style={{ margin: 0 }}>
-                <img src="/landing/img/screenshot-inbox.svg" alt="SupportMate shared inbox with AI replies" />
-              </figure>
-              <figure className="ss-card" style={{ margin: 0 }}>
-                <img src="/landing/img/screenshot-analytics.svg" alt="Analytics dashboard" />
-              </figure>
-              <figure className="ss-card" style={{ margin: 0 }}>
-                <img src="/landing/img/screenshot-builder.svg" alt="Workflow builder" />
-              </figure>
+            <p className="section-sub">
+              Follow the same Z flow your team uses: upload trusted sources, monitor results in one dashboard, then
+              refine workflows to improve every reply.
+            </p>
+            <div className="screenshots-flow">
+              <article className="ss-row">
+                <div className="ss-copy">
+                  <span className="ss-step">Step 01</span>
+                  <h3>Upload your content</h3>
+                  <p>Add PDFs, markdown files, web pages, and images so answers stay grounded in your sources.</p>
+                </div>
+                <figure className="ss-media" style={{ margin: 0 }}>
+                  <img src="/landing/screenshot-inbox.png" alt="SupportMate shared inbox with AI replies" />
+                </figure>
+              </article>
+              <article className="ss-row reverse">
+                <div className="ss-copy">
+                  <span className="ss-step">Step 02</span>
+                  <h3>Track performance live</h3>
+                  <p>Use the dashboard to review sessions, content coverage, and where responses need improvement.</p>
+                </div>
+                <figure className="ss-media" style={{ margin: 0 }}>
+                  <img src="/landing/screenshot-analytics.png" alt="Analytics dashboard" />
+                </figure>
+              </article>
+              <article className="ss-row">
+                <div className="ss-copy">
+                  <span className="ss-step">Step 03</span>
+                  <h3>Automate your workflows</h3>
+                  <p>Route conversations and qualify leads with rules that turn insights into repeatable actions.</p>
+                </div>
+                <figure className="ss-media" style={{ margin: 0 }}>
+                  <img src="/landing/screenshot-builder.png" alt="Workflow builder" />
+                </figure>
+              </article>
             </div>
           </div>
         </section>
