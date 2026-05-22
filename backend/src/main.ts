@@ -13,7 +13,7 @@ async function bootstrap() {
   app.use(express.json({
     limit: '10mb',
     verify: (req: RawBodyRequest, _res: unknown, buf: Buffer) => {
-      if (req.originalUrl?.startsWith('/whatsapp/webhook')) {
+      if (req.originalUrl?.startsWith('/whatsapp/webhook') || req.originalUrl?.startsWith('/payments/webhook')) {
         req.rawBody = Buffer.from(buf);
       }
     },

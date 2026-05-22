@@ -48,6 +48,12 @@ export default () => ({
   },
   appUrl: process.env.APP_URL ?? `http://localhost:${parseInt(process.env.PORT ?? '3000', 10) || 3000}`,
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  creem: {
+    apiKey: process.env.CREEM_API_KEY,
+    productId: process.env.CREEM_PRODUCT_ID,
+    webhookSecret: process.env.CREEM_WEBHOOK_SECRET,
+    testMode: process.env.CREEM_TEST_MODE !== 'false',
+  },
   whatsapp: {
     credentialEncryptionKey: process.env.WHATSAPP_CREDENTIAL_ENCRYPTION_KEY,
     graphVersion: process.env.WHATSAPP_GRAPH_VERSION ?? 'v24.0',

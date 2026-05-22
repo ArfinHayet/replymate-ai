@@ -29,6 +29,10 @@ export const apiRoutes = {
     list: "/pdfs",
     byId: (id: string) => `/pdfs/${id}`,
   },
+  payments: {
+    checkout: "/payments/checkout",
+    config: "/payments/config",
+  },
   upload: {
     pdf: "/admin/upload",
     urls: "/admin/ingest-urls",

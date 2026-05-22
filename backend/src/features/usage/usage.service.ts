@@ -106,6 +106,36 @@ export class UsageService implements OnModuleInit {
     });
   }
 
+  async setCurrentPlan(userId: string, planName: string): Promise<MessageUsageSnapshot> {
+    const plan = await this.planRepo.findOneBy({ name: planName });
+    if (!plan) {
+      throw new Error(`Plan ${planName} not found.`);
+    }
+
+    const period = this.currentPeriod();
+    let usage = await this.usageRepo.findOne({
+      where: { userId, periodStart: period.periodStart },
+      relations: { plan: true },
+    });
+
+    if (!usage) {
+      usage = this.usageRepo.create({
+        userId,
+        periodStart: period.periodStart,
+        periodEnd: period.periodEnd,
+        usedMessages: 0,
+        planId: plan.id,
+      });
+    } else {
+      usage.planId = plan.id;
+    }
+
+    usage = await this.usageRepo.save(usage);
+    usage.plan = plan;
+
+    return this.toSnapshot(usage);
+  }
+
   private currentPeriod(): { periodStart: string; periodEnd: string } {
     const now = new Date();
     const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));

@@ -11,6 +11,7 @@ import {
   Images,
   LogOut,
   MessageSquare,
+  Sparkles,
   UserRound,
   X
 } from 'lucide-react'
@@ -41,6 +42,7 @@ const navItems = [
   { to: '/analytics', icon: ChartColumn, label: 'Analytics' },
   { to: '/chat-history', icon: History, label: 'Chat History' },
   { to: '/embed', icon: Code2, label: 'Website Widget' },
+  { to: '/upgrade', icon: Sparkles, label: 'Upgrade' },
   { to: '/profile', icon: UserRound, label: 'Profile' }
 ]
 

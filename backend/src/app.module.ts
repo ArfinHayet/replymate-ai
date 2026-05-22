@@ -29,6 +29,7 @@ import { WhatsappModule } from './features/whatsapp/whatsapp.module';
 import { Plan } from './features/usage/plan.entity';
 import { AiMessageUsage } from './features/usage/ai-message-usage.entity';
 import { UsageModule } from './features/usage/usage.module';
+import { PaymentsModule } from './features/payments/payments.module';
 
 @Module({
   imports: [
@@ -65,6 +66,7 @@ import { UsageModule } from './features/usage/usage.module';
     WebPageModule,
     WhatsappModule,
     UsageModule,
+    PaymentsModule,
   ],
 })
 export class AppModule implements OnModuleInit {
