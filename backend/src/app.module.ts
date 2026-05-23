@@ -36,7 +36,7 @@ import { PaymentsModule } from './features/payments/payments.module';
     ConfigModule.forRoot({
       isGlobal: true,
       load: [configuration],
-      envFilePath: '.env',
+      envFilePath: ['.env', 'backend/.env'],
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

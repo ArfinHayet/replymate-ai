@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Loader2, Sparkles } from "lucide-react";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -34,13 +34,14 @@ type PaymentConfig = {
 };
 
 export function UpgradePage() {
+  const attemptedConfirmationRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<PaymentConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
-  const checkoutSuccess = searchParams.get("checkout") === "success";
+  const checkoutSuccess = searchParams.has("checkout_id") && searchParams.has("signature");
 
   useEffect(() => {
     let cancelled = false;
@@ -62,12 +63,20 @@ export function UpgradePage() {
   useEffect(() => {
     if (!checkoutSuccess || confirmed || confirming) return;
 
+    const confirmationKey = `${searchParams.get("checkout_id") ?? ""}:${searchParams.get("signature") ?? ""}`;
+    if (attemptedConfirmationRef.current === confirmationKey) return;
+    attemptedConfirmationRef.current = confirmationKey;
+
     const confirmCheckout = async () => {
       setConfirming(true);
       setError(null);
 
       try {
+        const redirectParams = Object.fromEntries(searchParams.entries());
         const response = await api.post<ConfirmCheckoutResponse>(apiRoutes.payments.confirm, {
+          raw_query: window.location.search,
+          redirect_params: redirectParams,
+          checkout: searchParams.get("checkout"),
           checkout_id: searchParams.get("checkout_id"),
           order_id: searchParams.get("order_id"),
           customer_id: searchParams.get("customer_id"),

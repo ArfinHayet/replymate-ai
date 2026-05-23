@@ -11,7 +11,9 @@ type CreateCheckoutInput = {
 type CreemCheckoutResponse = {
   id?: string;
   checkout_url?: string;
+  product?: string | { id?: string };
   product_id?: string;
+  request_id?: string;
   status?: string;
 };
 
@@ -20,8 +22,8 @@ export class CreemClient {
   constructor(private readonly config: ConfigService) {}
 
   async createPremiumCheckout(input: CreateCheckoutInput) {
-    const apiKey = this.config.get<string>('creem.apiKey');
-    const productId = this.config.get<string>('creem.productId');
+    const apiKey = this.config.get<string>('creem.apiKey')?.trim();
+    const productId = this.config.get<string>('creem.productId')?.trim();
 
     if (!apiKey || !productId) {
       throw new InternalServerErrorException('Creem checkout is not configured.');
@@ -63,6 +65,46 @@ export class CreemClient {
       status: checkout.status ?? 'pending',
       testMode: this.config.get<boolean>('creem.testMode') ?? true,
     };
+  }
+
+  async retrieveCheckout(checkoutId: string): Promise<{
+    id: string | null;
+    productId: string | null;
+    requestId: string | null;
+    status: string | null;
+  }> {
+    const apiKey = this.config.get<string>('creem.apiKey')?.trim();
+
+    if (!apiKey) {
+      throw new InternalServerErrorException('Creem checkout is not configured.');
+    }
+
+    const params = new URLSearchParams({ checkout_id: checkoutId });
+    const response = await fetch(`${this.baseUrl}/v1/checkouts?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'x-api-key': apiKey,
+      },
+    });
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new BadGatewayException(`Creem checkout lookup failed: ${message}`);
+    }
+
+    const checkout = (await response.json()) as CreemCheckoutResponse;
+
+    return {
+      id: checkout.id ?? checkoutId,
+      productId: this.extractProductId(checkout),
+      requestId: checkout.request_id ?? null,
+      status: checkout.status ?? null,
+    };
+  }
+
+  private extractProductId(checkout: CreemCheckoutResponse): string | null {
+    if (typeof checkout.product === 'string') return checkout.product;
+    return checkout.product?.id ?? checkout.product_id ?? null;
   }
 
   private get baseUrl() {
