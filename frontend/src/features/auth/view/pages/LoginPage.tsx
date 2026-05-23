@@ -1,16 +1,23 @@
 import { type FormEvent } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { isLoggedIn } from "@/lib/auth";
 import { useLoginViewModel } from "../../viewModel/useLoginViewModel";
 import { AuthBrandHeader } from "../components/AuthBrandHeader";
 import { AuthDivider } from "../components/AuthDivider";
 import { AuthSurface } from "../components/AuthSurface";
 import { GoogleSignInButton } from "../components/GoogleSignInButton";
 
+const DASHBOARD_PATH = "/chat";
+
 export function LoginPage() {
   const navigate = useNavigate();
   const viewModel = useLoginViewModel();
+
+  if (isLoggedIn()) {
+    return <Navigate to={DASHBOARD_PATH} replace />;
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -18,7 +25,7 @@ export function LoginPage() {
 
     if (result.success) {
       setTimeout(() => {
-        navigate("/chat", { replace: true });
+        navigate(DASHBOARD_PATH, { replace: true });
       }, 500);
       return;
     }

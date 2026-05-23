@@ -1,10 +1,15 @@
-import { BadGatewayException, Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  BadGatewayException,
+  Injectable,
+  InternalServerErrorException
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 type CreateCheckoutInput = {
   userId: string;
   email?: string;
   plan: string;
+  productId: string;
   successUrl: string;
 };
 
@@ -22,29 +27,30 @@ export class CreemClient {
   constructor(private readonly config: ConfigService) {}
 
   async createPremiumCheckout(input: CreateCheckoutInput) {
-    const apiKey = this.config.get<string>('creem.apiKey')?.trim();
-    const productId = this.config.get<string>('creem.productId')?.trim();
+    const apiKey = this.config.get<string>("creem.apiKey")?.trim();
 
-    if (!apiKey || !productId) {
-      throw new InternalServerErrorException('Creem checkout is not configured.');
+    if (!apiKey || !input.productId) {
+      throw new InternalServerErrorException(
+        "Creem checkout is not configured."
+      );
     }
 
     const response = await fetch(`${this.baseUrl}/v1/checkouts`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
+        "Content-Type": "application/json",
+        "x-api-key": apiKey
       },
       body: JSON.stringify({
-        product_id: productId,
+        product_id: input.productId,
         request_id: `user:${input.userId}:${Date.now()}`,
         success_url: input.successUrl,
         customer: input.email ? { email: input.email } : undefined,
         metadata: {
           userId: input.userId,
-          planType: input.plan,
-        },
-      }),
+          planType: input.plan
+        }
+      })
     });
 
     if (!response.ok) {
@@ -55,15 +61,15 @@ export class CreemClient {
     const checkout = (await response.json()) as CreemCheckoutResponse;
 
     if (!checkout.checkout_url) {
-      throw new BadGatewayException('Creem did not return a checkout URL.');
+      throw new BadGatewayException("Creem did not return a checkout URL.");
     }
 
     return {
       id: checkout.id ?? null,
       url: checkout.checkout_url,
-      productId: checkout.product_id ?? productId,
-      status: checkout.status ?? 'pending',
-      testMode: this.config.get<boolean>('creem.testMode') ?? true,
+      productId: checkout.product_id ?? input.productId,
+      status: checkout.status ?? "pending",
+      testMode: this.config.get<boolean>("creem.testMode") ?? true
     };
   }
 
@@ -73,19 +79,24 @@ export class CreemClient {
     requestId: string | null;
     status: string | null;
   }> {
-    const apiKey = this.config.get<string>('creem.apiKey')?.trim();
+    const apiKey = this.config.get<string>("creem.apiKey")?.trim();
 
     if (!apiKey) {
-      throw new InternalServerErrorException('Creem checkout is not configured.');
+      throw new InternalServerErrorException(
+        "Creem checkout is not configured."
+      );
     }
 
     const params = new URLSearchParams({ checkout_id: checkoutId });
-    const response = await fetch(`${this.baseUrl}/v1/checkouts?${params.toString()}`, {
-      method: 'GET',
-      headers: {
-        'x-api-key': apiKey,
-      },
-    });
+    const response = await fetch(
+      `${this.baseUrl}/v1/checkouts?${params.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          "x-api-key": apiKey
+        }
+      }
+    );
 
     if (!response.ok) {
       const message = await response.text();
@@ -98,18 +109,18 @@ export class CreemClient {
       id: checkout.id ?? checkoutId,
       productId: this.extractProductId(checkout),
       requestId: checkout.request_id ?? null,
-      status: checkout.status ?? null,
+      status: checkout.status ?? null
     };
   }
 
   private extractProductId(checkout: CreemCheckoutResponse): string | null {
-    if (typeof checkout.product === 'string') return checkout.product;
+    if (typeof checkout.product === "string") return checkout.product;
     return checkout.product?.id ?? checkout.product_id ?? null;
   }
 
   private get baseUrl() {
-    return this.config.get<boolean>('creem.testMode') === false
-      ? 'https://api.creem.io'
-      : 'https://test-api.creem.io';
+    return this.config.get<boolean>("creem.testMode") === false
+      ? "https://api.creem.io"
+      : "https://test-api.creem.io";
   }
 }

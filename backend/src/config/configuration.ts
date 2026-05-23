@@ -50,7 +50,6 @@ export default () => ({
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
   creem: {
     apiKey: process.env.CREEM_API_KEY,
-    productId: process.env.CREEM_PRODUCT_ID,
     webhookSecret: process.env.CREEM_WEBHOOK_SECRET,
     testMode: process.env.CREEM_TEST_MODE !== 'false',
   },

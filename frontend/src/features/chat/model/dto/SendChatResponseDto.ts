@@ -5,7 +5,7 @@ export interface SendChatResponseDto {
     plan: {
       id: number;
       name: string;
-      monthlyLimit: number;
+      monthlyMessageLimit: number;
     };
     periodStart: string;
     periodEnd: string;

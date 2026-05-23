@@ -14,7 +14,7 @@ type MessageUsage = {
   plan: {
     id: number;
     name: string;
-    monthlyLimit: number;
+    monthlyMessageLimit: number;
   };
   periodStart: string;
   periodEnd: string;
@@ -40,8 +40,12 @@ export function UpgradePage() {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const searchParams = useMemo(() => new URLSearchParams(window.location.search), []);
-  const checkoutSuccess = searchParams.has("checkout_id") && searchParams.has("signature");
+  const searchParams = useMemo(
+    () => new URLSearchParams(window.location.search),
+    [],
+  );
+  const checkoutSuccess =
+    searchParams.has("checkout_id") && searchParams.has("signature");
 
   useEffect(() => {
     let cancelled = false;
@@ -73,23 +77,32 @@ export function UpgradePage() {
 
       try {
         const redirectParams = Object.fromEntries(searchParams.entries());
-        const response = await api.post<ConfirmCheckoutResponse>(apiRoutes.payments.confirm, {
-          raw_query: window.location.search,
-          redirect_params: redirectParams,
-          checkout: searchParams.get("checkout"),
-          checkout_id: searchParams.get("checkout_id"),
-          order_id: searchParams.get("order_id"),
-          customer_id: searchParams.get("customer_id"),
-          subscription_id: searchParams.get("subscription_id"),
-          product_id: searchParams.get("product_id"),
-          request_id: searchParams.get("request_id"),
-          signature: searchParams.get("signature"),
-        });
+        const response = await api.post<ConfirmCheckoutResponse>(
+          apiRoutes.payments.confirm,
+          {
+            raw_query: window.location.search,
+            redirect_params: redirectParams,
+            checkout: searchParams.get("checkout"),
+            checkout_id: searchParams.get("checkout_id"),
+            order_id: searchParams.get("order_id"),
+            customer_id: searchParams.get("customer_id"),
+            subscription_id: searchParams.get("subscription_id"),
+            product_id: searchParams.get("product_id"),
+            request_id: searchParams.get("request_id"),
+            signature: searchParams.get("signature"),
+          },
+        );
 
         setConfirmed(response.data.confirmed);
-        window.dispatchEvent(new CustomEvent("supportmate-usage-updated", { detail: response.data.usage }));
+        window.dispatchEvent(
+          new CustomEvent("supportmate-usage-updated", {
+            detail: response.data.usage,
+          }),
+        );
       } catch {
-        setError("Payment succeeded, but we could not confirm the plan update. Please contact support with your checkout ID.");
+        setError(
+          "Payment succeeded, but we could not confirm the plan update. Please contact support with your checkout ID.",
+        );
       } finally {
         setConfirming(false);
       }
@@ -103,17 +116,24 @@ export function UpgradePage() {
     setError(null);
 
     try {
-      const response = await api.post<CheckoutResponse>(apiRoutes.payments.checkout);
+      const response = await api.post<CheckoutResponse>(
+        apiRoutes.payments.checkout,
+      );
       window.location.href = response.data.url;
     } catch {
-      setError("Could not start checkout. Please check your payment configuration and try again.");
+      setError(
+        "Could not start checkout. Please check your payment configuration and try again.",
+      );
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-rm-trip-surface">
-      <PageHeader title="Upgrade" subtitle="Move to Premium for a larger monthly AI message allowance." />
+      <PageHeader
+        title="Upgrade"
+        subtitle="Move to Premium for a larger monthly AI message allowance."
+      />
       <PageContent>
         {checkoutSuccess && (
           <div className="rounded-rm-trip-smooth border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
@@ -131,14 +151,25 @@ export function UpgradePage() {
               <Sparkles className="h-3.5 w-3.5" />
               Premium
             </div>
-            <h2 className="mt-4 font-rm-trip-heading text-2xl font-bold text-rm-trip-text">2,000 AI messages per month</h2>
+            <h2 className="mt-4 font-rm-trip-heading text-2xl font-bold text-rm-trip-text">
+              2,000 AI messages per month
+            </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-rm-trip-text-muted">
-              Upgrade your workspace when the free plan starts feeling tight. Checkout is handled securely by Creem.
+              Upgrade your workspace when the free plan starts feeling tight.
+              Checkout is handled securely by Creem.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {["Higher monthly message limit", "Hosted secure checkout", "Test-mode friendly integration", "Webhook-based plan activation"].map((item) => (
-                <div key={item} className="flex min-w-0 items-center gap-3 rounded-rm-trip-smooth bg-gray-50 px-4 py-3 text-sm font-semibold text-rm-trip-text">
+              {[
+                "Higher monthly message limit",
+                "Hosted secure checkout",
+                "Test-mode friendly integration",
+                "Webhook-based plan activation",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex min-w-0 items-center gap-3 rounded-rm-trip-smooth bg-gray-50 px-4 py-3 text-sm font-semibold text-rm-trip-text"
+                >
                   <Check className="h-4 w-4 shrink-0 text-rm-trip-brand" />
                   <span>{item}</span>
                 </div>
@@ -147,12 +178,17 @@ export function UpgradePage() {
           </div>
 
           <aside className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
-            <p className="text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">Premium Plan</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
+              Premium Plan
+            </p>
             <div className="mt-3 flex items-end gap-1">
-              <span className="font-rm-trip-heading text-4xl font-bold text-rm-trip-text">Upgrade</span>
+              <span className="font-rm-trip-heading text-4xl font-bold text-rm-trip-text">
+                Upgrade
+              </span>
             </div>
             <p className="mt-3 text-sm leading-6 text-rm-trip-text-muted">
-              Configure your Creem API key and premium product ID in the backend environment to enable checkout.
+              Configure your Creem API key and premium product ID in the backend
+              environment to enable checkout.
             </p>
 
             {config?.testMode && (
@@ -161,7 +197,11 @@ export function UpgradePage() {
               </div>
             )}
 
-            {error && <p className="mt-4 text-sm font-semibold text-rm-trip-state-error">{error}</p>}
+            {error && (
+              <p className="mt-4 text-sm font-semibold text-rm-trip-state-error">
+                {error}
+              </p>
+            )}
 
             <button
               type="button"
