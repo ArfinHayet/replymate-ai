@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Loader2, Sparkles } from "lucide-react";
+import { CalendarDays, Check, Loader2, Sparkles } from "lucide-react";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { api } from "@/lib/api";
@@ -15,6 +15,9 @@ type MessageUsage = {
     id: number;
     name: string;
     monthlyMessageLimit: number;
+    webCrawlLimit?: number;
+    pdfUploadLimit?: number;
+    imageUploadLimit?: number;
   };
   periodStart: string;
   periodEnd: string;
@@ -33,10 +36,38 @@ type PaymentConfig = {
   testMode: boolean;
 };
 
+type Plan = {
+  id: number;
+  name: string;
+  monthlyMessageLimit: number;
+  webCrawlLimit: number;
+  pdfUploadLimit: number;
+  imageUploadLimit: number;
+};
+
+type ProfileResponse = {
+  usage: MessageUsage;
+};
+
+function formatPlanName(name: string) {
+  return name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+function formatDate(dateString: string) {
+  return new Intl.DateTimeFormat(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${dateString}T00:00:00`));
+}
+
 export function UpgradePage() {
   const attemptedConfirmationRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [config, setConfig] = useState<PaymentConfig | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [usage, setUsage] = useState<MessageUsage | null>(null);
+  const [pageLoading, setPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -50,14 +81,32 @@ export function UpgradePage() {
   useEffect(() => {
     let cancelled = false;
 
-    api
-      .get<PaymentConfig>(apiRoutes.payments.config)
-      .then((response) => {
-        if (!cancelled) setConfig(response.data);
-      })
-      .catch(() => {
-        if (!cancelled) setConfig(null);
-      });
+    const loadUpgradeData = async () => {
+      setPageLoading(true);
+
+      try {
+        const [configResponse, plansResponse, profileResponse] =
+          await Promise.all([
+            api.get<PaymentConfig>(apiRoutes.payments.config),
+            api.get<Plan[]>(apiRoutes.plans.list),
+            api.get<ProfileResponse>(apiRoutes.auth.me),
+          ]);
+
+        if (cancelled) return;
+        setConfig(configResponse.data);
+        setPlans(plansResponse.data);
+        setUsage(profileResponse.data.usage);
+      } catch {
+        if (!cancelled) {
+          setConfig(null);
+          setError("Could not load your plan details. Please refresh and try again.");
+        }
+      } finally {
+        if (!cancelled) setPageLoading(false);
+      }
+    };
+
+    void loadUpgradeData();
 
     return () => {
       cancelled = true;
@@ -94,6 +143,7 @@ export function UpgradePage() {
         );
 
         setConfirmed(response.data.confirmed);
+        setUsage(response.data.usage);
         window.dispatchEvent(
           new CustomEvent("supportmate-usage-updated", {
             detail: response.data.usage,
@@ -128,11 +178,26 @@ export function UpgradePage() {
     }
   };
 
+  const premiumPlan = useMemo(
+    () => plans.find((plan) => plan.name.toLowerCase() === "premium"),
+    [plans],
+  );
+  const currentPlanName = usage ? formatPlanName(usage.plan.name) : "Loading";
+  const isPremium = usage?.plan.name.toLowerCase() === "premium";
+  const planHighlights = premiumPlan
+    ? [
+        `${premiumPlan.monthlyMessageLimit.toLocaleString()} AI messages every 30 days`,
+        `${premiumPlan.webCrawlLimit.toLocaleString()} web crawls`,
+        `${premiumPlan.pdfUploadLimit.toLocaleString()} PDF uploads`,
+        `${premiumPlan.imageUploadLimit.toLocaleString()} image uploads`,
+      ]
+    : ["AI messages", "Web crawls", "PDF uploads", "Image uploads"];
+
   return (
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader
         title="Upgrade"
-        subtitle="Move to Premium for a larger monthly AI message allowance."
+        subtitle="Review your active plan and manage your Premium subscription."
       />
       <PageContent>
         {checkoutSuccess && (
@@ -149,23 +214,22 @@ export function UpgradePage() {
           <div className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
             <div className="inline-flex items-center gap-2 rounded-rm-trip-smooth bg-blue-50 px-3 py-1 text-xs font-semibold text-rm-trip-brand">
               <Sparkles className="h-3.5 w-3.5" />
-              Premium
+              {premiumPlan ? formatPlanName(premiumPlan.name) : "Premium"}
             </div>
             <h2 className="mt-4 font-rm-trip-heading text-2xl font-bold text-rm-trip-text">
-              2,000 AI messages per month
+              {premiumPlan
+                ? `${premiumPlan.monthlyMessageLimit.toLocaleString()} AI messages every 30 days`
+                : pageLoading
+                  ? "Loading plan details..."
+                  : "Premium plan unavailable"}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-rm-trip-text-muted">
-              Upgrade your workspace when the free plan starts feeling tight.
-              Checkout is handled securely by Creem.
+              Upgrade your workspace when the free plan starts feeling tight. Your
+              billing period starts on the day you pay and renews after 30 days.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {[
-                "Higher monthly message limit",
-                "Hosted secure checkout",
-                "Test-mode friendly integration",
-                "Webhook-based plan activation",
-              ].map((item) => (
+              {planHighlights.map((item) => (
                 <div
                   key={item}
                   className="flex min-w-0 items-center gap-3 rounded-rm-trip-smooth bg-gray-50 px-4 py-3 text-sm font-semibold text-rm-trip-text"
@@ -179,17 +243,48 @@ export function UpgradePage() {
 
           <aside className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
             <p className="text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
-              Premium Plan
+              Current Plan
             </p>
             <div className="mt-3 flex items-end gap-1">
               <span className="font-rm-trip-heading text-4xl font-bold text-rm-trip-text">
-                Upgrade
+                {currentPlanName}
               </span>
             </div>
-            <p className="mt-3 text-sm leading-6 text-rm-trip-text-muted">
-              Configure your Creem API key and premium product ID in the backend
-              environment to enable checkout.
-            </p>
+            {usage && (
+              <p className="mt-3 text-sm leading-6 text-rm-trip-text-muted">
+                {usage.usedMessages.toLocaleString()} of{" "}
+                {usage.plan.monthlyMessageLimit.toLocaleString()} messages used.
+              </p>
+            )}
+
+            {isPremium && usage && (
+              <div className="mt-5 grid gap-3">
+                <div className="rounded-rm-trip-smooth bg-gray-50 px-4 py-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Started
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-rm-trip-text">
+                    {formatDate(usage.periodStart)}
+                  </p>
+                </div>
+                <div className="rounded-rm-trip-smooth bg-gray-50 px-4 py-3">
+                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    Renews
+                  </div>
+                  <p className="mt-1 text-sm font-semibold text-rm-trip-text">
+                    {formatDate(usage.periodEnd)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="inline-flex w-full items-center justify-center rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-rm-trip-text transition-all hover:bg-gray-50"
+                >
+                  Cancel subscription
+                </button>
+              </div>
+            )}
 
             {config?.testMode && (
               <div className="mt-4 rounded-rm-trip-smooth border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
@@ -206,11 +301,17 @@ export function UpgradePage() {
             <button
               type="button"
               onClick={() => void startCheckout()}
-              disabled={loading || config?.configured === false}
+              disabled={
+                loading ||
+                pageLoading ||
+                isPremium ||
+                !premiumPlan ||
+                config?.configured === false
+              }
               className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-semibold text-white shadow-rm-trip-card transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              Start checkout
+              {isPremium ? "Premium active" : "Start checkout"}
             </button>
 
             {config?.configured === false && (

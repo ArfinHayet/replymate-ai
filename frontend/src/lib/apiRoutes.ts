@@ -34,6 +34,9 @@ export const apiRoutes = {
     confirm: "/payments/confirm",
     config: "/payments/config",
   },
+  plans: {
+    list: "/plans",
+  },
   upload: {
     pdf: "/admin/upload",
     urls: "/admin/ingest-urls",

@@ -8,7 +8,7 @@ import {
 } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { randomUUID } from "crypto";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, LessThanOrEqual, MoreThan, Repository } from "typeorm";
 import { AiMessageUsage } from "./ai-message-usage.entity";
 import { CreatePlanDto, UpdatePlanDto } from "./dto/plan.dto";
 import { Plan } from "./plan.entity";
@@ -65,13 +65,11 @@ export class UsageService implements OnModuleInit {
   }
 
   async ensureCurrentUsage(userId: string): Promise<MessageUsageSnapshot> {
-    const period = this.currentPeriod();
-    let usage = await this.usageRepo.findOne({
-      where: { userId, periodStart: period.periodStart },
-      relations: { plan: true }
-    });
+    const today = this.today();
+    let usage = await this.findActiveUsage(userId, today);
 
     if (!usage) {
+      const period = this.periodFrom(today);
       usage = this.usageRepo.create({
         userId,
         periodStart: period.periodStart,
@@ -87,28 +85,41 @@ export class UsageService implements OnModuleInit {
   }
 
   async incrementOrThrow(userId: string): Promise<MessageUsageSnapshot> {
-    const period = this.currentPeriod();
+    const today = this.today();
+    const period = this.periodFrom(today);
 
     return this.dataSource.transaction(async (manager) => {
-      await manager
-        .createQueryBuilder()
-        .insert()
-        .into(AiMessageUsage)
-        .values({
-          id: randomUUID(),
+      let usage = await manager.findOne(AiMessageUsage, {
+        where: {
           userId,
-          periodStart: period.periodStart,
-          periodEnd: period.periodEnd,
-          usedMessages: 0,
-          planId: 1
-        })
-        .orIgnore()
-        .execute();
-
-      const usage = await manager.findOne(AiMessageUsage, {
-        where: { userId, periodStart: period.periodStart },
+          periodStart: LessThanOrEqual(today),
+          periodEnd: MoreThan(today)
+        },
+        order: { periodStart: "DESC" },
         lock: { mode: "pessimistic_write" }
       });
+
+      if (!usage) {
+        await manager
+          .createQueryBuilder()
+          .insert()
+          .into(AiMessageUsage)
+          .values({
+            id: randomUUID(),
+            userId,
+            periodStart: period.periodStart,
+            periodEnd: period.periodEnd,
+            usedMessages: 0,
+            planId: 1
+          })
+          .orIgnore()
+          .execute();
+
+        usage = await manager.findOne(AiMessageUsage, {
+          where: { userId, periodStart: period.periodStart },
+          lock: { mode: "pessimistic_write" }
+        });
+      }
 
       if (!usage) {
         throw new Error("Unable to load message usage for this user.");
@@ -139,11 +150,16 @@ export class UsageService implements OnModuleInit {
     planName: string
   ): Promise<MessageUsageSnapshot> {
     const plan = await this.findPlanByName(planName);
+    const today = this.today();
+    const period = this.periodFrom(today);
 
-    const period = this.currentPeriod();
-    let usage = await this.usageRepo.findOne({
-      where: { userId, periodStart: period.periodStart }
-    });
+    let usage = await this.findActiveUsage(userId, today);
+
+    if (!usage) {
+      usage = await this.usageRepo.findOne({
+        where: { userId, periodStart: period.periodStart }
+      });
+    }
 
     if (!usage) {
       usage = this.usageRepo.create({
@@ -154,8 +170,24 @@ export class UsageService implements OnModuleInit {
         planId: plan.id
       });
       usage = await this.usageRepo.save(usage);
+    } else if (
+      usage.planId === plan.id &&
+      usage.periodStart === period.periodStart
+    ) {
+      await this.usageRepo.update(
+        { id: usage.id },
+        { periodEnd: period.periodEnd }
+      );
     } else {
-      await this.usageRepo.update({ id: usage.id }, { planId: plan.id });
+      await this.usageRepo.update(
+        { id: usage.id },
+        {
+          periodStart: period.periodStart,
+          periodEnd: period.periodEnd,
+          usedMessages: 0,
+          planId: plan.id
+        }
+      );
     }
 
     const updatedUsage = await this.usageRepo.findOne({
@@ -273,19 +305,37 @@ export class UsageService implements OnModuleInit {
     await this.planRepo.remove(plan);
   }
 
-  private currentPeriod(): { periodStart: string; periodEnd: string } {
+  private today(): string {
     const now = new Date();
-    const start = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
-    );
-    const end = new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)
-    );
+    return this.toDateString(now);
+  }
 
+  private periodFrom(dateString: string): {
+    periodStart: string;
+    periodEnd: string;
+  } {
+    const start = new Date(`${dateString}T00:00:00.000Z`);
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 30);
     return {
       periodStart: this.toDateString(start),
       periodEnd: this.toDateString(end)
     };
+  }
+
+  private findActiveUsage(
+    userId: string,
+    today: string
+  ): Promise<AiMessageUsage | null> {
+    return this.usageRepo.findOne({
+      where: {
+        userId,
+        periodStart: LessThanOrEqual(today),
+        periodEnd: MoreThan(today)
+      },
+      order: { periodStart: "DESC" },
+      relations: { plan: true }
+    });
   }
 
   private toDateString(date: Date): string {
