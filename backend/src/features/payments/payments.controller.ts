@@ -68,6 +68,11 @@ type ConfirmPaymentDto = {
   signature?: string;
 };
 
+type CreateCheckoutDto = {
+  plan_id?: number | string | null;
+  planId?: number | string | null;
+};
+
 type CancelSubscriptionDto = {
   checkout_id?: string | null;
   subscription_id?: string | null;
@@ -85,34 +90,34 @@ export class PaymentsController {
 
   @Get("config")
   async getConfig() {
-    const premiumPlan = await this.usageService.findPlanByName("premium");
+    const plans = await this.usageService.findPlans();
 
     return {
       provider: "creem",
       testMode: this.config.get<boolean>("creem.testMode") ?? true,
       configured: Boolean(
         this.config.get<string>("creem.apiKey") &&
-        premiumPlan.creemProductId?.trim()
+        plans.some((plan) => plan.creemProductId?.trim())
       )
     };
   }
 
   @Post("checkout")
   @UseGuards(JwtAuthGuard)
-  async createCheckout(@Req() req: Request) {
+  async createCheckout(@Req() req: Request, @Body() body: CreateCheckoutDto) {
     const user = req.user as {
       id: string;
       email?: string;
       user_metadata?: { full_name?: string; name?: string };
     };
     const frontendUrl = this.getFrontendUrl();
-    const premiumPlan = await this.usageService.findPlanByName("premium");
-    const productId = this.getPlanProductId(premiumPlan.creemProductId);
+    const plan = await this.findCheckoutPlan(body);
+    const productId = this.getPlanProductId(plan.creemProductId);
 
     return this.creem.createPremiumCheckout({
       userId: user.id,
       email: user.email,
-      plan: "premium",
+      plan: plan.name,
       productId,
       successUrl: `${frontendUrl}/upgrade`
     });
@@ -122,12 +127,12 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   async confirmCheckout(@Req() req: Request, @Body() body: ConfirmPaymentDto) {
     const user = req.user as { id: string };
-    const premiumPlan = await this.usageService.findPlanByName("premium");
-    const productId = this.getPlanProductId(premiumPlan.creemProductId);
+    const plan = await this.findPlanByProductId(body.product_id);
+    const productId = this.getPlanProductId(plan.creemProductId);
 
     if (body.product_id !== productId) {
       throw new BadRequestException(
-        "Payment product does not match the premium plan."
+        "Payment product does not match an available plan."
       );
     }
 
@@ -151,7 +156,7 @@ export class PaymentsController {
         : null;
     const subscriptionId =
       redirectSubscriptionId ?? checkout?.subscriptionId ?? null;
-    const usage = await this.usageService.setCurrentPlan(user.id, "premium", {
+    const usage = await this.usageService.setCurrentPlan(user.id, plan.name, {
       creemSubscriptionId: subscriptionId
     });
     return { confirmed: true, usage };
@@ -164,13 +169,18 @@ export class PaymentsController {
     @Body() body: CancelSubscriptionDto
   ) {
     const user = req.user as { id: string; email?: string };
-    const premiumPlan = await this.usageService.findPlanByName("premium");
-    const productId = this.getPlanProductId(premiumPlan.creemProductId);
+    const currentUsage = await this.usageService.ensureCurrentUsage(user.id);
+    const productId = this.normalizeId(currentUsage.plan.creemProductId);
     const storedSubscriptionId =
       await this.usageService.findCurrentSubscriptionId(user.id);
     let subscriptionId = storedSubscriptionId;
 
     if (!subscriptionId && body.checkout_id) {
+      if (!productId) {
+        throw new BadRequestException(
+          "No active subscription is linked to this account."
+        );
+      }
       const checkout = await this.verifyCheckoutWithCreem(
         body.checkout_id,
         user.id,
@@ -180,14 +190,13 @@ export class PaymentsController {
         checkout.subscriptionId ?? this.normalizeId(body.subscription_id);
     }
 
-    if (!subscriptionId && user.email) {
+    if (!subscriptionId && user.email && productId) {
       const customer = await this.creem.retrieveCustomerByEmail(user.email);
       if (customer.id) {
-        subscriptionId =
-          await this.creem.findLatestSubscriptionIdForCustomer({
-            customerId: customer.id,
-            productId
-          });
+        subscriptionId = await this.creem.findLatestSubscriptionIdForCustomer({
+          customerId: customer.id,
+          productId
+        });
       }
     }
 
@@ -198,9 +207,7 @@ export class PaymentsController {
     }
 
     const subscription = await this.creem.cancelSubscription(subscriptionId);
-    const usage = await this.usageService.setCurrentPlan(user.id, "free", {
-      creemSubscriptionId: null
-    });
+    const usage = await this.usageService.ensureCurrentUsage(user.id);
 
     return { canceled: true, subscription, usage };
   }
@@ -234,7 +241,7 @@ export class PaymentsController {
       });
     }
 
-    if (["subscription.canceled", "subscription.expired"].includes(eventName)) {
+    if (eventName === "subscription.expired") {
       await this.usageService.setCurrentPlan(userId, "free", {
         creemSubscriptionId: null
       });
@@ -464,7 +471,7 @@ export class PaymentsController {
     const checkout = await this.creem.retrieveCheckout(checkoutId);
     if (checkout.productId !== productId) {
       throw new BadRequestException(
-        "Payment product does not match the premium plan."
+        "Payment product does not match an available plan."
       );
     }
 
@@ -480,6 +487,41 @@ export class PaymentsController {
     }
 
     return checkout;
+  }
+
+  private async findCheckoutPlan(body: CreateCheckoutDto) {
+    const planId = Number(body.plan_id ?? body.planId);
+    if (!Number.isInteger(planId)) {
+      throw new BadRequestException("Checkout is missing a valid plan.");
+    }
+
+    const plan = await this.usageService.findPlan(planId);
+    if (!plan.creemProductId?.trim()) {
+      throw new BadRequestException("This plan is not available for checkout.");
+    }
+
+    return plan;
+  }
+
+  private async findPlanByProductId(productId: string | null | undefined) {
+    const normalizedProductId = this.normalizeId(productId);
+    if (!normalizedProductId) {
+      throw new BadRequestException(
+        "Payment confirmation is missing product details."
+      );
+    }
+
+    const plans = await this.usageService.findPlans();
+    const plan = plans.find(
+      (item) => item.creemProductId?.trim() === normalizedProductId
+    );
+    if (!plan) {
+      throw new BadRequestException(
+        "Payment product does not match an available plan."
+      );
+    }
+
+    return plan;
   }
 
   private isPaidCheckoutStatus(status: string | null): boolean {
@@ -531,7 +573,7 @@ export class PaymentsController {
     const normalized = productId?.trim();
     if (!normalized) {
       throw new InternalServerErrorException(
-        "Premium plan Creem product ID is not configured."
+        "Plan payment product ID is not configured."
       );
     }
     return normalized;

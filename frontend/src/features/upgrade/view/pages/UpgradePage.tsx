@@ -7,7 +7,6 @@ import { apiRoutes } from "@/lib/apiRoutes";
 
 type CheckoutResponse = {
   url: string;
-  testMode: boolean;
 };
 
 type MessageUsage = {
@@ -38,14 +37,13 @@ type CancelSubscriptionResponse = {
 
 type PaymentConfig = {
   configured: boolean;
-  provider: string;
-  testMode: boolean;
 };
 
 type Plan = {
   id: number;
   name: string;
   monthlyMessageLimit: number;
+  creemProductId?: string | null;
   webCrawlLimit: number;
   pdfUploadLimit: number;
   imageUploadLimit: number;
@@ -69,7 +67,7 @@ function formatDate(dateString: string) {
 
 export function UpgradePage() {
   const attemptedConfirmationRef = useRef<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [checkoutPlanId, setCheckoutPlanId] = useState<number | null>(null);
   const [config, setConfig] = useState<PaymentConfig | null>(null);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [usage, setUsage] = useState<MessageUsage | null>(null);
@@ -161,7 +159,7 @@ export function UpgradePage() {
         );
       } catch {
         setError(
-          "Payment succeeded, but we could not confirm the plan update. Please contact support with your checkout ID.",
+          "Payment succeeded, but we could not confirm your plan update. Please contact support with your checkout ID.",
         );
       } finally {
         setConfirming(false);
@@ -171,26 +169,27 @@ export function UpgradePage() {
     void confirmCheckout();
   }, [checkoutSuccess, confirmed, confirming, searchParams]);
 
-  const startCheckout = async () => {
-    setLoading(true);
+  const startCheckout = async (plan: Plan) => {
+    setCheckoutPlanId(plan.id);
     setError(null);
 
     try {
       const response = await api.post<CheckoutResponse>(
         apiRoutes.payments.checkout,
+        {
+          plan_id: plan.id,
+        },
       );
       window.location.href = response.data.url;
     } catch {
-      setError(
-        "Could not start checkout. Please check your payment configuration and try again.",
-      );
-      setLoading(false);
+      setError("Could not open the payment page. Please try again.");
+      setCheckoutPlanId(null);
     }
   };
 
   const cancelSubscription = async () => {
     const shouldCancel = window.confirm(
-      "Cancel your Premium subscription now? Your account will move back to the free plan.",
+      "Cancel your subscription? Your current plan will stay active until the end of this billing period.",
     );
     if (!shouldCancel) return;
 
@@ -222,75 +221,119 @@ export function UpgradePage() {
     }
   };
 
-  const premiumPlan = useMemo(
-    () => plans.find((plan) => plan.name.toLowerCase() === "premium"),
-    [plans],
-  );
   const currentPlanName = usage ? formatPlanName(usage.plan.name) : "Loading";
-  const isPremium = usage?.plan.name.toLowerCase() === "premium";
-  const planHighlights = premiumPlan
-    ? [
-        `${premiumPlan.monthlyMessageLimit.toLocaleString()} AI messages every 30 days`,
-        `${premiumPlan.webCrawlLimit.toLocaleString()} web crawls`,
-        `${premiumPlan.pdfUploadLimit.toLocaleString()} PDF uploads`,
-        `${premiumPlan.imageUploadLimit.toLocaleString()} image uploads`,
-      ]
-    : ["AI messages", "Web crawls", "PDF uploads", "Image uploads"];
+  const currentPlanId = usage?.plan.id;
+  const hasCurrentSubscription = Boolean(usage?.creemSubscriptionId);
 
   return (
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader
         title="Upgrade"
-        subtitle="Review your active plan and manage your Premium subscription."
+        subtitle="Review your active plan and choose the right limits for your workspace."
       />
       <PageContent>
         {checkoutSuccess && (
           <div className="rounded-rm-trip-smooth border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             {confirming
-              ? "Checkout completed. Confirming your Premium plan..."
+              ? "Payment completed. Updating your plan..."
               : confirmed
-                ? "Checkout completed. Your Premium plan is active."
-                : "Checkout completed. Your plan will update as soon as Creem sends the payment webhook."}
+                ? "Payment completed. Your plan is active."
+                : "Payment completed. We are updating your plan."}
           </div>
         )}
 
         {cancelledSubscription && (
           <div className="rounded-rm-trip-smooth border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
-            Your subscription has been cancelled. Your account is back on the
-            free plan.
+            Your subscription has been cancelled. Your current plan stays active
+            until the end of this billing period.
           </div>
         )}
 
         <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
-          <div className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
-            <div className="inline-flex items-center gap-2 rounded-rm-trip-smooth bg-blue-50 px-3 py-1 text-xs font-semibold text-rm-trip-brand">
-              <Sparkles className="h-3.5 w-3.5" />
-              {premiumPlan ? formatPlanName(premiumPlan.name) : "Premium"}
-            </div>
-            <h2 className="mt-4 font-rm-trip-heading text-2xl font-bold text-rm-trip-text">
-              {premiumPlan
-                ? `${premiumPlan.monthlyMessageLimit.toLocaleString()} AI messages every 30 days`
-                : pageLoading
-                  ? "Loading plan details..."
-                  : "Premium plan unavailable"}
-            </h2>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-rm-trip-text-muted">
-              Upgrade your workspace when the free plan starts feeling tight.
-              Your billing period starts on the day you pay and renews after 30
-              days.
-            </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {pageLoading
+              ? Array.from({ length: 2 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="min-h-[300px] animate-pulse rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card"
+                  />
+                ))
+              : plans.map((plan) => {
+                  const isActive = currentPlanId === plan.id;
+                  const isPaid = Boolean(plan.creemProductId?.trim());
+                  const isStarting = checkoutPlanId === plan.id;
+                  const features = [
+                    `${plan.monthlyMessageLimit.toLocaleString()} AI messages every 30 days`,
+                    `${plan.webCrawlLimit.toLocaleString()} web crawls`,
+                    `${plan.pdfUploadLimit.toLocaleString()} PDF uploads`,
+                    `${plan.imageUploadLimit.toLocaleString()} image uploads`,
+                  ];
 
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {planHighlights.map((item) => (
-                <div
-                  key={item}
-                  className="flex min-w-0 items-center gap-3 rounded-rm-trip-smooth bg-gray-50 px-4 py-3 text-sm font-semibold text-rm-trip-text"
-                >
-                  <Check className="h-4 w-4 shrink-0 text-rm-trip-brand" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
+                  return (
+                    <article
+                      key={plan.id}
+                      className="flex min-h-[300px] flex-col rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="inline-flex items-center gap-2 rounded-rm-trip-smooth bg-blue-50 px-3 py-1 text-xs font-semibold text-rm-trip-brand">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            {formatPlanName(plan.name)}
+                          </div>
+                          <h2 className="mt-4 font-rm-trip-heading text-2xl font-bold text-rm-trip-text">
+                            {plan.monthlyMessageLimit.toLocaleString()} messages
+                          </h2>
+                        </div>
+
+                        {isActive && (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex shrink-0 items-center justify-center rounded-rm-trip-smooth bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700"
+                          >
+                            Active
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="mt-6 grid gap-3">
+                        {features.map((item) => (
+                          <div
+                            key={item}
+                            className="flex min-w-0 items-center gap-3 rounded-rm-trip-smooth bg-gray-50 px-4 py-3 text-sm font-semibold text-rm-trip-text"
+                          >
+                            <Check className="h-4 w-4 shrink-0 text-rm-trip-brand" />
+                            <span>{item}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="mt-auto pt-6">
+                        {isActive ? null : isPaid ? (
+                          <button
+                            type="button"
+                            onClick={() => void startCheckout(plan)}
+                            disabled={
+                              pageLoading ||
+                              checkoutPlanId !== null ||
+                              config?.configured === false
+                            }
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-semibold text-white shadow-rm-trip-card transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            {isStarting && (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            )}
+                            {isStarting ? "Opening..." : "Start"}
+                          </button>
+                        ) : (
+                          <div className="rounded-rm-trip-smooth bg-gray-50 px-4 py-3 text-center text-sm font-semibold text-rm-trip-text-muted">
+                            Included
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
           </div>
 
           <aside className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
@@ -309,7 +352,7 @@ export function UpgradePage() {
               </p>
             )}
 
-            {isPremium && usage && (
+            {usage && (
               <div className="mt-5 grid gap-3">
                 <div className="rounded-rm-trip-smooth bg-gray-50 px-4 py-3">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
@@ -329,21 +372,17 @@ export function UpgradePage() {
                     {formatDate(usage.periodEnd)}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void cancelSubscription()}
-                  disabled={canceling || pageLoading}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth border border-red-100 bg-white px-4 py-3 text-sm font-semibold text-rm-trip-state-error transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {canceling && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {canceling ? "Cancelling..." : "Cancel subscription"}
-                </button>
-              </div>
-            )}
-
-            {config?.testMode && (
-              <div className="mt-4 rounded-rm-trip-smooth border border-amber-100 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-700">
-                Creem test mode is enabled.
+                {hasCurrentSubscription && !cancelledSubscription && (
+                  <button
+                    type="button"
+                    onClick={() => void cancelSubscription()}
+                    disabled={canceling || pageLoading}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth border border-red-100 bg-white px-4 py-3 text-sm font-semibold text-rm-trip-state-error transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {canceling && <Loader2 className="h-4 w-4 animate-spin" />}
+                    {canceling ? "Cancelling..." : "Cancel subscription"}
+                  </button>
+                )}
               </div>
             )}
 
@@ -353,25 +392,9 @@ export function UpgradePage() {
               </p>
             )}
 
-            <button
-              type="button"
-              onClick={() => void startCheckout()}
-              disabled={
-                loading ||
-                pageLoading ||
-                isPremium ||
-                !premiumPlan ||
-                config?.configured === false
-              }
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-semibold text-white shadow-rm-trip-card transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isPremium ? "Premium active" : "Start checkout"}
-            </button>
-
             {config?.configured === false && (
               <p className="mt-3 text-xs font-medium leading-5 text-rm-trip-text-muted">
-                Missing Creem API key or premium product ID.
+                Plan changes are temporarily unavailable.
               </p>
             )}
           </aside>
