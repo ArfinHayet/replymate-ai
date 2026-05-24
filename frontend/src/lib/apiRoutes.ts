@@ -30,6 +30,7 @@ export const apiRoutes = {
     byId: (id: string) => `/pdfs/${id}`,
   },
   payments: {
+    cancelSubscription: "/payments/subscription/cancel",
     checkout: "/payments/checkout",
     confirm: "/payments/confirm",
     config: "/payments/config",

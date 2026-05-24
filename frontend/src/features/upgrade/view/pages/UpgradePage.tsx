@@ -23,10 +23,16 @@ type MessageUsage = {
   periodEnd: string;
   usedMessages: number;
   remainingMessages: number;
+  creemSubscriptionId?: string | null;
 };
 
 type ConfirmCheckoutResponse = {
   confirmed: boolean;
+  usage: MessageUsage;
+};
+
+type CancelSubscriptionResponse = {
+  canceled: boolean;
   usage: MessageUsage;
 };
 
@@ -71,6 +77,8 @@ export function UpgradePage() {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [canceling, setCanceling] = useState(false);
+  const [cancelledSubscription, setCancelledSubscription] = useState(false);
   const searchParams = useMemo(
     () => new URLSearchParams(window.location.search),
     [],
@@ -99,7 +107,9 @@ export function UpgradePage() {
       } catch {
         if (!cancelled) {
           setConfig(null);
-          setError("Could not load your plan details. Please refresh and try again.");
+          setError(
+            "Could not load your plan details. Please refresh and try again.",
+          );
         }
       } finally {
         if (!cancelled) setPageLoading(false);
@@ -178,6 +188,40 @@ export function UpgradePage() {
     }
   };
 
+  const cancelSubscription = async () => {
+    const shouldCancel = window.confirm(
+      "Cancel your Premium subscription now? Your account will move back to the free plan.",
+    );
+    if (!shouldCancel) return;
+
+    setCanceling(true);
+    setError(null);
+    setCancelledSubscription(false);
+
+    try {
+      const response = await api.post<CancelSubscriptionResponse>(
+        apiRoutes.payments.cancelSubscription,
+        {
+          checkout_id: searchParams.get("checkout_id"),
+          subscription_id: searchParams.get("subscription_id"),
+        },
+      );
+      setUsage(response.data.usage);
+      setCancelledSubscription(response.data.canceled);
+      window.dispatchEvent(
+        new CustomEvent("supportmate-usage-updated", {
+          detail: response.data.usage,
+        }),
+      );
+    } catch {
+      setError(
+        "Could not cancel your subscription. Please try again or contact support.",
+      );
+    } finally {
+      setCanceling(false);
+    }
+  };
+
   const premiumPlan = useMemo(
     () => plans.find((plan) => plan.name.toLowerCase() === "premium"),
     [plans],
@@ -210,6 +254,13 @@ export function UpgradePage() {
           </div>
         )}
 
+        {cancelledSubscription && (
+          <div className="rounded-rm-trip-smooth border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+            Your subscription has been cancelled. Your account is back on the
+            free plan.
+          </div>
+        )}
+
         <section className="grid gap-4 lg:grid-cols-[1fr_360px]">
           <div className="rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card">
             <div className="inline-flex items-center gap-2 rounded-rm-trip-smooth bg-blue-50 px-3 py-1 text-xs font-semibold text-rm-trip-brand">
@@ -224,8 +275,9 @@ export function UpgradePage() {
                   : "Premium plan unavailable"}
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-rm-trip-text-muted">
-              Upgrade your workspace when the free plan starts feeling tight. Your
-              billing period starts on the day you pay and renews after 30 days.
+              Upgrade your workspace when the free plan starts feeling tight.
+              Your billing period starts on the day you pay and renews after 30
+              days.
             </p>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -279,9 +331,12 @@ export function UpgradePage() {
                 </div>
                 <button
                   type="button"
-                  className="inline-flex w-full items-center justify-center rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-rm-trip-text transition-all hover:bg-gray-50"
+                  onClick={() => void cancelSubscription()}
+                  disabled={canceling || pageLoading}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth border border-red-100 bg-white px-4 py-3 text-sm font-semibold text-rm-trip-state-error transition-all hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Cancel subscription
+                  {canceling && <Loader2 className="h-4 w-4 animate-spin" />}
+                  {canceling ? "Cancelling..." : "Cancel subscription"}
                 </button>
               </div>
             )}

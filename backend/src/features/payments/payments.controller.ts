@@ -23,8 +23,10 @@ type RawBodyRequest = Request & { rawBody?: Buffer };
 type PaymentWebhookBody = {
   eventType?: string;
   object?: {
+    id?: string;
     status?: string;
     request_id?: string;
+    subscription_id?: string;
     metadata?: {
       userId?: string;
       user_id?: string;
@@ -39,14 +41,17 @@ type PaymentWebhookBody = {
         plan?: string;
       };
     };
-    subscription?: {
-      metadata?: {
-        userId?: string;
-        user_id?: string;
-        planType?: string;
-        plan?: string;
-      };
-    };
+    subscription?:
+      | string
+      | {
+          id?: string;
+          metadata?: {
+            userId?: string;
+            user_id?: string;
+            planType?: string;
+            plan?: string;
+          };
+        };
   };
 };
 
@@ -61,6 +66,11 @@ type ConfirmPaymentDto = {
   product_id?: string;
   request_id?: string | null;
   signature?: string;
+};
+
+type CancelSubscriptionDto = {
+  checkout_id?: string | null;
+  subscription_id?: string | null;
 };
 
 @Controller("payments")
@@ -130,12 +140,69 @@ export class PaymentsController {
       );
     }
 
-    if (!hasValidRedirectSignature) {
-      await this.verifyCheckoutWithCreem(body.checkout_id, user.id, productId);
+    const redirectSubscriptionId = this.normalizeId(body.subscription_id);
+    const checkout =
+      !hasValidRedirectSignature || !redirectSubscriptionId
+        ? await this.verifyCheckoutWithCreem(
+            body.checkout_id,
+            user.id,
+            productId
+          )
+        : null;
+    const subscriptionId =
+      redirectSubscriptionId ?? checkout?.subscriptionId ?? null;
+    const usage = await this.usageService.setCurrentPlan(user.id, "premium", {
+      creemSubscriptionId: subscriptionId
+    });
+    return { confirmed: true, usage };
+  }
+
+  @Post("subscription/cancel")
+  @UseGuards(JwtAuthGuard)
+  async cancelSubscription(
+    @Req() req: Request,
+    @Body() body: CancelSubscriptionDto
+  ) {
+    const user = req.user as { id: string; email?: string };
+    const premiumPlan = await this.usageService.findPlanByName("premium");
+    const productId = this.getPlanProductId(premiumPlan.creemProductId);
+    const storedSubscriptionId =
+      await this.usageService.findCurrentSubscriptionId(user.id);
+    let subscriptionId = storedSubscriptionId;
+
+    if (!subscriptionId && body.checkout_id) {
+      const checkout = await this.verifyCheckoutWithCreem(
+        body.checkout_id,
+        user.id,
+        productId
+      );
+      subscriptionId =
+        checkout.subscriptionId ?? this.normalizeId(body.subscription_id);
     }
 
-    const usage = await this.usageService.setCurrentPlan(user.id, "premium");
-    return { confirmed: true, usage };
+    if (!subscriptionId && user.email) {
+      const customer = await this.creem.retrieveCustomerByEmail(user.email);
+      if (customer.id) {
+        subscriptionId =
+          await this.creem.findLatestSubscriptionIdForCustomer({
+            customerId: customer.id,
+            productId
+          });
+      }
+    }
+
+    if (!subscriptionId) {
+      throw new BadRequestException(
+        "No active Creem subscription is linked to this account."
+      );
+    }
+
+    const subscription = await this.creem.cancelSubscription(subscriptionId);
+    const usage = await this.usageService.setCurrentPlan(user.id, "free", {
+      creemSubscriptionId: null
+    });
+
+    return { canceled: true, subscription, usage };
   }
 
   @Post("webhook")
@@ -162,11 +229,15 @@ export class PaymentsController {
     }
 
     if (this.shouldGrantPremium(body)) {
-      await this.usageService.setCurrentPlan(userId, plan);
+      await this.usageService.setCurrentPlan(userId, plan, {
+        creemSubscriptionId: this.extractSubscriptionId(body)
+      });
     }
 
     if (["subscription.canceled", "subscription.expired"].includes(eventName)) {
-      await this.usageService.setCurrentPlan(userId, "free");
+      await this.usageService.setCurrentPlan(userId, "free", {
+        creemSubscriptionId: null
+      });
     }
 
     return { received: true };
@@ -377,7 +448,13 @@ export class PaymentsController {
     checkoutId: string | undefined,
     userId: string,
     productId: string
-  ) {
+  ): Promise<{
+    id: string | null;
+    productId: string | null;
+    requestId: string | null;
+    subscriptionId: string | null;
+    status: string | null;
+  }> {
     if (!checkoutId) {
       throw new BadRequestException(
         "Payment confirmation is missing checkout ID."
@@ -401,6 +478,8 @@ export class PaymentsController {
     if (!this.isPaidCheckoutStatus(checkout.status)) {
       throw new ForbiddenException("Payment checkout is not completed yet.");
     }
+
+    return checkout;
   }
 
   private isPaidCheckoutStatus(status: string | null): boolean {
@@ -422,6 +501,24 @@ export class PaymentsController {
   private extractPlan(body: PaymentWebhookBody): string {
     const metadata = this.extractMetadata(body);
     return metadata?.planType ?? metadata?.plan ?? "premium";
+  }
+
+  private extractSubscriptionId(body: PaymentWebhookBody): string | null {
+    const subscription = body.object?.subscription;
+    if (typeof subscription === "string") return this.normalizeId(subscription);
+
+    return (
+      this.normalizeId(subscription?.id) ??
+      this.normalizeId(body.object?.subscription_id) ??
+      (body.eventType?.startsWith("subscription.")
+        ? this.normalizeId(body.object?.id)
+        : null)
+    );
+  }
+
+  private normalizeId(id: string | null | undefined): string | null {
+    const normalized = id?.trim();
+    return normalized && normalized !== "null" ? normalized : null;
   }
 
   private getFrontendUrl(): string {
@@ -450,6 +547,7 @@ export class PaymentsController {
   }
 
   private summarizeWebhook(body: PaymentWebhookBody) {
+    const subscription = body.object?.subscription;
     return {
       eventType: body.eventType,
       objectType:
@@ -459,15 +557,18 @@ export class PaymentsController {
       requestId: body.object?.request_id,
       hasObjectMetadata: Boolean(body.object?.metadata),
       hasCustomerMetadata: Boolean(body.object?.customer?.metadata),
-      hasSubscriptionMetadata: Boolean(body.object?.subscription?.metadata)
+      hasSubscriptionMetadata: Boolean(
+        typeof subscription === "string" ? false : subscription?.metadata
+      )
     };
   }
 
   private extractMetadata(body: PaymentWebhookBody) {
+    const subscription = body.object?.subscription;
     return (
       body.object?.metadata ??
       body.object?.customer?.metadata ??
-      body.object?.subscription?.metadata
+      (typeof subscription === "string" ? undefined : subscription?.metadata)
     );
   }
 

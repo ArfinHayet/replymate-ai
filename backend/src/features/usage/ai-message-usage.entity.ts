@@ -28,6 +28,9 @@ export class AiMessageUsage {
   @Column({ name: 'plan_id', type: 'int', default: 1 })
   planId!: number;
 
+  @Column({ name: 'creem_subscription_id', type: 'varchar', nullable: true })
+  creemSubscriptionId?: string | null;
+
   @ManyToOne(() => Plan)
   @JoinColumn({ name: 'plan_id' })
   plan?: Plan;

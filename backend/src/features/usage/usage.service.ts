@@ -27,6 +27,7 @@ export type MessageUsageSnapshot = {
   periodEnd: string;
   usedMessages: number;
   remainingMessages: number;
+  creemSubscriptionId: string | null;
 };
 
 const DEFAULT_PLANS = [
@@ -147,7 +148,8 @@ export class UsageService implements OnModuleInit {
 
   async setCurrentPlan(
     userId: string,
-    planName: string
+    planName: string,
+    options: { creemSubscriptionId?: string | null } = {}
   ): Promise<MessageUsageSnapshot> {
     const plan = await this.findPlanByName(planName);
     const today = this.today();
@@ -167,7 +169,8 @@ export class UsageService implements OnModuleInit {
         periodStart: period.periodStart,
         periodEnd: period.periodEnd,
         usedMessages: 0,
-        planId: plan.id
+        planId: plan.id,
+        creemSubscriptionId: options.creemSubscriptionId ?? null
       });
       usage = await this.usageRepo.save(usage);
     } else if (
@@ -176,7 +179,13 @@ export class UsageService implements OnModuleInit {
     ) {
       await this.usageRepo.update(
         { id: usage.id },
-        { periodEnd: period.periodEnd }
+        {
+          periodEnd: period.periodEnd,
+          creemSubscriptionId:
+            options.creemSubscriptionId !== undefined
+              ? options.creemSubscriptionId
+              : usage.creemSubscriptionId
+        }
       );
     } else {
       await this.usageRepo.update(
@@ -185,7 +194,11 @@ export class UsageService implements OnModuleInit {
           periodStart: period.periodStart,
           periodEnd: period.periodEnd,
           usedMessages: 0,
-          planId: plan.id
+          planId: plan.id,
+          creemSubscriptionId:
+            options.creemSubscriptionId !== undefined
+              ? options.creemSubscriptionId
+              : null
         }
       );
     }
@@ -200,6 +213,11 @@ export class UsageService implements OnModuleInit {
     }
 
     return this.toSnapshot(updatedUsage);
+  }
+
+  async findCurrentSubscriptionId(userId: string): Promise<string | null> {
+    const usage = await this.findActiveUsage(userId, this.today());
+    return usage?.creemSubscriptionId ?? null;
   }
 
   findPlans(): Promise<Plan[]> {
@@ -371,7 +389,8 @@ export class UsageService implements OnModuleInit {
       remainingMessages: Math.max(
         usage.plan.monthlyMessageLimit - usage.usedMessages,
         0
-      )
+      ),
+      creemSubscriptionId: usage.creemSubscriptionId ?? null
     };
   }
 
