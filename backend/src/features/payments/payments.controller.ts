@@ -157,7 +157,8 @@ export class PaymentsController {
     const subscriptionId =
       redirectSubscriptionId ?? checkout?.subscriptionId ?? null;
     const usage = await this.usageService.setCurrentPlan(user.id, plan.name, {
-      creemSubscriptionId: subscriptionId
+      creemSubscriptionId: subscriptionId,
+      subscriptionStatus: subscriptionId ? "active" : null
     });
     return { confirmed: true, usage };
   }
@@ -170,6 +171,19 @@ export class PaymentsController {
   ) {
     const user = req.user as { id: string; email?: string };
     const currentUsage = await this.usageService.ensureCurrentUsage(user.id);
+    if (currentUsage.subscriptionStatus === "canceled") {
+      return {
+        canceled: true,
+        subscription: {
+          id: currentUsage.creemSubscriptionId,
+          status: "canceled",
+          canceledAt: null,
+          currentPeriodEndDate: currentUsage.periodEnd
+        },
+        usage: currentUsage
+      };
+    }
+
     const productId = this.normalizeId(currentUsage.plan.creemProductId);
     const storedSubscriptionId =
       await this.usageService.findCurrentSubscriptionId(user.id);
@@ -207,7 +221,10 @@ export class PaymentsController {
     }
 
     const subscription = await this.creem.cancelSubscription(subscriptionId);
-    const usage = await this.usageService.ensureCurrentUsage(user.id);
+    const usage = await this.usageService.setCurrentSubscriptionStatus(
+      user.id,
+      "canceled"
+    );
 
     return { canceled: true, subscription, usage };
   }
@@ -237,13 +254,19 @@ export class PaymentsController {
 
     if (this.shouldGrantPremium(body)) {
       await this.usageService.setCurrentPlan(userId, plan, {
-        creemSubscriptionId: this.extractSubscriptionId(body)
+        creemSubscriptionId: this.extractSubscriptionId(body),
+        subscriptionStatus: "active"
       });
+    }
+
+    if (eventName === "subscription.canceled") {
+      await this.usageService.setCurrentSubscriptionStatus(userId, "canceled");
     }
 
     if (eventName === "subscription.expired") {
       await this.usageService.setCurrentPlan(userId, "free", {
-        creemSubscriptionId: null
+        creemSubscriptionId: null,
+        subscriptionStatus: null
       });
     }
 

@@ -1,17 +1,36 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CheckCircle2, Mail } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Loader2, Mail } from "lucide-react";
+import { createAuthService } from "../../model/services/createAuthService";
 import { AuthBrandHeader } from "../components/AuthBrandHeader";
 import { AuthSurface } from "../components/AuthSurface";
 
 export function ForgotPasswordPage() {
+  const authService = useMemo(() => createAuthService(), []);
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!email.trim()) return;
-    setSent(true);
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) return;
+
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      await authService.forgotPassword(normalizedEmail);
+      setSent(true);
+    } catch (requestError: unknown) {
+      setError(
+        (requestError as { response?: { data?: { message?: string } } })
+          ?.response?.data?.message ?? "Could not send reset instructions.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (sent) {
@@ -67,11 +86,14 @@ export function ForgotPasswordPage() {
 
           <button
             type="submit"
-            disabled={!email.trim()}
+            disabled={!email.trim() || submitting}
             className="flex w-full items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-white shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
-            Send Reset Link
+            {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {submitting ? "Sending..." : "Send Reset Link"}
           </button>
+
+          {error && <p className="text-sm font-semibold text-rm-trip-error">{error}</p>}
 
           <Link
             to="/login"

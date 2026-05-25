@@ -172,6 +172,18 @@ export class CreemClient {
 
     if (!response.ok) {
       const message = await response.text();
+      if (
+        response.status === 400 &&
+        message.includes("Subscription cannot be canceled in state: canceled")
+      ) {
+        return {
+          id: subscriptionId,
+          status: "canceled",
+          canceledAt: null,
+          currentPeriodEndDate: null
+        };
+      }
+
       throw new BadGatewayException(
         `Creem subscription cancellation failed: ${message}`
       );

@@ -22,6 +22,22 @@ export class HttpAuthRepository implements AuthRepository {
     await api.post(apiRoutes.auth.signup, request);
   }
 
+  async forgotPassword(email: string): Promise<void> {
+    await api.post(apiRoutes.auth.forgotPassword, { email });
+  }
+
+  async resetPassword(request: {
+    accessToken: string;
+    refreshToken: string;
+    password: string;
+  }): Promise<void> {
+    await api.post(apiRoutes.auth.resetPassword, {
+      access_token: request.accessToken,
+      refresh_token: request.refreshToken,
+      password: request.password,
+    });
+  }
+
   async signInWithGoogle(redirectTo: string): Promise<void> {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",

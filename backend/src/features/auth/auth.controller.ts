@@ -166,6 +166,37 @@ export class AuthController {
     return this.authService.login(body.email.trim(), body.password);
   }
 
+  @Post('forgot-password')
+  async forgotPassword(@Body() body: { email?: string }) {
+    if (!body.email?.trim()) throw new BadRequestException('email is required');
+    return this.authService.sendPasswordResetEmail(body.email.trim().toLowerCase());
+  }
+
+  @Post('reset-password')
+  async resetPassword(
+    @Body()
+    body: {
+      access_token?: string;
+      refresh_token?: string;
+      password?: string;
+    },
+  ) {
+    if (!body.access_token?.trim())
+      throw new BadRequestException('access_token is required');
+    if (!body.refresh_token?.trim())
+      throw new BadRequestException('refresh_token is required');
+    if (!body.password?.trim())
+      throw new BadRequestException('password is required');
+    if (body.password.length < 6)
+      throw new BadRequestException('Password must be at least 6 characters');
+
+    return this.authService.updatePassword(
+      body.access_token,
+      body.refresh_token,
+      body.password,
+    );
+  }
+
   @Post('refresh')
   async refresh(@Body() body: { refresh_token: string }) {
     if (!body.refresh_token?.trim())

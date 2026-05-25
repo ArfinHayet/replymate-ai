@@ -5,9 +5,10 @@ import { Pdf } from './pdf.entity';
 import { LlmFactoryModule } from '../../core/llm/llm-factory.module';
 import { DocumentService } from './document.service';
 import { DocumentController } from './document.controller';
+import { UsageModule } from '../usage/usage.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DocumentChunk, Pdf]), LlmFactoryModule],
+  imports: [TypeOrmModule.forFeature([DocumentChunk, Pdf]), LlmFactoryModule, UsageModule],
   controllers: [DocumentController],
   providers: [DocumentService],
 })

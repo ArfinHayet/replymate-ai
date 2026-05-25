@@ -23,6 +23,7 @@ type MessageUsage = {
   usedMessages: number;
   remainingMessages: number;
   creemSubscriptionId?: string | null;
+  subscriptionStatus?: "active" | "canceled" | null;
 };
 
 type ConfirmCheckoutResponse = {
@@ -223,7 +224,12 @@ export function UpgradePage() {
 
   const currentPlanName = usage ? formatPlanName(usage.plan.name) : "Loading";
   const currentPlanId = usage?.plan.id;
-  const hasCurrentSubscription = Boolean(usage?.creemSubscriptionId);
+  const subscriptionStatus =
+    usage?.subscriptionStatus ??
+    (usage?.creemSubscriptionId ? "active" : null);
+  const hasActiveSubscription =
+    Boolean(usage?.creemSubscriptionId) && subscriptionStatus === "active";
+  const hasCanceledSubscription = subscriptionStatus === "canceled";
 
   return (
     <div className="min-h-screen bg-rm-trip-surface">
@@ -242,7 +248,7 @@ export function UpgradePage() {
           </div>
         )}
 
-        {cancelledSubscription && (
+        {(cancelledSubscription || hasCanceledSubscription) && (
           <div className="rounded-rm-trip-smooth border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             Your subscription has been cancelled. Your current plan stays active
             until the end of this billing period.
@@ -366,13 +372,13 @@ export function UpgradePage() {
                 <div className="rounded-rm-trip-smooth bg-gray-50 px-4 py-3">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
                     <CalendarDays className="h-3.5 w-3.5" />
-                    Renews
+                    {hasCanceledSubscription ? "Active until" : "Renews"}
                   </div>
                   <p className="mt-1 text-sm font-semibold text-rm-trip-text">
                     {formatDate(usage.periodEnd)}
                   </p>
                 </div>
-                {hasCurrentSubscription && !cancelledSubscription && (
+                {hasActiveSubscription && !cancelledSubscription && (
                   <button
                     type="button"
                     onClick={() => void cancelSubscription()}

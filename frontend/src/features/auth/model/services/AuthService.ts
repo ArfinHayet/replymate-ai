@@ -22,6 +22,18 @@ export class AuthService {
     });
   }
 
+  forgotPassword(email: string) {
+    return this.authRepository.forgotPassword(email.toLowerCase().trim());
+  }
+
+  resetPassword(accessToken: string, refreshToken: string, password: string) {
+    return this.authRepository.resetPassword({
+      accessToken,
+      refreshToken,
+      password,
+    });
+  }
+
   signInWithGoogle(origin: string) {
     return this.authRepository.signInWithGoogle(`${origin}${apiRoutes.auth.callbackPath}`);
   }

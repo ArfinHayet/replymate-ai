@@ -30,16 +30,10 @@ export function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean })
         <div className="ml-auto flex shrink-0 items-center gap-2 max-[700px]:gap-1.5">
           <Link
             to={isAuthenticated ? DASHBOARD_PATH : "/login"}
-            className="rounded-[var(--rm-trip-smooth)] border border-[rgba(15,23,42,0.16)] bg-white px-[15px] py-[7px] text-[13.5px] font-semibold text-[var(--rm-trip-text)] no-underline transition hover:bg-[var(--rm-trip-surface)] max-[700px]:px-2.5 max-[700px]:py-1.5 max-[700px]:text-xs max-[560px]:hidden"
+            className="rounded-[var(--rm-trip-smooth)] border border-[rgba(15,23,42,0.16)] bg-white px-[15px] py-[7px] text-[13.5px] font-semibold text-[var(--rm-trip-text)] no-underline transition hover:bg-[var(--rm-trip-surface)] max-[700px]:px-2.5 max-[700px]:py-1.5 max-[700px]:text-xs"
           >
             {isAuthenticated ? "Go to dashboard" : "Sign in"}
           </Link>
-          <a
-            href="#cta"
-            className="rounded-[var(--rm-trip-smooth)] bg-[var(--rm-trip-brand)] px-4 py-[7px] text-[13.5px] font-semibold text-white no-underline shadow-[var(--rm-trip-glow-shadow)] transition hover:bg-[var(--rm-trip-brand-dark)] max-[700px]:whitespace-nowrap max-[700px]:px-[11px] max-[700px]:py-1.5 max-[700px]:text-xs max-[560px]:px-2.5 max-[560px]:text-[11.5px]"
-          >
-            Book walkthrough
-          </a>
         </div>
       </div>
     </header>

@@ -19,6 +19,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ImageService } from './image.service';
 import { AnalyzeImageDto } from './dto/analyze-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
+import { CheckContentLimit } from '../usage/content-limit.decorator';
+import { ContentLimitGuard } from '../usage/content-limit.guard';
 
 @Controller('images')
 @UseGuards(JwtAuthGuard)
@@ -36,6 +38,8 @@ export class ImageController {
 
   /** Save an image: uploads binary to Supabase Storage, embeds text, persists record */
   @Post()
+  @CheckContentLimit('images')
+  @UseGuards(ContentLimitGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),

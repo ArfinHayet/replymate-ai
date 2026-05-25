@@ -18,13 +18,16 @@ import type { Request } from 'express';
 import { DocumentService } from './document.service';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CheckContentLimit } from '../usage/content-limit.decorator';
+import { ContentLimitGuard } from '../usage/content-limit.guard';
 
 @Controller()
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
   @Post('admin/upload')
-  @UseGuards(JwtAuthGuard)
+  @CheckContentLimit('pdfs')
+  @UseGuards(JwtAuthGuard, ContentLimitGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),

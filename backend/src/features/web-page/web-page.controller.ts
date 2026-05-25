@@ -15,6 +15,8 @@ import type { Response } from 'express';
 import { WebPageService } from './web-page.service';
 import { IngestUrlsDto } from './dto/ingest-urls.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { CheckContentLimit } from '../usage/content-limit.decorator';
+import { ContentLimitGuard } from '../usage/content-limit.guard';
 
 @Controller()
 @UseGuards(JwtAuthGuard)
@@ -27,6 +29,8 @@ export class WebPageController {
    * Processes URLs sequentially; per-URL errors are collected without aborting the batch.
    */
   @Post('admin/ingest-urls')
+  @CheckContentLimit('webPages')
+  @UseGuards(ContentLimitGuard)
   async ingestUrls(
     @Body() dto: IngestUrlsDto,
     @Req() req: Request,

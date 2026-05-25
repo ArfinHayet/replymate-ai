@@ -245,9 +245,9 @@ export function useUploadViewModel(): UploadViewModel {
       setImgResult(result);
       setImgState("success");
       return { success: true, message: "Image added" };
-    } catch {
+    } catch (error: unknown) {
       setImgState("error");
-      return { success: false, errorMessage: "Failed to save image" };
+      return { success: false, errorMessage: getUploadErrorMessage(error, "Failed to save image") };
     }
   };
 

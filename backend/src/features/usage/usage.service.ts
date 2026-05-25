@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -28,7 +29,20 @@ export type MessageUsageSnapshot = {
   usedMessages: number;
   remainingMessages: number;
   creemSubscriptionId: string | null;
+  subscriptionStatus: "active" | "canceled" | null;
+  contentUsage: ContentUsageSnapshot;
 };
+
+export type ContentLimitResource = "webPages" | "pdfs" | "images";
+
+export type ContentUsageSnapshot = Record<
+  ContentLimitResource,
+  {
+    used: number;
+    limit: number;
+    remaining: number;
+  }
+>;
 
 const DEFAULT_PLANS = [
   {
@@ -149,7 +163,10 @@ export class UsageService implements OnModuleInit {
   async setCurrentPlan(
     userId: string,
     planName: string,
-    options: { creemSubscriptionId?: string | null } = {}
+    options: {
+      creemSubscriptionId?: string | null;
+      subscriptionStatus?: "active" | "canceled" | null;
+    } = {}
   ): Promise<MessageUsageSnapshot> {
     const plan = await this.findPlanByName(planName);
     const today = this.today();
@@ -170,7 +187,8 @@ export class UsageService implements OnModuleInit {
         periodEnd: period.periodEnd,
         usedMessages: 0,
         planId: plan.id,
-        creemSubscriptionId: options.creemSubscriptionId ?? null
+        creemSubscriptionId: options.creemSubscriptionId ?? null,
+        subscriptionStatus: options.subscriptionStatus ?? null
       });
       usage = await this.usageRepo.save(usage);
     } else if (
@@ -184,7 +202,11 @@ export class UsageService implements OnModuleInit {
           creemSubscriptionId:
             options.creemSubscriptionId !== undefined
               ? options.creemSubscriptionId
-              : usage.creemSubscriptionId
+              : usage.creemSubscriptionId,
+          subscriptionStatus:
+            options.subscriptionStatus !== undefined
+              ? options.subscriptionStatus
+              : usage.subscriptionStatus
         }
       );
     } else {
@@ -198,6 +220,10 @@ export class UsageService implements OnModuleInit {
           creemSubscriptionId:
             options.creemSubscriptionId !== undefined
               ? options.creemSubscriptionId
+              : null,
+          subscriptionStatus:
+            options.subscriptionStatus !== undefined
+              ? options.subscriptionStatus
               : null
         }
       );
@@ -218,6 +244,49 @@ export class UsageService implements OnModuleInit {
   async findCurrentSubscriptionId(userId: string): Promise<string | null> {
     const usage = await this.findActiveUsage(userId, this.today());
     return usage?.creemSubscriptionId ?? null;
+  }
+
+  async assertCanAddContent(
+    userId: string,
+    resource: ContentLimitResource,
+    requestedCount = 1
+  ): Promise<void> {
+    const usage = await this.ensureCurrentUsage(userId);
+    const quota = usage.contentUsage[resource];
+
+    if (requestedCount > quota.remaining) {
+      throw new ForbiddenException(
+        this.buildContentLimitMessage(resource, quota.limit)
+      );
+    }
+  }
+
+  async setCurrentSubscriptionStatus(
+    userId: string,
+    subscriptionStatus: "active" | "canceled" | null
+  ): Promise<MessageUsageSnapshot> {
+    const usage = await this.findActiveUsage(userId, this.today());
+    if (!usage) {
+      throw new NotFoundException("No active usage period found.");
+    }
+
+    await this.usageRepo.update(
+      { id: usage.id },
+      {
+        subscriptionStatus
+      }
+    );
+
+    const updatedUsage = await this.usageRepo.findOne({
+      where: { id: usage.id },
+      relations: { plan: true }
+    });
+
+    if (!updatedUsage) {
+      throw new Error("Unable to load updated message usage for this user.");
+    }
+
+    return this.toSnapshot(updatedUsage);
   }
 
   findPlans(): Promise<Plan[]> {
@@ -368,10 +437,12 @@ export class UsageService implements OnModuleInit {
     return plan;
   }
 
-  private toSnapshot(usage: AiMessageUsage): MessageUsageSnapshot {
+  private async toSnapshot(usage: AiMessageUsage): Promise<MessageUsageSnapshot> {
     if (!usage.plan) {
       throw new Error(`Plan ${usage.planId} was not loaded.`);
     }
+
+    const contentUsage = await this.getContentUsage(usage.userId, usage.plan);
 
     return {
       plan: {
@@ -390,8 +461,64 @@ export class UsageService implements OnModuleInit {
         usage.plan.monthlyMessageLimit - usage.usedMessages,
         0
       ),
-      creemSubscriptionId: usage.creemSubscriptionId ?? null
+      creemSubscriptionId: usage.creemSubscriptionId ?? null,
+      subscriptionStatus:
+        usage.subscriptionStatus === "active" ||
+        usage.subscriptionStatus === "canceled"
+          ? usage.subscriptionStatus
+          : usage.creemSubscriptionId
+            ? "active"
+            : null,
+      contentUsage
     };
+  }
+
+  private async getContentUsage(
+    userId: string,
+    plan: Plan
+  ): Promise<ContentUsageSnapshot> {
+    const [webPages, pdfs, images] = await Promise.all([
+      this.countRows("web_pages", userId),
+      this.countRows("pdfs", userId),
+      this.countRows("images", userId)
+    ]);
+
+    return {
+      webPages: this.toContentQuota(webPages, plan.webCrawlLimit),
+      pdfs: this.toContentQuota(pdfs, plan.pdfUploadLimit),
+      images: this.toContentQuota(images, plan.imageUploadLimit)
+    };
+  }
+
+  private async countRows(tableName: string, userId: string): Promise<number> {
+    const rows = (await this.dataSource.query(
+      `SELECT COUNT(*)::int AS count FROM ${tableName} WHERE "userId" = $1`,
+      [userId]
+    )) as Array<{ count: number | string }>;
+
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  private toContentQuota(used: number, limit: number) {
+    return {
+      used,
+      limit,
+      remaining: Math.max(limit - used, 0)
+    };
+  }
+
+  private buildContentLimitMessage(
+    resource: ContentLimitResource,
+    limit: number
+  ): string {
+    const label =
+      resource === "webPages"
+        ? "URLs"
+        : resource === "pdfs"
+          ? "PDFs"
+          : "images";
+
+    return `Your current plan allows up to ${limit.toLocaleString()} ${label}. Upgrade your plan or remove existing content to add more.`;
   }
 
   private validatePlanInput(dto: CreatePlanDto) {

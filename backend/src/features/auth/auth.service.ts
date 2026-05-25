@@ -64,6 +64,48 @@ export class AuthService {
     };
   }
 
+  async sendPasswordResetEmail(email: string) {
+    const { error } = await this.supabaseClient.auth.resetPasswordForEmail(
+      email,
+      {
+        redirectTo: `${this.frontendUrl()}/reset-password`,
+      },
+    );
+
+    if (error) {
+      this.logger.warn(`Password reset request failed for ${email}: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    return {
+      message:
+        'If an account exists for this email, a password reset link will be sent.',
+    };
+  }
+
+  async updatePassword(accessToken: string, refreshToken: string, password: string) {
+    const { error: sessionError } = await this.supabaseClient.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (sessionError) {
+      this.logger.warn(`Password reset session failed: ${sessionError.message}`);
+      throw new UnauthorizedException('Invalid or expired password reset link.');
+    }
+
+    const { error } = await this.supabaseClient.auth.updateUser({ password });
+
+    if (error) {
+      this.logger.warn(`Password update failed: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    await this.supabaseClient.auth.signOut();
+
+    return { message: 'Password updated successfully.' };
+  }
+
   /**
    * Verify an email address using the token_hash + type params that Supabase
    * appends to the verification link redirect URL.
@@ -141,5 +183,9 @@ export class AuthService {
 
   private redirectBase(): string {
     return this.config.get<string>('appUrl') ?? 'http://localhost:3000';
+  }
+
+  private frontendUrl(): string {
+    return this.config.get<string>('frontendUrl') ?? 'http://localhost:5173';
   }
 }
