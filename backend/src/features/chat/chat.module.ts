@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ChatMessage } from './chat-message.entity';
+import { ChatSuggestion } from './chat-suggestion.entity';
 import { ChatService } from './chat.service';
 import { ChatController } from './chat.controller';
+import { ChatSuggestionService } from './chat-suggestion.service';
 import { AiModule } from '../../core/ai/ai.module';
 import { CacheModule } from '../../core/cache/cache.module';
 import { CompanyModule } from '../company/company.module';
@@ -12,7 +14,7 @@ import { ChatToolsModule } from '../chat-tools/chat-tools.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ChatMessage]),
+    TypeOrmModule.forFeature([ChatMessage, ChatSuggestion]),
     AiModule,
     CacheModule,
     CompanyModule,
@@ -21,7 +23,7 @@ import { ChatToolsModule } from '../chat-tools/chat-tools.module';
     ChatToolsModule,
   ],
   controllers: [ChatController],
-  providers: [ChatService],
-  exports: [ChatService],
+  providers: [ChatService, ChatSuggestionService],
+  exports: [ChatService, ChatSuggestionService],
 })
 export class ChatModule {}

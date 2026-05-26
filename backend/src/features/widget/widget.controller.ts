@@ -14,6 +14,7 @@ import type { Request } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ChatService } from '../chat/chat.service';
+import { ChatSuggestionService } from '../chat/chat-suggestion.service';
 import { WidgetKeyGuard } from './widget-key.guard';
 import type { WidgetRequest } from './widget-key.guard';
 import { WidgetKeyService } from './widget-key.service';
@@ -49,6 +50,7 @@ export class WidgetController {
   constructor(
     private readonly chatService: ChatService,
     private readonly widgetKeyService: WidgetKeyService,
+    private readonly chatSuggestionService: ChatSuggestionService,
   ) {}
 
   /** Serve the embeddable widget JavaScript file */
@@ -141,6 +143,14 @@ export class WidgetController {
       answer: response.answer,
       cached: response.cached,
       ...(response.action ? { action: response.action } : {}),
+    };
+  }
+
+  @Get('widget/:key/suggestions')
+  @UseGuards(WidgetKeyGuard)
+  async suggestions(@Req() req: WidgetRequest) {
+    return {
+      suggestions: await this.chatSuggestionService.get(req.widgetUserId),
     };
   }
 }

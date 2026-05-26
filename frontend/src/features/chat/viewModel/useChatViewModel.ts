@@ -12,7 +12,11 @@ import { AxiosError } from "axios";
 export function useChatViewModel(): ChatViewModel {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [suggestionsDraft, setSuggestionsDraft] = useState<string[]>(["", "", ""]);
   const [loading, setLoading] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(true);
+  const [suggestionsSaving, setSuggestionsSaving] = useState(false);
   const sessionId = useRef(crypto.randomUUID());
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -21,6 +25,35 @@ export function useChatViewModel(): ChatViewModel {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    chatService
+      .getSuggestions()
+      .then((loadedSuggestions) => {
+        if (cancelled) return;
+        setSuggestions(loadedSuggestions);
+        setSuggestionsDraft([
+          loadedSuggestions[0] ?? "",
+          loadedSuggestions[1] ?? "",
+          loadedSuggestions[2] ?? "",
+        ]);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSuggestions([]);
+          setSuggestionsDraft(["", "", ""]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setSuggestionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [chatService]);
 
   const resetTextareaHeight = () => {
     if (textareaRef.current) {
@@ -91,6 +124,36 @@ export function useChatViewModel(): ChatViewModel {
     textareaRef.current?.focus();
   };
 
+  const updateSuggestionDraft = (index: number, value: string) => {
+    setSuggestionsDraft((current) => {
+      const next = [...current];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const saveSuggestions = async () => {
+    if (suggestionsSaving) return {};
+
+    setSuggestionsSaving(true);
+    try {
+      const saved = await chatService.updateSuggestions(
+        suggestionsDraft.map((suggestion) => suggestion.trim()).filter(Boolean),
+      );
+      setSuggestions(saved);
+      setSuggestionsDraft([saved[0] ?? "", saved[1] ?? "", saved[2] ?? ""]);
+      return { message: "Chat suggestions saved" };
+    } catch (error) {
+      const message =
+        error instanceof AxiosError
+          ? ((error.response?.data as { message?: string } | undefined)?.message ?? undefined)
+          : undefined;
+      return { errorMessage: message ?? "Could not save chat suggestions" };
+    } finally {
+      setSuggestionsSaving(false);
+    }
+  };
+
   const clearChat = () => {
     setMessages([]);
     sessionId.current = crypto.randomUUID();
@@ -99,10 +162,16 @@ export function useChatViewModel(): ChatViewModel {
   return {
     messages,
     input,
+    suggestions,
+    suggestionsDraft,
     loading,
+    suggestionsLoading,
+    suggestionsSaving,
     bottomRef,
     textareaRef,
     canSend: Boolean(input.trim()) && !loading,
+    updateSuggestionDraft,
+    saveSuggestions,
     setSuggestedQuestion,
     handleInputChange,
     handleKeyDown,

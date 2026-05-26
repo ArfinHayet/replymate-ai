@@ -7,6 +7,7 @@ import { DocumentChunk } from './features/document/document-chunk.entity';
 import { Pdf } from './features/document/pdf.entity';
 import { Company } from './features/company/company.entity';
 import { ChatMessage } from './features/chat/chat-message.entity';
+import { ChatSuggestion } from './features/chat/chat-suggestion.entity';
 import { CachedAnswer } from './core/cache/cached-answer.entity';
 import { WidgetKey } from './features/widget/widget-key.entity';
 import { AllowedDomain } from './features/widget/allowed-domain.entity';
@@ -48,7 +49,7 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
+        entities: [DocumentChunk, Pdf, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
         synchronize: true,
         logging: false,
         extra: {

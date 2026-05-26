@@ -10,4 +10,12 @@ export class ChatService {
   sendMessage(message: string, sessionId: string) {
     return this.chatRepository.sendMessage({ message, sessionId });
   }
+
+  getSuggestions() {
+    return this.chatRepository.getSuggestions();
+  }
+
+  updateSuggestions(suggestions: string[]) {
+    return this.chatRepository.updateSuggestions(suggestions);
+  }
 }

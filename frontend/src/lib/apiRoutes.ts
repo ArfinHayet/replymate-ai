@@ -12,6 +12,7 @@ export const apiRoutes = {
   chat: {
     send: "/chat",
     history: "/chat/history",
+    suggestions: "/chat/suggestions",
   },
   chatTools: {
     list: "/chat-tools",

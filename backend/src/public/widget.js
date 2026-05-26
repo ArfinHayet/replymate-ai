@@ -247,6 +247,22 @@
     "font-size:13px;font-weight:600;",
     "}",
 
+    "#suggestions{",
+    "display:none;flex-wrap:wrap;gap:8px;",
+    "padding:10px 12px 0;",
+    "background:var(--rm-trip-surface);",
+    "border-top:1px solid var(--rm-trip-border);",
+    "}",
+    "#suggestions.visible{display:flex;}",
+    ".suggestion-btn{",
+    "max-width:100%;border:1px solid #dbeafe;background:#ffffff;",
+    "color:var(--rm-trip-brand);border-radius:999px;",
+    "padding:7px 10px;font-size:12px;font-weight:700;line-height:1.25;",
+    "cursor:pointer;transition:all .2s ease;",
+    "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;",
+    "}",
+    ".suggestion-btn:hover{background:#eff6ff;border-color:#bfdbfe;transform:translateY(-1px);}",
+
     ".typing{",
     "display:flex;align-items:center;gap:5px;",
     "padding:13px 16px;",
@@ -641,6 +657,9 @@
     messages.id = "messages";
     messages.setAttribute("aria-live", "polite");
 
+    var suggestionsEl = document.createElement("div");
+    suggestionsEl.id = "suggestions";
+
     // Input Row
     var inputRow = document.createElement("div");
     inputRow.id = "input-row";
@@ -672,6 +691,7 @@
 
     chatWindow.appendChild(header);
     chatWindow.appendChild(messages);
+    chatWindow.appendChild(suggestionsEl);
     chatWindow.appendChild(inputRow);
     chatWindow.appendChild(footer);
 
@@ -682,6 +702,8 @@
     var isOpen = false;
     var isLoading = false;
     var hasOpened = false;
+    var hasSentMessage = false;
+    var widgetSuggestions = [];
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
     function scrollToBottom() {
@@ -731,6 +753,52 @@
       } else {
         statusEl.lastChild.textContent = " Online · ready to help";
       }
+    }
+
+    function renderSuggestions() {
+      suggestionsEl.innerHTML = "";
+
+      if (hasSentMessage || !widgetSuggestions.length) {
+        suggestionsEl.classList.remove("visible");
+        return;
+      }
+
+      widgetSuggestions.slice(0, 3).forEach(function (suggestion) {
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "suggestion-btn";
+        btn.textContent = suggestion;
+        btn.title = suggestion;
+        btn.addEventListener("click", function () {
+          userInput.value = suggestion;
+          userInput.focus();
+        });
+        suggestionsEl.appendChild(btn);
+      });
+
+      suggestionsEl.classList.add("visible");
+    }
+
+    function loadSuggestions() {
+      fetch(apiBase + "/widget/" + widgetKey + "/suggestions", {
+        method: "GET"
+      })
+        .then(function (res) {
+          if (!res.ok) return { suggestions: [] };
+          return res.json();
+        })
+        .then(function (data) {
+          widgetSuggestions = Array.isArray(data.suggestions)
+            ? data.suggestions.filter(function (item) {
+                return typeof item === "string" && item.trim();
+              })
+            : [];
+          renderSuggestions();
+        })
+        .catch(function () {
+          widgetSuggestions = [];
+          renderSuggestions();
+        });
     }
 
     function openChat() {
@@ -794,6 +862,8 @@
       }
 
       userInput.value = "";
+      hasSentMessage = true;
+      renderSuggestions();
 
       addMessage(text, "user");
 
@@ -869,6 +939,8 @@
     if (alwaysOpen) {
       openChat();
     }
+
+    loadSuggestions();
 
     /*
       Important:

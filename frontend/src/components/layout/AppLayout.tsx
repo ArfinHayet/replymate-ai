@@ -11,12 +11,14 @@ import {
   Building2,
   ChartColumn,
   CheckCircle2,
+  ChevronDown,
   Code2,
   FileUp,
   Files,
   Globe,
   History,
   Images,
+  Lightbulb,
   LogOut,
   MessageSquare,
   Sparkles,
@@ -43,20 +45,70 @@ type MessageUsage = {
   remainingMessages: number;
 };
 
-const navItems = [
-  { to: "/profile-completion", icon: CheckCircle2, label: "Profile Completion", requiresCompletion: false },
-  { to: "/company", icon: Building2, label: "Company", requiresCompletion: false },
-  { to: "/upload", icon: FileUp, label: "Add Content", requiresCompletion: false },
-  { to: "/chat", icon: MessageSquare, label: "Chat", requiresCompletion: true },
-  { to: "/pdfs", icon: Files, label: "Documents", requiresCompletion: true },
-  { to: "/web-pages", icon: Globe, label: "Web Pages", requiresCompletion: true },
-  { to: "/images", icon: Images, label: "Images", requiresCompletion: true },
-  { to: "/analytics", icon: ChartColumn, label: "Analytics", requiresCompletion: true },
-  { to: "/chat-history", icon: History, label: "Chat History", requiresCompletion: true },
-  { to: "/embed", icon: Code2, label: "Website Widget", requiresCompletion: true },
-  { to: "/tools", icon: Wrench, label: "Tools", requiresCompletion: true },
-  { to: "/upgrade", icon: Sparkles, label: "Upgrade", requiresCompletion: true },
-  { to: "/profile", icon: UserRound, label: "Profile", requiresCompletion: true },
+type NavItem = {
+  to: string;
+  icon: typeof MessageSquare;
+  label: string;
+  requiresCompletion: boolean;
+};
+
+type NavGroup = {
+  id: string;
+  icon: typeof MessageSquare;
+  label: string;
+  items: NavItem[];
+};
+
+const navGroups: NavGroup[] = [
+  {
+    id: "setup",
+    icon: CheckCircle2,
+    label: "Setup",
+    items: [
+      { to: "/profile-completion", icon: CheckCircle2, label: "Profile Completion", requiresCompletion: false },
+      { to: "/company", icon: Building2, label: "Company", requiresCompletion: false },
+      { to: "/upload", icon: FileUp, label: "Add Content", requiresCompletion: false },
+    ],
+  },
+  {
+    id: "chat",
+    icon: MessageSquare,
+    label: "Chat",
+    items: [
+      { to: "/chat", icon: MessageSquare, label: "Chat", requiresCompletion: true },
+      { to: "/chat-suggestions", icon: Lightbulb, label: "Suggestions", requiresCompletion: true },
+      { to: "/chat-history", icon: History, label: "Chat History", requiresCompletion: true },
+      { to: "/tools", icon: Wrench, label: "Tools", requiresCompletion: true },
+    ],
+  },
+  {
+    id: "knowledge",
+    icon: Files,
+    label: "Knowledge",
+    items: [
+      { to: "/pdfs", icon: Files, label: "Documents", requiresCompletion: true },
+      { to: "/web-pages", icon: Globe, label: "Web Pages", requiresCompletion: true },
+      { to: "/images", icon: Images, label: "Images", requiresCompletion: true },
+    ],
+  },
+  {
+    id: "workspace",
+    icon: ChartColumn,
+    label: "Workspace",
+    items: [
+      { to: "/analytics", icon: ChartColumn, label: "Analytics", requiresCompletion: true },
+      { to: "/embed", icon: Code2, label: "Website Widget", requiresCompletion: true },
+    ],
+  },
+  {
+    id: "account",
+    icon: UserRound,
+    label: "Account",
+    items: [
+      { to: "/upgrade", icon: Sparkles, label: "Upgrade", requiresCompletion: true },
+      { to: "/profile", icon: UserRound, label: "Profile", requiresCompletion: true },
+    ],
+  },
 ];
 
 const onboardingAllowedPaths = new Set([
@@ -90,6 +142,13 @@ export function AppLayout() {
   const logoutViewModel = useLogoutViewModel();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [usage, setUsage] = useState<MessageUsage | null>(null);
+  const [openNavGroups, setOpenNavGroups] = useState<Record<string, boolean>>({
+    setup: true,
+    chat: true,
+    knowledge: false,
+    workspace: false,
+    account: false,
+  });
   const [profileCompletion, setProfileCompletion] =
     useState<ProfileCompletion | null>(null);
   const [completionLoading, setCompletionLoading] = useState(true);
@@ -196,13 +255,33 @@ export function AppLayout() {
     ? `${usage.usedMessages.toLocaleString()} / ${usage.plan.monthlyMessageLimit.toLocaleString()}`
     : "Loading";
 
-  const completionPercent = profileCompletion?.completionPercent ?? 0;
   const isProfileComplete = Boolean(profileCompletion?.isComplete);
-  const visibleNavItems = isProfileComplete
-    ? navItems.filter((item) => item.to !== "/profile-completion")
-    : navItems;
+  const visibleNavGroups = useMemo(
+    () =>
+      navGroups
+        .map((group) => ({
+          ...group,
+          items: group.items.filter(
+            (item) => !isProfileComplete || item.to !== "/profile-completion",
+          ),
+        }))
+        .filter((group) => group.items.length > 0),
+    [isProfileComplete],
+  );
   const shouldHoldForCompletion =
     completionLoading && !onboardingAllowedPaths.has(location.pathname);
+
+  useEffect(() => {
+    const activeGroup = navGroups.find((group) =>
+      group.items.some((item) => item.to === location.pathname),
+    );
+    if (!activeGroup) return;
+
+    setOpenNavGroups((current) => ({
+      ...current,
+      [activeGroup.id]: true,
+    }));
+  }, [location.pathname]);
 
   const guardIncompleteNavigation = (requiresCompletion: boolean) => {
     if (!requiresCompletion || isProfileComplete) return false;
@@ -212,6 +291,89 @@ export function AppLayout() {
     navigate("/profile-completion");
     return true;
   };
+
+  const toggleNavGroup = (groupId: string) => {
+    setOpenNavGroups((current) => ({
+      ...current,
+      [groupId]: !current[groupId],
+    }));
+  };
+
+  const renderNavGroups = (mobile = false) => (
+    <>
+      {visibleNavGroups.map((group) => {
+        const GroupIcon = group.icon;
+        const isOpen = openNavGroups[group.id] ?? false;
+        const isGroupActive = group.items.some((item) => item.to === location.pathname);
+
+        return (
+          <div key={group.id} className="space-y-1">
+            <button
+              type="button"
+              onClick={() => toggleNavGroup(group.id)}
+              className={cn(
+                "flex w-full items-center gap-3 text-left font-semibold transition-all",
+                mobile
+                  ? "rounded-2xl px-3.5 py-3 text-sm"
+                  : "rounded-rm-trip-smooth px-3 py-2.5 text-sm",
+                isGroupActive
+                  ? "bg-rm-trip-brand text-white shadow-rm-trip-card"
+                  : "text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text",
+              )}
+            >
+              <GroupIcon className="h-4 w-4 shrink-0" />
+              <span className="min-w-0 flex-1 truncate">{group.label}</span>
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform",
+                  isOpen ? "rotate-180" : "rotate-0",
+                )}
+              />
+            </button>
+
+            {isOpen && (
+              <div className={cn("space-y-1", mobile ? "pl-3" : "pl-3")}>
+                {group.items.map(({ to, icon: Icon, label, requiresCompletion }) => {
+                  const locked = Boolean(requiresCompletion && !isProfileComplete);
+
+                  return (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      end={to === "/images"}
+                      onClick={(event) => {
+                        if (guardIncompleteNavigation(Boolean(requiresCompletion))) {
+                          event.preventDefault();
+                          return;
+                        }
+                        if (mobile) closeMobileMenu();
+                      }}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 border-l text-sm transition-all duration-150",
+                          mobile
+                            ? "rounded-r-2xl py-2.5 pl-3 pr-3"
+                            : "rounded-rm-trip-smooth py-2.5 pl-3 pr-3",
+                          isActive
+                            ? "border-gray-100 bg-transparent font-semibold text-rm-trip-text"
+                            : locked
+                              ? "border-gray-100 font-medium text-gray-400 hover:bg-gray-50"
+                              : "border-gray-100 font-medium text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text",
+                        )
+                      }
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="truncate">{label}</span>
+                    </NavLink>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </>
+  );
 
   return (
     <div className="flex h-dvh bg-rm-trip-surface overflow-hidden">
@@ -229,53 +391,11 @@ export function AppLayout() {
         </div>
 
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <nav className="flex flex-col gap-1 p-3 pt-4">
-            {visibleNavItems.map(({ to, icon: Icon, label, requiresCompletion }) => {
-              const locked = Boolean(requiresCompletion && !isProfileComplete);
-
-              return (
-              <NavLink
-                key={to}
-                to={to}
-                end={to === "/images"}
-                onClick={(event) => {
-                  if (guardIncompleteNavigation(Boolean(requiresCompletion))) {
-                    event.preventDefault();
-                  }
-                }}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-rm-trip-smooth px-3 py-2.5 text-sm font-medium transition-all duration-150",
-                    isActive
-                      ? "bg-rm-trip-brand text-white shadow-rm-trip-card"
-                      : locked
-                        ? "text-gray-400 hover:bg-gray-50"
-                        : "text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text",
-                  )
-                }
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{label}</span>
-              </NavLink>
-              );
-            })}
+          <nav className="flex flex-col gap-2 p-3 pt-4">
+            {renderNavGroups()}
           </nav>
 
           <div className="mt-auto border-t border-gray-100 p-3">
-            <div className="mb-3 rounded-rm-trip-smooth border border-gray-100 bg-gray-50 p-3">
-              <div className="flex items-center justify-between gap-3 text-xs font-semibold">
-                <span className="text-rm-trip-text-muted">
-                  Profile completion
-                </span>
-                <span className="text-rm-trip-text">{completionPercent}%</span>
-              </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
-                <div
-                  className="h-full rounded-full bg-rm-trip-brand transition-all"
-                  style={{ width: `${completionPercent}%` }}
-                />
-              </div>
-            </div>
             <div className="mb-3 rounded-rm-trip-smooth border border-gray-100 bg-gray-50 p-3">
               <div className="flex items-center justify-between gap-3 text-xs font-semibold">
                 <span className="text-rm-trip-text-muted">
@@ -343,54 +463,10 @@ export function AppLayout() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <nav className="flex flex-1 flex-col gap-1.5 overflow-y-auto p-4">
-              {visibleNavItems.map(({ to, icon: Icon, label, requiresCompletion }) => {
-                const locked = Boolean(requiresCompletion && !isProfileComplete);
-
-                return (
-                <NavLink
-                  key={to}
-                  to={to}
-                  end={to === "/images"}
-                  onClick={(event) => {
-                    if (guardIncompleteNavigation(Boolean(requiresCompletion))) {
-                      event.preventDefault();
-                      return;
-                    }
-                    closeMobileMenu();
-                  }}
-                  className={({ isActive }) =>
-                    cn(
-                      "flex items-center gap-3 rounded-2xl px-3.5 py-3 text-sm font-semibold transition-all",
-                      isActive
-                        ? "bg-rm-trip-brand text-white shadow-rm-trip-card"
-                        : locked
-                          ? "text-gray-400 hover:bg-gray-50"
-                          : "text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text",
-                    )
-                  }
-                >
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{label}</span>
-                </NavLink>
-                );
-              })}
+            <nav className="flex flex-1 flex-col gap-2 overflow-y-auto p-4">
+              {renderNavGroups(true)}
             </nav>
             <div className="border-t border-gray-100 p-4">
-              <div className="mb-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
-                <div className="flex items-center justify-between gap-3 text-xs font-semibold">
-                  <span className="text-rm-trip-text-muted">
-                    Profile completion
-                  </span>
-                  <span className="text-rm-trip-text">{completionPercent}%</span>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
-                  <div
-                    className="h-full rounded-full bg-rm-trip-brand transition-all"
-                    style={{ width: `${completionPercent}%` }}
-                  />
-                </div>
-              </div>
               <div className="mb-3 rounded-2xl border border-gray-100 bg-gray-50 p-3">
                 <div className="flex items-center justify-between gap-3 text-xs font-semibold">
                   <span className="text-rm-trip-text-muted">

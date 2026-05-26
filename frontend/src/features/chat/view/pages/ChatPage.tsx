@@ -5,12 +5,6 @@ import { ChatStyles } from "../components/ChatStyles";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Trash2 } from "lucide-react";
 
-const SUGGESTED_QUESTIONS = [
-  "What is this document about?",
-  "Summarize the key points",
-  "What are the main topics?",
-];
-
 export function ChatPage() {
   const viewModel = useChatViewModel();
 
@@ -35,7 +29,7 @@ export function ChatPage() {
       <ChatMessageList
         messages={viewModel.messages}
         loading={viewModel.loading}
-        suggestions={SUGGESTED_QUESTIONS}
+        suggestions={viewModel.suggestions}
         bottomRef={viewModel.bottomRef}
         onSelectSuggestion={viewModel.setSuggestedQuestion}
       />

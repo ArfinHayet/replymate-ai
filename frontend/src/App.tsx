@@ -23,6 +23,9 @@ const ImageUploadPage = lazy(() => import("@/features/images").then((module) => 
 const ImagesPage = lazy(() => import("@/features/images").then((module) => ({ default: module.ImagesPage })));
 const CompanyPage = lazy(() => import("@/features/company").then((module) => ({ default: module.CompanyPage })));
 const ChatPage = lazy(() => import("@/features/chat").then((module) => ({ default: module.ChatPage })));
+const ChatSuggestionsPage = lazy(() =>
+  import("@/features/chat").then((module) => ({ default: module.ChatSuggestionsPage })),
+);
 const ChatHistoryPage = lazy(() =>
   import("@/features/chatHistory").then((module) => ({ default: module.ChatHistoryPage })),
 );
@@ -67,6 +70,7 @@ export default function App() {
               <Route path="/images" element={<ImagesPage />} />
               <Route path="/company" element={<CompanyPage />} />
               <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chat-suggestions" element={<ChatSuggestionsPage />} />
               <Route path="/chat-history" element={<ChatHistoryPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile-completion" element={<ProfileCompletionPage />} />
