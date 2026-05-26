@@ -17,6 +17,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { UsageService } from '../usage/usage.service';
+import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
 
 @Controller('auth')
 export class AuthController {
@@ -24,6 +25,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly config: ConfigService,
     private readonly usageService: UsageService,
+    private readonly profileCompletionService: ProfileCompletionService,
   ) {}
 
   @Get('me')
@@ -37,6 +39,7 @@ export class AuthController {
     };
     const meta = user.user_metadata ?? {};
     const usage = await this.usageService.ensureCurrentUsage(user.id);
+    const profileCompletion = await this.profileCompletionService.getStatus(user.id);
     return {
       id: user.id,
       email: user.email ?? '',
@@ -44,6 +47,7 @@ export class AuthController {
       avatarUrl: meta.avatar_url ?? null,
       joinedAt: user.created_at,
       usage,
+      profileCompletion,
     };
   }
 

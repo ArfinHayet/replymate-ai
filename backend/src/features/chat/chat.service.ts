@@ -10,6 +10,8 @@ import { CacheService } from '../../core/cache/cache.service';
 import { CompanyService } from '../company/company.service';
 import { RetrievalService } from '../../core/retrieval/retrieval.service';
 import { MessageUsageSnapshot, UsageService } from '../usage/usage.service';
+import { ChatRedirectAction } from '../chat-tools/chat-tools.types';
+import { ChatToolsService } from '../chat-tools/chat-tools.service';
 
 /** Max stored messages loaded per session (10 full turns) */
 const MAX_HISTORY = 20;
@@ -55,6 +57,7 @@ export class ChatService implements OnModuleInit {
     private readonly companyService: CompanyService,
     private readonly retrievalService: RetrievalService,
     private readonly usageService: UsageService,
+    private readonly chatToolsService: ChatToolsService,
   ) {}
 
   onModuleInit() {
@@ -77,7 +80,8 @@ export class ChatService implements OnModuleInit {
   private async buildSystemPrompt(userId: string): Promise<SystemPromptContext> {
     const company = await this.companyService.getActive(userId);
     console.log('Active company profile:', company, userId);
-    if (!company) return { prompt: this.systemPrompt };
+    const runtimeContext = this.buildRuntimeContextPrompt();
+    if (!company) return { prompt: runtimeContext + this.systemPrompt };
 
     const name = company.name;
     const description = company.shortDescription;
@@ -91,9 +95,15 @@ export class ChatService implements OnModuleInit {
     ].join('\n');
 
     return {
-      prompt: persona + '\n' + this.systemPrompt,
+      prompt: persona + '\n' + runtimeContext + this.systemPrompt,
       activeCompanyName: name,
     };
+  }
+
+  private buildRuntimeContextPrompt(): string {
+    const now = new Date();
+    const currentDate = now.toISOString().slice(0, 10);
+    return `Runtime context:\nCurrent date: ${currentDate}\nCurrent year: ${now.getFullYear()}\n\n`;
   }
 
   private buildContextualRetrievalQuery(
@@ -249,12 +259,15 @@ export class ChatService implements OnModuleInit {
     message: string,
     sessionId: string,
     userId: string,
-  ): Promise<{ answer: string; cached: boolean; usage: MessageUsageSnapshot }> {
+  ): Promise<{ answer: string; cached: boolean; usage: MessageUsageSnapshot; action?: ChatRedirectAction }> {
     const usage = await this.usageService.incrementOrThrow(userId);
-    const [history, systemPrompt] = await Promise.all([
+
+    const [history, systemPrompt, chatToolConfigs] = await Promise.all([
       this.loadHistory(sessionId, userId),
       this.buildSystemPrompt(userId),
+      this.chatToolsService.list(userId),
     ]);
+    const enabledChatToolConfigs = chatToolConfigs.filter((config) => config.enabled);
     const hasCompanyProfile = Boolean(systemPrompt.activeCompanyName);
     const retrievalIntent = this.buildDeterministicRetrievalIntent(
       history,
@@ -276,30 +289,36 @@ export class ChatService implements OnModuleInit {
       retrievalIntent ?? this.buildContextualRetrievalQuery(history, message);
     const queryVector = await this.aiService.embedText(retrievalQuery);
 
-    const cachedAnswer = await this.cacheService.findHit(queryVector, userId);
-    if (cachedAnswer) {
-      await this.saveTurn(sessionId, userId, message, cachedAnswer);
-      return { answer: cachedAnswer, cached: true, usage };
+    if (enabledChatToolConfigs.length === 0) {
+      const cachedAnswer = await this.cacheService.findHit(queryVector, userId);
+      if (cachedAnswer) {
+        await this.saveTurn(sessionId, userId, message, cachedAnswer);
+        return { answer: cachedAnswer, cached: true, usage };
+      }
     }
 
     const hasKnowledge =
       hasCompanyProfile ||
       (await this.retrievalService.hasRelevantKnowledge(queryVector, userId));
-    if (!hasKnowledge) {
+    if (!hasKnowledge && enabledChatToolConfigs.length === 0) {
       this.logger.log('No relevant chunks in KB - returning fallback without calling LLM');
       await this.saveTurn(sessionId, userId, message, this.fallbackMessage);
       return { answer: this.fallbackMessage, cached: false, usage };
     }
 
     let answer: string;
+    let action: ChatRedirectAction | undefined;
     try {
-      answer = await this.aiService.runAgenticLoop(
+      const agentResult = await this.aiService.runAgenticLoop(
         systemPrompt.prompt,
         history,
         message,
         userId,
         retrievalIntent ?? undefined,
+        enabledChatToolConfigs,
       );
+      answer = agentResult.answer;
+      action = agentResult.action;
     } catch (err) {
       this.logger.error('Agentic loop failed', err);
       answer = this.fallbackMessage;
@@ -310,12 +329,17 @@ export class ChatService implements OnModuleInit {
     const tasks: Promise<unknown>[] = [
       this.saveTurn(sessionId, userId, message, answer),
     ];
-    if (!isFallback) {
+    if (!isFallback && !action) {
       tasks.push(this.cacheService.save(retrievalQuery, queryVector, answer, userId));
     }
     await Promise.all(tasks);
 
-    return { answer, cached: false, usage };
+    return {
+      answer,
+      cached: false,
+      usage,
+      ...(action ? { action } : {}),
+    };
   }
 
   private async loadHistory(

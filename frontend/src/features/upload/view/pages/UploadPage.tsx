@@ -84,7 +84,10 @@ export function UploadPage() {
   const uploadPdf = async () => {
     const result = await viewModel.uploadSelectedPdf();
     showActionResult(result);
-    if (result.success) void loadUsage();
+    if (result.success) {
+      window.dispatchEvent(new Event("supportmate-profile-completion-updated"));
+      void loadUsage();
+    }
   };
 
   const uploadMarkdown = async () => {
@@ -94,7 +97,10 @@ export function UploadPage() {
   const ingestUrls = async () => {
     const result = await viewModel.ingestUrls();
     showActionResult(result);
-    if (result.message) void loadUsage();
+    if (result.message) {
+      window.dispatchEvent(new Event("supportmate-profile-completion-updated"));
+      void loadUsage();
+    }
   };
 
   const handleAsyncFileResult = async (result: Promise<UploadActionResult>) => {

@@ -41,7 +41,7 @@ function createService() {
   };
   const aiService = {
     embedText: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]),
-    runAgenticLoop: jest.fn().mockResolvedValue("Agent answer")
+    runAgenticLoop: jest.fn().mockResolvedValue({ answer: "Agent answer" })
   };
   const cacheService = {
     findHit: jest.fn().mockResolvedValue(null),
@@ -56,6 +56,9 @@ function createService() {
   const usageService = {
     incrementOrThrow: jest.fn().mockResolvedValue(USAGE_SNAPSHOT)
   };
+  const chatToolsService = {
+    list: jest.fn().mockResolvedValue([])
+  };
 
   const service = new ChatService(
     chatRepo as never,
@@ -64,7 +67,8 @@ function createService() {
     cacheService as never,
     companyService as never,
     retrievalService as never,
-    usageService as never
+    usageService as never,
+    chatToolsService as never
   );
   service.onModuleInit();
 
@@ -75,7 +79,8 @@ function createService() {
     cacheService,
     companyService,
     retrievalService,
-    usageService
+    usageService,
+    chatToolsService
   };
 }
 
@@ -145,7 +150,8 @@ describe("ChatService", () => {
       expect.any(Array),
       "contact number?",
       "user-1",
-      expect.stringContaining("Flights Nepal contact number phone")
+      expect.stringContaining("Flights Nepal contact number phone"),
+      []
     );
   });
 
@@ -287,7 +293,7 @@ describe("ChatService", () => {
   it("does not cache fallback answers", async () => {
     const { service, chatRepo, aiService, cacheService } = createService();
     chatRepo.find.mockResolvedValue([]);
-    aiService.runAgenticLoop.mockResolvedValue(FALLBACK_MESSAGE);
+    aiService.runAgenticLoop.mockResolvedValue({ answer: FALLBACK_MESSAGE });
 
     const result = await service.chat(
       "what is unrelated?",
@@ -301,6 +307,72 @@ describe("ChatService", () => {
       usage: USAGE_SNAPSHOT
     });
     expect(cacheService.save).not.toHaveBeenCalled();
+  });
+
+  it("lets enabled redirect tools run through the agent and does not cache them", async () => {
+    const {
+      service,
+      chatRepo,
+      aiService,
+      cacheService,
+      retrievalService,
+      chatToolsService
+    } = createService();
+    chatRepo.find.mockResolvedValue([]);
+    chatToolsService.list.mockResolvedValue([
+      {
+        toolKey: "live_agent_contact",
+        enabled: true,
+        config: { redirectUrl: "https://wa.me/8801000000000" }
+      }
+    ]);
+    retrievalService.hasRelevantKnowledge.mockResolvedValue(false);
+    aiService.runAgenticLoop.mockResolvedValue({
+      answer: "Redirecting to Live Agent",
+      action: {
+        type: "redirect",
+        target: "new_tab",
+        url: "https://wa.me/8801000000000",
+        delayMs: 1200
+      }
+    });
+
+    const result = await service.chat(
+      "I want to talk to a real agent",
+      "session-1",
+      "user-1"
+    );
+
+    expect(result).toEqual({
+      answer: "Redirecting to Live Agent",
+      cached: false,
+      usage: USAGE_SNAPSHOT,
+      action: {
+        type: "redirect",
+        target: "new_tab",
+        url: "https://wa.me/8801000000000",
+        delayMs: 1200
+      }
+    });
+    expect(chatRepo.save).toHaveBeenCalled();
+    expect(aiService.embedText).toHaveBeenCalled();
+    expect(retrievalService.hasRelevantKnowledge).toHaveBeenCalled();
+    expect(cacheService.findHit).not.toHaveBeenCalled();
+    expect(cacheService.save).not.toHaveBeenCalled();
+    expect(aiService.runAgenticLoop).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Array),
+      "I want to talk to a real agent",
+      "user-1",
+      undefined,
+      [
+        {
+          toolKey: "live_agent_contact",
+          enabled: true,
+          config: { redirectUrl: "https://wa.me/8801000000000" }
+        }
+      ]
+    );
   });
 
   it("does not save or answer when the monthly message quota is exceeded", async () => {
@@ -333,6 +405,14 @@ describe("chat system prompt", () => {
     expect(prompt).toContain("contact number?");
     expect(prompt).toContain("office hours?");
     expect(prompt).toContain("ask a concise clarification question");
+    expect(prompt).toContain("Tool workflow exception");
+    expect(prompt).toContain("city_to_airport");
+    expect(prompt).toContain("assume one-way");
+    expect(prompt).toContain("use the Current year from the Runtime context");
+    expect(prompt).toContain("do not ask for the year");
+    expect(prompt).toContain("22th June");
+    expect(prompt).toContain("Redirecting to flight page");
+    expect(prompt).toContain("Redirecting to Live Agent");
     expect(prompt).toContain(FALLBACK_MESSAGE);
   });
 });

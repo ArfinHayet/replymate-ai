@@ -27,7 +27,11 @@ const ChatHistoryPage = lazy(() =>
   import("@/features/chatHistory").then((module) => ({ default: module.ChatHistoryPage })),
 );
 const EmbedPage = lazy(() => import("@/features/embed").then((module) => ({ default: module.EmbedPage })));
+const ToolsPage = lazy(() => import("@/features/tools").then((module) => ({ default: module.ToolsPage })));
 const ProfilePage = lazy(() => import("@/features/profile").then((module) => ({ default: module.ProfilePage })));
+const ProfileCompletionPage = lazy(() =>
+  import("@/features/profileCompletion").then((module) => ({ default: module.ProfileCompletionPage })),
+);
 const AnalyticsPage = lazy(() => import("@/features/analytics").then((module) => ({ default: module.AnalyticsPage })));
 const UpgradePage = lazy(() => import("@/features/upgrade").then((module) => ({ default: module.UpgradePage })));
 
@@ -65,7 +69,9 @@ export default function App() {
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chat-history" element={<ChatHistoryPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile-completion" element={<ProfileCompletionPage />} />
               <Route path="/embed" element={<EmbedPage />} />
+              <Route path="/tools" element={<ToolsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/upgrade" element={<UpgradePage />} />
             </Route>

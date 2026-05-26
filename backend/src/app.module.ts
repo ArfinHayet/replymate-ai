@@ -30,6 +30,10 @@ import { Plan } from './features/usage/plan.entity';
 import { AiMessageUsage } from './features/usage/ai-message-usage.entity';
 import { UsageModule } from './features/usage/usage.module';
 import { PaymentsModule } from './features/payments/payments.module';
+import { ProfileCompletion } from './features/profile-completion/profile-completion.entity';
+import { ProfileCompletionModule } from './features/profile-completion/profile-completion.module';
+import { ChatToolConfig } from './features/chat-tools/chat-tool-config.entity';
+import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
 
 @Module({
   imports: [
@@ -44,7 +48,7 @@ import { PaymentsModule } from './features/payments/payments.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage],
+        entities: [DocumentChunk, Pdf, Company, ChatMessage, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
         synchronize: true,
         logging: false,
         extra: {
@@ -67,6 +71,8 @@ import { PaymentsModule } from './features/payments/payments.module';
     WhatsappModule,
     UsageModule,
     PaymentsModule,
+    ProfileCompletionModule,
+    ChatToolsModule,
   ],
 })
 export class AppModule implements OnModuleInit {

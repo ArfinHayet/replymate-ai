@@ -6,6 +6,14 @@ import { HumanMessage, AIMessage, BaseMessage } from '@langchain/core/messages';
 import { createAgent } from 'langchain';
 import { LlmFactoryService } from '../llm/llm-factory.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
+import {
+  ChatRedirectAction,
+  ChatToolConfigResponse,
+} from '../../features/chat-tools/chat-tools.types';
+import {
+  FlightSearchToolInput,
+  ToolRetrievalService,
+} from '../retrieval/tool-retrieval.service';
 
 const analyzeOutputSchema = z.object({
   title: z.string().describe('A concise title (5-10 words) for the image'),
@@ -17,6 +25,11 @@ export interface Message {
   role: 'user' | 'model';
   parts: { text?: string }[];
 }
+
+export type AgenticLoopResult = {
+  answer: string;
+  action?: ChatRedirectAction;
+};
 
 const TOOL_QUERY_CONTEXT_TURNS = 6;
 const TOOL_QUERY_CONTEXT_CHAR_LIMIT = 1600;
@@ -58,6 +71,7 @@ export class AiService {
     private readonly config: ConfigService,
     private readonly llmFactory: LlmFactoryService,
     private readonly retrievalService: RetrievalService,
+    private readonly toolRetrievalService: ToolRetrievalService,
   ) {}
 
   private buildContextualToolQuery(
@@ -85,13 +99,15 @@ export class AiService {
     userMessage: string,
     userId: string,
     retrievalIntent?: string,
-  ): Promise<string> {
+    chatToolConfigs: ChatToolConfigResponse[] = [],
+  ): Promise<AgenticLoopResult> {
     const maxIterations = this.config.get<number>('rag.maxToolIterations') ?? 10;
 
     // ── 1. Tool definitions ───────────────────────────────────────────────────
     // Accumulate every {title, url} pair the search_images tool returns so we
     // can restore any URLs the LLM inadvertently mutates in its final answer.
     const imageUrls: { title: string; url: string }[] = [];
+    const redirectActions: ChatRedirectAction[] = [];
 
     const searchDocumentsTool = tool(
       async ({ query }: { query: string }): Promise<string> => {
@@ -175,6 +191,116 @@ export class AiService {
       },
     );
 
+    const tools: ReturnType<typeof tool>[] = [
+      searchDocumentsTool,
+      searchImagesTool,
+      searchWebPagesTool,
+    ];
+    const flightSearchConfig = chatToolConfigs.find(
+      (config) => config.toolKey === 'flight_search' && config.enabled,
+    );
+    const liveAgentConfig = chatToolConfigs.find(
+      (config) => config.toolKey === 'live_agent_contact' && config.enabled,
+    );
+
+    if (flightSearchConfig) {
+      const cityToAirportTool = tool(
+        async ({ location }: { location: string }): Promise<string> => {
+          this.logger.log(`Tool: city_to_airport("${location.slice(0, 80)}")`);
+          return this.toolRetrievalService.cityToAirport(location);
+        },
+        {
+          name: 'city_to_airport',
+          description:
+            'Resolve a city, airport, country, or corrected user misspelling into IATA-style airport/city codes. ' +
+            'Call this for every flight origin and destination before calling flight_search.',
+          schema: z.object({
+            location: z.string().describe(
+              'A city, airport, or country name. Correct obvious user typos before calling, for example Dakka -> Dhaka.',
+            ),
+          }),
+        },
+      );
+
+      const flightSearchTool = tool(
+        async (input: FlightSearchToolInput): Promise<string> => {
+          this.logger.log(
+            `Tool: flight_search("${input.originCode}" -> "${input.destinationCode}")`,
+          );
+          const result = this.toolRetrievalService.buildFlightRedirect(
+            flightSearchConfig,
+            input,
+          );
+          if (result.action) {
+            redirectActions.push(result.action);
+            return 'Flight search redirect is ready. Final answer must be exactly: Redirecting to flight page';
+          }
+          return result.answer;
+        },
+        {
+          name: 'flight_search',
+          description:
+            'Build a flight search redirect URL after route locations have been resolved with city_to_airport. ' +
+            'Use only when the user wants flight search, tickets, or travel booking. ' +
+            'If the user gives dates without a year, use the Current year from the system Runtime context. ' +
+            'If the user gives opposite-direction outbound and return legs, use tripType round_trip.',
+          schema: z.object({
+            tripType: z.enum(['one_way', 'round_trip', 'multi_city']).describe(
+              'Use one_way by default. Use round_trip when the user gives an outbound leg and a return leg in the opposite direction.',
+            ),
+            originCode: z.string().describe('Resolved IATA origin code, such as DAC.'),
+            destinationCode: z.string().describe('Resolved IATA destination code, such as KUL.'),
+            originName: z.string().optional().describe('Resolved origin city or airport display name from city_to_airport, such as Dhaka.'),
+            destinationName: z.string().optional().describe('Resolved destination city or airport display name from city_to_airport, such as Dubai.'),
+            originAirportName: z.string().optional().describe('Resolved origin airport name from city_to_airport when available.'),
+            destinationAirportName: z.string().optional().describe('Resolved destination airport name from city_to_airport when available.'),
+            originCountryName: z.string().optional().describe('Resolved origin country name from city_to_airport when available.'),
+            destinationCountryName: z.string().optional().describe('Resolved destination country name from city_to_airport when available.'),
+            departDate: z.string().describe(
+              'Departure date in YYYY-MM-DD format. If the user omitted the year, use the Current year from Runtime context.',
+            ),
+            returnDate: z.string().optional().describe(
+              'Return date in YYYY-MM-DD format for round trips. If the user omitted the year, use the Current year from Runtime context.',
+            ),
+            adult: z.number().int().min(0).optional().describe('Adult passenger count. Default 1.'),
+            child: z.number().int().min(0).optional().describe('Child passenger count. Default 0.'),
+            childAge: z.string().optional().describe('Comma-separated child ages if provided.'),
+            infant: z.number().int().min(0).optional().describe('Infant passenger count. Default 0.'),
+            cabinClass: z.string().optional().describe('Cabin class. Default Economy.'),
+          }),
+        },
+      );
+
+      tools.push(cityToAirportTool, flightSearchTool);
+    }
+
+    if (liveAgentConfig) {
+      const liveAgentContactTool = tool(
+        async (): Promise<string> => {
+          this.logger.log('Tool: live_agent_contact');
+          const result = this.toolRetrievalService.buildLiveAgentRedirect(
+            liveAgentConfig,
+          );
+          if (result.action) {
+            redirectActions.push(result.action);
+            return 'Live agent redirect is ready. Final answer must be exactly: Redirecting to Live Agent';
+          }
+          return result.answer;
+        },
+        {
+          name: 'live_agent_contact',
+          description:
+            'Redirect the user to a configured human/live agent channel such as WhatsApp, Telegram, or live chat. ' +
+            'Use when the user asks for a real person, human support, WhatsApp, Telegram, or live agent.',
+          schema: z.object({
+            reason: z.string().optional().describe('Short reason the user wants a live agent.'),
+          }),
+        },
+      );
+
+      tools.push(liveAgentContactTool);
+    }
+
     // ── 2. LLM ────────────────────────────────────────────────────────────────
     const llm = this.llmFactory.getChatModel();
 
@@ -187,7 +313,7 @@ export class AiService {
     // ── 4. Agent — LangGraph handles the tool-call loop automatically ─────────
     const agent = createAgent({
       model: llm,
-      tools: [searchDocumentsTool, searchImagesTool, searchWebPagesTool],
+      tools,
       systemPrompt: systemPrompt,
     });
 
@@ -229,7 +355,10 @@ export class AiService {
     const unescaped = output.replace(/\\n/g, '\n');
 
     // Restore any image URLs the LLM may have inadvertently modified.
-    return this.restoreImageUrls(unescaped, imageUrls);
+    return {
+      answer: this.restoreImageUrls(unescaped, imageUrls),
+      action: redirectActions.at(-1),
+    };
   }
 
   /**

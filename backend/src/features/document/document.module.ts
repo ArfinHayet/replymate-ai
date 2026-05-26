@@ -6,9 +6,10 @@ import { LlmFactoryModule } from '../../core/llm/llm-factory.module';
 import { DocumentService } from './document.service';
 import { DocumentController } from './document.controller';
 import { UsageModule } from '../usage/usage.module';
+import { ProfileCompletionModule } from '../profile-completion/profile-completion.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DocumentChunk, Pdf]), LlmFactoryModule, UsageModule],
+  imports: [TypeOrmModule.forFeature([DocumentChunk, Pdf]), LlmFactoryModule, UsageModule, ProfileCompletionModule],
   controllers: [DocumentController],
   providers: [DocumentService],
 })

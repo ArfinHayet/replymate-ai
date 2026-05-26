@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import { UsageService } from '../usage/usage.service';
+import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
 
 @Injectable()
 export class AuthService {
@@ -17,6 +18,7 @@ export class AuthService {
   constructor(
     private readonly config: ConfigService,
     private readonly usageService: UsageService,
+    private readonly profileCompletionService: ProfileCompletionService,
   ) {
     const url = this.config.getOrThrow<string>('supabase.url');
     const anonKey = this.config.getOrThrow<string>('supabase.anonKey');
@@ -55,6 +57,7 @@ export class AuthService {
     this.logger.log(`User signed up: ${email}`);
     if (data.user?.id) {
       await this.usageService.ensureCurrentUsage(data.user.id);
+      await this.profileCompletionService.refresh(data.user.id);
     }
 
     return {
@@ -165,6 +168,7 @@ export class AuthService {
 
     this.logger.log(`User logged in: ${email}`);
     const usage = await this.usageService.ensureCurrentUsage(data.user.id);
+    const profileCompletion = await this.profileCompletionService.getStatus(data.user.id);
 
     return {
       access_token: data.session.access_token,
@@ -174,6 +178,7 @@ export class AuthService {
         email: data.user.email,
       },
       usage,
+      profileCompletion,
     };
   }
 

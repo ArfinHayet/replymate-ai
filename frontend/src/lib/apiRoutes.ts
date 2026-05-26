@@ -13,6 +13,10 @@ export const apiRoutes = {
     send: "/chat",
     history: "/chat/history",
   },
+  chatTools: {
+    list: "/chat-tools",
+    byKey: (toolKey: string) => `/chat-tools/${toolKey}`,
+  },
   company: {
     list: "/company",
     byId: (id: string) => `/company/${id}`,
@@ -40,6 +44,9 @@ export const apiRoutes = {
   },
   plans: {
     list: "/plans",
+  },
+  profileCompletion: {
+    status: "/profile-completion",
   },
   upload: {
     pdf: "/admin/upload",

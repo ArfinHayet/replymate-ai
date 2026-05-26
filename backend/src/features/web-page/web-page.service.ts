@@ -9,6 +9,7 @@ import * as cheerio from 'cheerio';
 import { LlmFactoryService } from '../../core/llm/llm-factory.service';
 import { WebPage } from './web-page.entity';
 import { WebPageChunk } from './web-page-chunk.entity';
+import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
 
 const JINA_BASE = 'https://r.jina.ai/';
 const SCRAPINGANT_EXTENDED_ENDPOINT = 'https://api.scrapingant.com/v2/extended';
@@ -177,6 +178,7 @@ export class WebPageService {
     private readonly config: ConfigService,
     private readonly dataSource: DataSource,
     private readonly llmFactory: LlmFactoryService,
+    private readonly profileCompletionService: ProfileCompletionService,
   ) {
     this.embeddings = this.llmFactory.getEmbeddings();
   }
@@ -1246,6 +1248,7 @@ export class WebPageService {
       `DELETE FROM cached_answers WHERE "userId" = $1`,
       [userId],
     );
+    await this.profileCompletionService.refresh(userId);
     this.logger.log(`Cache invalidated for user ${userId}`);
 
     return {
@@ -1302,5 +1305,6 @@ export class WebPageService {
       `DELETE FROM cached_answers WHERE "userId" = $1`,
       [userId],
     );
+    await this.profileCompletionService.refresh(userId);
   }
 }

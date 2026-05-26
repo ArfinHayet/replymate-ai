@@ -48,6 +48,21 @@ export function useChatViewModel(): ChatViewModel {
         window.dispatchEvent(new CustomEvent("supportmate-usage-updated", { detail: response.usage }));
       }
       setMessages((prev) => [...prev, mapChatResponseToAssistantMessage(response)]);
+      const redirectAction = response.action?.type === "redirect" ? response.action : null;
+      if (redirectAction) {
+        window.setTimeout(() => {
+          const opened = window.open(redirectAction.url, "_blank", "noopener");
+          if (!opened) {
+            setMessages((prev) => [
+              ...prev,
+              mapChatResponseToAssistantMessage({
+                answer: `[Open page](${redirectAction.url})`,
+                cached: false,
+              }),
+            ]);
+          }
+        }, redirectAction.delayMs);
+      }
     } catch (error) {
       const message =
         error instanceof AxiosError

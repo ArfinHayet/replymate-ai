@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Company } from './company.entity';
 import { CreateCompanyDto, UpdateCompanyDto } from './dto/company.dto';
+import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
 
 @Injectable()
 export class CompanyService {
@@ -10,6 +11,7 @@ export class CompanyService {
     @InjectRepository(Company)
     private readonly repo: Repository<Company>,
     private readonly dataSource: DataSource,
+    private readonly profileCompletionService: ProfileCompletionService,
   ) {}
 
   findAll(userId: string): Promise<Company[]> {
@@ -28,6 +30,7 @@ export class CompanyService {
       `DELETE FROM cached_answers WHERE "userId" = $1`,
       [userId],
     );
+    await this.profileCompletionService.refresh(userId);
     return company;
   }
 
@@ -39,12 +42,14 @@ export class CompanyService {
       `DELETE FROM cached_answers WHERE "userId" = $1`,
       [userId],
     );
+    await this.profileCompletionService.refresh(userId);
     return saved;
   }
 
   async remove(id: string, userId: string): Promise<void> {
     const c = await this.findOne(id, userId);
     await this.repo.remove(c);
+    await this.profileCompletionService.refresh(userId);
   }
 
   /** Returns the most-recently updated company for this user, or null. Used by ChatService. */

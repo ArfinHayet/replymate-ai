@@ -833,6 +833,20 @@
             data.answer || data.response || data.message || "No response";
 
           addMessage(reply, "bot");
+
+          if (
+            data.action &&
+            data.action.type === "redirect" &&
+            data.action.url
+          ) {
+            setTimeout(function () {
+              var opened = window.open(data.action.url, "_blank", "noopener");
+
+              if (!opened) {
+                addMessage("[Open page](" + data.action.url + ")", "bot");
+              }
+            }, Number(data.action.delayMs || 1200));
+          }
         })
         .catch(function (err) {
           hideTyping();

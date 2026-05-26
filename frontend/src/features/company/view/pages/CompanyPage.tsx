@@ -23,12 +23,18 @@ export function CompanyPage() {
     const result = await viewModel.saveCompany();
     if (result.message) toast.success(result.message);
     if (result.errorMessage) toast.error(result.errorMessage);
+    if (result.success) {
+      window.dispatchEvent(new Event("supportmate-profile-completion-updated"));
+    }
   };
 
   const deleteCompany = async () => {
     const result = await viewModel.deleteCompany();
     if (result.message) toast.success(result.message);
     if (result.errorMessage) toast.error(result.errorMessage);
+    if (result.success) {
+      window.dispatchEvent(new Event("supportmate-profile-completion-updated"));
+    }
   };
 
   return (

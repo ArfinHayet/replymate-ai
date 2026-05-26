@@ -6,9 +6,10 @@ import { LlmFactoryModule } from '../../core/llm/llm-factory.module';
 import { WebPageService } from './web-page.service';
 import { WebPageController } from './web-page.controller';
 import { UsageModule } from '../usage/usage.module';
+import { ProfileCompletionModule } from '../profile-completion/profile-completion.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WebPage, WebPageChunk]), LlmFactoryModule, UsageModule],
+  imports: [TypeOrmModule.forFeature([WebPage, WebPageChunk]), LlmFactoryModule, UsageModule, ProfileCompletionModule],
   controllers: [WebPageController],
   providers: [WebPageService],
 })

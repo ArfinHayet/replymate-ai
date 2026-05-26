@@ -8,6 +8,7 @@ import { LlmFactoryService } from '../../core/llm/llm-factory.service';
 import { DocumentChunk } from './document-chunk.entity';
 import { Pdf } from './pdf.entity';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
+import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
 
 // ─── Vercel limits ────────────────────────────────────────────────────────────
 // Hobby  : 4.5 MB body, 10 s timeout, 1 GB RAM
@@ -31,6 +32,7 @@ export class DocumentService {
     private readonly config: ConfigService,
     private readonly dataSource: DataSource,
     private readonly llmFactory: LlmFactoryService,
+    private readonly profileCompletionService: ProfileCompletionService,
   ) {
     this.embeddings = this.llmFactory.getEmbeddings();
   }
@@ -205,6 +207,7 @@ export class DocumentService {
       `DELETE FROM cached_answers WHERE "userId" = $1`,
       [userId],
     );
+    await this.profileCompletionService.refresh(userId);
     this.logger.log(`Cache invalidated for user ${userId}`);
 
     return {
@@ -236,5 +239,6 @@ export class DocumentService {
   async deletePdf(id: string, userId: string): Promise<void> {
     const pdf = await this.findOnePdf(id, userId);
     await this.pdfRepo.remove(pdf);
+    await this.profileCompletionService.refresh(userId);
   }
 }
