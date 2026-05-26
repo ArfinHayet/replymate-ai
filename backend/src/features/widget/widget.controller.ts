@@ -131,6 +131,16 @@ export class WidgetController {
 
     // Namespace session to prevent collision with the owner's own chat sessions
     const scopedSessionId = `widget:${key}:${body.sessionId.trim()}`;
-    return this.chatService.chat(body.message.trim(), scopedSessionId, req.widgetUserId);
+    const response = await this.chatService.chat(
+      body.message.trim(),
+      scopedSessionId,
+      req.widgetUserId,
+    );
+
+    return {
+      answer: response.answer,
+      cached: response.cached,
+      ...(response.action ? { action: response.action } : {}),
+    };
   }
 }
