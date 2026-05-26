@@ -248,18 +248,18 @@
     "}",
 
     "#suggestions{",
-    "display:none;flex-wrap:wrap;gap:8px;",
-    "padding:10px 12px 0;",
-    "background:var(--rm-trip-surface);",
-    "border-top:1px solid var(--rm-trip-border);",
+    "display:none;flex-direction:column;align-items:center;justify-content:center;gap:9px;",
+    "width:100%;max-width:280px;margin:auto;padding:8px;",
+    "background:transparent;",
     "}",
     "#suggestions.visible{display:flex;}",
     ".suggestion-btn{",
-    "max-width:100%;border:1px solid #dbeafe;background:#ffffff;",
+    "width:100%;max-width:280px;border:1px solid #dbeafe;background:#ffffff;",
     "color:var(--rm-trip-brand);border-radius:999px;",
-    "padding:7px 10px;font-size:12px;font-weight:700;line-height:1.25;",
+    "padding:9px 12px;font-size:12px;font-weight:700;line-height:1.25;",
     "cursor:pointer;transition:all .2s ease;",
     "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;",
+    "box-shadow:0 8px 22px rgba(37,99,235,.08);",
     "}",
     ".suggestion-btn:hover{background:#eff6ff;border-color:#bfdbfe;transform:translateY(-1px);}",
 
@@ -691,9 +691,9 @@
 
     chatWindow.appendChild(header);
     chatWindow.appendChild(messages);
-    chatWindow.appendChild(suggestionsEl);
     chatWindow.appendChild(inputRow);
     chatWindow.appendChild(footer);
+    messages.appendChild(suggestionsEl);
 
     shadow.appendChild(chatWindow);
     document.body.appendChild(host);
