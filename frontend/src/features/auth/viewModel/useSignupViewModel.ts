@@ -10,6 +10,7 @@ export function useSignupViewModel(): SignupViewModel {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<AuthFieldErrors>({});
@@ -71,11 +72,27 @@ export function useSignupViewModel(): SignupViewModel {
     }
   };
 
+  const resendConfirmation = async () => {
+    setResendLoading(true);
+    try {
+      await authService.resendConfirmation(email);
+      return { success: true };
+    } catch (error: unknown) {
+      return {
+        success: false,
+        errorMessage: getAuthErrorMessage(error, "Could not resend confirmation email. Please try again."),
+      };
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
   return {
     email,
     password,
     confirm,
     loading,
+    resendLoading,
     done,
     googleLoading,
     errors,
@@ -83,6 +100,7 @@ export function useSignupViewModel(): SignupViewModel {
     handlePasswordChange,
     handleConfirmChange,
     submitSignup,
+    resendConfirmation,
     signInWithGoogle,
   };
 }

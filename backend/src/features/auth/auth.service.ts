@@ -83,6 +83,26 @@ export class AuthService {
     };
   }
 
+  async resendSignupConfirmation(email: string) {
+    const { error } = await this.supabaseClient.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${this.redirectBase()}/auth/verify-email`,
+      },
+    });
+
+    if (error) {
+      this.logger.warn(`Signup confirmation resend failed for ${email}: ${error.message}`);
+      throw new BadRequestException(error.message);
+    }
+
+    return {
+      message:
+        'If this email is waiting for verification, a new confirmation link will be sent.',
+    };
+  }
+
   async updatePassword(accessToken: string, refreshToken: string, password: string) {
     const { error: sessionError } = await this.supabaseClient.auth.setSession({
       access_token: accessToken,

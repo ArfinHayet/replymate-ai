@@ -2,6 +2,7 @@ export const apiRoutes = {
   auth: {
     login: "/auth/login",
     signup: "/auth/signup",
+    resendConfirmation: "/auth/resend-confirmation",
     forgotPassword: "/auth/forgot-password",
     resetPassword: "/auth/reset-password",
     refresh: "/auth/refresh",

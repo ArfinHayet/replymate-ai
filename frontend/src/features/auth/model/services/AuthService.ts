@@ -22,6 +22,10 @@ export class AuthService {
     });
   }
 
+  resendConfirmation(email: string) {
+    return this.authRepository.resendConfirmation(email.toLowerCase().trim());
+  }
+
   forgotPassword(email: string) {
     return this.authRepository.forgotPassword(email.toLowerCase().trim());
   }

@@ -22,6 +22,10 @@ export class HttpAuthRepository implements AuthRepository {
     await api.post(apiRoutes.auth.signup, request);
   }
 
+  async resendConfirmation(email: string): Promise<void> {
+    await api.post(apiRoutes.auth.resendConfirmation, { email });
+  }
+
   async forgotPassword(email: string): Promise<void> {
     await api.post(apiRoutes.auth.forgotPassword, { email });
   }

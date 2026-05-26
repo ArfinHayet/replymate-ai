@@ -6,6 +6,7 @@ export interface SignupViewModel {
   password: string;
   confirm: string;
   loading: boolean;
+  resendLoading: boolean;
   done: boolean;
   googleLoading: boolean;
   errors: AuthFieldErrors;
@@ -13,5 +14,6 @@ export interface SignupViewModel {
   handlePasswordChange(event: ChangeEvent<HTMLInputElement>): void;
   handleConfirmChange(event: ChangeEvent<HTMLInputElement>): void;
   submitSignup(): Promise<{ success: boolean; errorMessage?: string }>;
+  resendConfirmation(): Promise<{ success: boolean; errorMessage?: string }>;
   signInWithGoogle(origin: string): Promise<{ success: boolean; errorMessage?: string }>;
 }

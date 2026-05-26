@@ -172,6 +172,12 @@ export class AuthController {
     return this.authService.sendPasswordResetEmail(body.email.trim().toLowerCase());
   }
 
+  @Post('resend-confirmation')
+  async resendConfirmation(@Body() body: { email?: string }) {
+    if (!body.email?.trim()) throw new BadRequestException('email is required');
+    return this.authService.resendSignupConfirmation(body.email.trim().toLowerCase());
+  }
+
   @Post('reset-password')
   async resetPassword(
     @Body()

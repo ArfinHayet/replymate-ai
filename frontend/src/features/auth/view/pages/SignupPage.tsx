@@ -26,6 +26,15 @@ export function SignupPage() {
     }
   };
 
+  const handleResendConfirmation = async () => {
+    const result = await viewModel.resendConfirmation();
+    if (result.errorMessage) {
+      toast.error(result.errorMessage);
+      return;
+    }
+    toast.success("Confirmation email sent again.");
+  };
+
   if (viewModel.done) {
     return (
       <AuthSurface>
@@ -46,6 +55,15 @@ export function SignupPage() {
           >
             Back to Sign In
           </Link>
+          <button
+            type="button"
+            disabled={viewModel.resendLoading}
+            onClick={() => void handleResendConfirmation()}
+            className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-3 text-sm font-bold text-rm-trip-text transition-all hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {viewModel.resendLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+            {viewModel.resendLoading ? "Sending..." : "Resend confirmation email"}
+          </button>
         </div>
       </AuthSurface>
     );
