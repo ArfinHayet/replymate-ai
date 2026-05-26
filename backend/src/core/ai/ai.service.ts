@@ -29,6 +29,7 @@ export interface Message {
 export type AgenticLoopResult = {
   answer: string;
   action?: ChatRedirectAction;
+  usedToolKeys?: string[];
 };
 
 const TOOL_QUERY_CONTEXT_TURNS = 6;
@@ -108,6 +109,7 @@ export class AiService {
     // can restore any URLs the LLM inadvertently mutates in its final answer.
     const imageUrls: { title: string; url: string }[] = [];
     const redirectActions: ChatRedirectAction[] = [];
+    const usedToolKeys = new Set<string>();
 
     const searchDocumentsTool = tool(
       async ({ query }: { query: string }): Promise<string> => {
@@ -207,6 +209,7 @@ export class AiService {
       const cityToAirportTool = tool(
         async ({ location }: { location: string }): Promise<string> => {
           this.logger.log(`Tool: city_to_airport("${location.slice(0, 80)}")`);
+          usedToolKeys.add('city_to_airport');
           return this.toolRetrievalService.cityToAirport(location);
         },
         {
@@ -227,6 +230,7 @@ export class AiService {
           this.logger.log(
             `Tool: flight_search("${input.originCode}" -> "${input.destinationCode}")`,
           );
+          usedToolKeys.add('flight_search');
           const result = this.toolRetrievalService.buildFlightRedirect(
             flightSearchConfig,
             input,
@@ -278,6 +282,7 @@ export class AiService {
       const liveAgentContactTool = tool(
         async (): Promise<string> => {
           this.logger.log('Tool: live_agent_contact');
+          usedToolKeys.add('live_agent_contact');
           const result = this.toolRetrievalService.buildLiveAgentRedirect(
             liveAgentConfig,
           );
@@ -358,6 +363,7 @@ export class AiService {
     return {
       answer: this.restoreImageUrls(unescaped, imageUrls),
       action: redirectActions.at(-1),
+      usedToolKeys: Array.from(usedToolKeys),
     };
   }
 

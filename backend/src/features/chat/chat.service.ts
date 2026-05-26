@@ -308,6 +308,7 @@ export class ChatService implements OnModuleInit {
 
     let answer: string;
     let action: ChatRedirectAction | undefined;
+    let usedToolKeys: string[] = [];
     try {
       const agentResult = await this.aiService.runAgenticLoop(
         systemPrompt.prompt,
@@ -319,17 +320,21 @@ export class ChatService implements OnModuleInit {
       );
       answer = agentResult.answer;
       action = agentResult.action;
+      usedToolKeys = agentResult.usedToolKeys ?? [];
     } catch (err) {
       this.logger.error('Agentic loop failed', err);
       answer = this.fallbackMessage;
     }
 
     const isFallback = answer.trim() === this.fallbackMessage.trim();
+    const usedFlightTool = usedToolKeys.some((toolKey) =>
+      ['city_to_airport', 'flight_search'].includes(toolKey),
+    );
 
     const tasks: Promise<unknown>[] = [
       this.saveTurn(sessionId, userId, message, answer),
     ];
-    if (!isFallback && !action) {
+    if (!isFallback && !action && !usedFlightTool) {
       tasks.push(this.cacheService.save(retrievalQuery, queryVector, answer, userId));
     }
     await Promise.all(tasks);

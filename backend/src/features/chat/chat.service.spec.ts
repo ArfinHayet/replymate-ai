@@ -375,6 +375,48 @@ describe("ChatService", () => {
     );
   });
 
+  it("does not cache flight tool answers even when no redirect action is returned", async () => {
+    const {
+      service,
+      chatRepo,
+      aiService,
+      cacheService,
+      retrievalService,
+      chatToolsService
+    } = createService();
+    chatRepo.find.mockResolvedValue([]);
+    chatToolsService.list.mockResolvedValue([
+      {
+        toolKey: "flight_search",
+        enabled: true,
+        config: {
+          oneWayTemplateUrl: "https://example.com/flights?trips=DAC,DXB,2026-12-12",
+          roundTripTemplateUrl: "https://example.com/flights?trips=DAC,DXB,2026-12-12%7CDXB,DAC,2026-12-20",
+          multiCityTemplateUrl: "https://example.com/flights?trips=DAC,DXB,2026-12-12"
+        }
+      }
+    ]);
+    retrievalService.hasRelevantKnowledge.mockResolvedValue(false);
+    aiService.runAgenticLoop.mockResolvedValue({
+      answer: "Which destination airport do you prefer?",
+      usedToolKeys: ["city_to_airport"]
+    });
+
+    const result = await service.chat(
+      "dhaka to london flight",
+      "session-1",
+      "user-1"
+    );
+
+    expect(result).toEqual({
+      answer: "Which destination airport do you prefer?",
+      cached: false,
+      usage: USAGE_SNAPSHOT
+    });
+    expect(cacheService.findHit).not.toHaveBeenCalled();
+    expect(cacheService.save).not.toHaveBeenCalled();
+  });
+
   it("does not save or answer when the monthly message quota is exceeded", async () => {
     const { service, chatRepo, usageService, aiService } = createService();
     usageService.incrementOrThrow.mockRejectedValue(
