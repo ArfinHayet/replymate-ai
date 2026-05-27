@@ -10,10 +10,18 @@ import { ChatAnthropic } from '@langchain/anthropic';
 export class LlmFactoryService {
     constructor(private readonly config: ConfigService) { }
 
+    getChatProvider(): string {
+        return this.config.get<string>('llm.chat.provider')!;
+    }
+
+    getChatModelName(): string {
+        return this.config.get<string>('llm.chat.model')!;
+    }
+
     getChatModel(): BaseChatModel {
-        const provider = this.config.get<string>('llm.chat.provider')!;
+        const provider = this.getChatProvider();
         const apiKey = this.config.get<string>('llm.chat.apiKey')!;
-        const model = this.config.get<string>('llm.chat.model')!;
+        const model = this.getChatModelName();
 
         switch (provider) {
             case 'openai': return new ChatOpenAI({ apiKey, model });

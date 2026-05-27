@@ -1,10 +1,17 @@
-import { Injectable, Logger, NotFoundException, PayloadTooLargeException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  PayloadTooLargeException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { Embeddings } from '@langchain/core/embeddings';
 import { LlmFactoryService } from '../../core/llm/llm-factory.service';
+import { AiService } from '../../core/ai/ai.service';
 import { DocumentChunk } from './document-chunk.entity';
 import { Pdf } from './pdf.entity';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
@@ -18,6 +25,10 @@ import { ProfileCompletionService } from '../profile-completion/profile-completi
 const MAX_PDF_BYTES = 4 * 1024 * 1024; // 4 MB — safe under Vercel's 4.5 MB body cap
 const EMBED_BATCH_SIZE = 5;            // smaller batches → each API call is faster
 const EMBED_CONCURRENCY = 3;           // run N batches in parallel to beat the clock
+const AI_FALLBACK_MIN_BYTES = 100 * 1024;
+const AI_FALLBACK_MIN_CHARS = 500;
+const AI_FALLBACK_MIN_WORDS = 50;
+const AI_FALLBACK_MAX_MALFORMED_RATIO = 0.25;
 
 @Injectable()
 export class DocumentService {
@@ -32,6 +43,7 @@ export class DocumentService {
     private readonly config: ConfigService,
     private readonly dataSource: DataSource,
     private readonly llmFactory: LlmFactoryService,
+    private readonly aiService: AiService,
     private readonly profileCompletionService: ProfileCompletionService,
   ) {
     this.embeddings = this.llmFactory.getEmbeddings();
@@ -109,6 +121,69 @@ export class DocumentService {
     return pageTexts.join('\n');
   }
 
+  private shouldUseAiPdfExtraction(text: string, fileSizeBytes: number): boolean {
+    const trimmed = text.trim();
+    if (!trimmed) return true;
+
+    if (
+      fileSizeBytes > AI_FALLBACK_MIN_BYTES &&
+      trimmed.length < AI_FALLBACK_MIN_CHARS
+    ) {
+      return true;
+    }
+
+    if (this.countAlphabeticWords(trimmed) < AI_FALLBACK_MIN_WORDS) {
+      return true;
+    }
+
+    return this.malformedCharacterRatio(trimmed) > AI_FALLBACK_MAX_MALFORMED_RATIO;
+  }
+
+  private isUsablePdfText(text: string): boolean {
+    const trimmed = text.trim();
+    return (
+      Boolean(trimmed) &&
+      this.countAlphabeticWords(trimmed) > 0 &&
+      this.malformedCharacterRatio(trimmed) <= AI_FALLBACK_MAX_MALFORMED_RATIO
+    );
+  }
+
+  private countAlphabeticWords(text: string): number {
+    return text.match(/[A-Za-z]{2,}/g)?.length ?? 0;
+  }
+
+  private malformedCharacterRatio(text: string): number {
+    if (!text.length) return 1;
+    const malformedPattern =
+      /[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFD]|[^A-Za-z0-9\s.,;:!?'"()[\]{}@#$%&*+=/_\\<>|-]/g;
+    const malformedMatches = text.match(malformedPattern);
+    return (malformedMatches?.length ?? 0) / text.length;
+  }
+
+  private async resolvePdfText(buffer: Buffer, fileName: string): Promise<string> {
+    const pdfjsText = await this.extractTextFromPdf(buffer);
+    if (!this.shouldUseAiPdfExtraction(pdfjsText, buffer.length)) {
+      return pdfjsText;
+    }
+
+    this.logger.log(
+      `pdfjs text looked empty or low quality; trying AI PDF extraction for ${fileName}`,
+    );
+    const aiText = await this.aiService.extractTextFromPdf(buffer, fileName);
+    if (this.isUsablePdfText(aiText)) {
+      return aiText;
+    }
+
+    if (pdfjsText.trim()) {
+      this.logger.warn(
+        `AI PDF extraction returned no usable text for ${fileName}; keeping pdfjs text`,
+      );
+      return pdfjsText;
+    }
+
+    return '';
+  }
+
   // ─── Parallel embedding helper ──────────────────────────────────────────────
 
   /**
@@ -159,8 +234,12 @@ export class DocumentService {
 
     this.logger.log(`Ingesting: ${file.originalname} (${file.buffer.length} bytes) for user ${userId}`);
 
-    const rawText = await this.extractTextFromPdf(file.buffer);
-    if (!rawText?.trim()) throw new Error('PDF contains no extractable text');
+    const rawText = await this.resolvePdfText(file.buffer, file.originalname);
+    if (!rawText?.trim()) {
+      throw new BadRequestException(
+        'This PDF does not contain extractable text. Please upload a text-based PDF, or a scanned PDF with readable pages so OCR can extract it.',
+      );
+    }
 
     // Strip null bytes — PostgreSQL UTF-8 rejects \x00.
     const cleanText = rawText.split('\0').join('');

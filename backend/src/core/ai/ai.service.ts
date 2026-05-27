@@ -2,7 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
 import { tool } from '@langchain/core/tools';
-import { HumanMessage, AIMessage, BaseMessage } from '@langchain/core/messages';
+import {
+  HumanMessage,
+  AIMessage,
+  BaseMessage,
+  type MessageContentComplex,
+} from '@langchain/core/messages';
 import { createAgent } from 'langchain';
 import { LlmFactoryService } from '../llm/llm-factory.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
@@ -446,6 +451,71 @@ export class AiService {
 
     this.logger.log(`Image analyzed: "${result.title}"`);
     return result;
+  }
+
+  /**
+   * Extract readable text from a PDF using the configured chat model.
+   * Providers/models that do not support PDF document input fail gracefully.
+   */
+  async extractTextFromPdf(buffer: Buffer, fileName: string): Promise<string> {
+    const modelName = this.llmFactory.getChatModelName();
+
+    try {
+      this.logger.log(`AI PDF extraction started for ${fileName} using ${modelName}`);
+      const llm = this.llmFactory.getChatModel();
+      const pdfContent: MessageContentComplex[] = [
+        {
+          type: 'application/pdf',
+          data: buffer.toString('base64'),
+        },
+        {
+          type: 'text',
+          text:
+            'Extract all readable text from this PDF for document search. ' +
+            'Preserve names, headings, dates, contact details, bullet points, and section order. ' +
+            'Return only the extracted text. If there is no readable text, return an empty response.',
+        },
+      ];
+
+      const result = await llm.invoke([
+        new HumanMessage({
+          content: pdfContent as never,
+        }),
+      ]);
+
+      const extractedText = this.extractMessageText(result.content).trim();
+      this.logger.log(
+        `AI PDF extraction returned ${extractedText.length} characters for ${fileName}`,
+      );
+      return extractedText;
+    } catch (err) {
+      this.logger.warn(
+        `AI PDF extraction failed for ${fileName} using ${modelName}: ${(err as Error).message}`,
+      );
+      return '';
+    }
+  }
+
+  private extractMessageText(content: unknown): string {
+    if (typeof content === 'string') return content;
+    if (!Array.isArray(content)) return '';
+
+    return content
+      .map((part) => {
+        if (typeof part === 'string') return part;
+        if (
+          part &&
+          typeof part === 'object' &&
+          'type' in part &&
+          part.type === 'text' &&
+          'text' in part &&
+          typeof part.text === 'string'
+        ) {
+          return part.text;
+        }
+        return '';
+      })
+      .join('');
   }
 
   /** Embed a text string using the configured embedding provider */

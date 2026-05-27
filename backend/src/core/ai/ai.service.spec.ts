@@ -17,6 +17,7 @@ function createService() {
   };
   const llmFactory = {
     getChatModel: jest.fn().mockReturnValue({}),
+    getChatModelName: jest.fn().mockReturnValue('test-model'),
     getEmbeddings: jest.fn(),
   };
   const retrievalService = {
@@ -114,5 +115,74 @@ describe('AiService agent tools', () => {
       'search_web_pages',
       'live_agent_contact',
     ]);
+  });
+});
+
+describe('AiService PDF extraction', () => {
+  function createPdfExtractionService(invoke: jest.Mock) {
+    const config = {
+      get: jest.fn().mockReturnValue(10),
+    };
+    const llmFactory = {
+      getChatModel: jest.fn().mockReturnValue({ invoke }),
+      getChatModelName: jest.fn().mockReturnValue('configured-model'),
+      getEmbeddings: jest.fn(),
+    };
+    const retrievalService = {
+      searchDocuments: jest.fn(),
+      searchImages: jest.fn(),
+      searchWebPages: jest.fn(),
+    };
+    const toolRetrievalService = {
+      cityToAirport: jest.fn(),
+      buildFlightRedirect: jest.fn(),
+      buildLiveAgentRedirect: jest.fn(),
+    };
+
+    return {
+      service: new AiService(
+        config as never,
+        llmFactory as never,
+        retrievalService as never,
+        toolRetrievalService as never,
+      ),
+      llmFactory,
+    };
+  }
+
+  it('uses the configured chat model and sends PDF document content', async () => {
+    const invoke = jest.fn().mockResolvedValue({ content: 'Extracted PDF text' });
+    const { service, llmFactory } = createPdfExtractionService(invoke);
+
+    const result = await service.extractTextFromPdf(Buffer.from('pdf bytes'), 'test.pdf');
+
+    expect(result).toBe('Extracted PDF text');
+    expect(llmFactory.getChatModel).toHaveBeenCalled();
+    expect(llmFactory.getChatModelName).toHaveBeenCalled();
+
+    const messages = invoke.mock.calls[0][0];
+    expect(messages[0].content[0]).toMatchObject({
+      type: 'application/pdf',
+      data: Buffer.from('pdf bytes').toString('base64'),
+    });
+    expect(messages[0].content[0]).not.toHaveProperty('inlineData');
+  });
+
+  it('returns text from array message content', async () => {
+    const invoke = jest.fn().mockResolvedValue({
+      content: [{ type: 'text', text: 'Array PDF text' }],
+    });
+    const { service } = createPdfExtractionService(invoke);
+
+    await expect(service.extractTextFromPdf(Buffer.from('pdf'), 'test.pdf')).resolves.toBe(
+      'Array PDF text',
+    );
+  });
+
+  it('returns an empty string when the model fails', async () => {
+    const invoke = jest.fn().mockRejectedValue(new Error('unsupported input'));
+    const { service } = createPdfExtractionService(invoke);
+
+    await expect(service.extractTextFromPdf(Buffer.from('pdf'), 'test.pdf')).resolves.toBe('');
   });
 });
