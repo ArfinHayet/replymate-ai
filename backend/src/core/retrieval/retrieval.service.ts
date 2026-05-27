@@ -40,9 +40,9 @@ export class RetrievalService {
     const queryVector = await this.embeddings.embedQuery(query);
     const topK = this.config.get<number>('rag.topK');
 
-    const rows: { content: string; file_name: string; distance: string }[] =
+    const rows: { content: string; distance: string }[] =
       await this.dataSource.query(
-        `SELECT content, "fileName" AS file_name,
+        `SELECT content,
                 (embedding::vector <=> $1::vector) AS distance
          FROM document_chunks
          WHERE "userId" = $3
@@ -60,11 +60,12 @@ export class RetrievalService {
       return 'No relevant documents found for this query.';
     }
 
-    // Format results as numbered excerpts — plain text, NOT injected into system prompt
+    // Format results without internal filenames. The assistant should answer from
+    // the content, not expose source document names to end users.
     return relevant
       .map(
         (r, i) =>
-          `[Excerpt ${i + 1} — ${r.file_name}]\n${r.content}`,
+          `[Document Excerpt ${i + 1}]\n${r.content}`,
       )
       .join('\n\n');
   }

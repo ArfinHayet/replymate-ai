@@ -455,6 +455,8 @@ describe("chat system prompt", () => {
     expect(prompt).toContain("22th June");
     expect(prompt).toContain("Redirecting to flight page");
     expect(prompt).toContain("Redirecting to Live Agent");
+    expect(prompt).toContain("Never mention source document names");
+    expect(prompt).toContain("uploaded file names");
     expect(prompt).toContain(FALLBACK_MESSAGE);
   });
 });
