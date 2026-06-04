@@ -406,8 +406,42 @@
         .replace(/>/g, "&gt;");
     }
 
+    function escAttr(s) {
+      return esc(s)
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
     function fmt(s) {
+      var protectedHtml = [];
+
+      function protect(html) {
+        var token = "\x01" + protectedHtml.length + "\x02";
+        protectedHtml.push(html);
+        return token;
+      }
+
       s = String(s || "").replace(/<br\s*\/?>/gi, "\x00");
+      s = s
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, function (_, alt, url) {
+          return protect(
+            '<img src="' +
+              escAttr(url) +
+              '" alt="' +
+              escAttr(alt) +
+              '" style="max-width:100%;border-radius:10px;margin:6px 0;">'
+          );
+        })
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, label, url) {
+          return protect(
+            '<a href="' +
+              escAttr(url) +
+              '" target="_blank" rel="noopener">' +
+              fmt(label) +
+              "</a>"
+          );
+        });
+
       s = esc(s);
       s = s.replace(/\x00/g, "<br>");
 
@@ -420,14 +454,9 @@
         .replace(/\*([^*\n]+)\*/g, "<em>$1</em>")
         .replace(/_([^_\n]+)_/g, "<em>$1</em>")
         .replace(/~~(.+?)~~/g, "<del>$1</del>")
-        .replace(
-          /!\[([^\]]*)\]\(([^)]+)\)/g,
-          '<img src="$2" alt="$1" style="max-width:100%;border-radius:10px;margin:6px 0;">'
-        )
-        .replace(
-          /\[([^\]]+)\]\(([^)]+)\)/g,
-          '<a href="$2" target="_blank" rel="noopener">$1</a>'
-        );
+        .replace(/\x01(\d+)\x02/g, function (_, index) {
+          return protectedHtml[Number(index)] || "";
+        });
     }
 
     function parseCells(row) {
@@ -726,6 +755,23 @@
       return el;
     }
 
+    function addRedirectFallback(url) {
+      var el = document.createElement("div");
+      var link = document.createElement("a");
+
+      el.className = "msg bot";
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.textContent = "Open page";
+
+      el.appendChild(link);
+      messages.appendChild(el);
+      scrollToBottom();
+
+      return el;
+    }
+
     function showTyping() {
       var el = document.createElement("div");
       el.className = "typing";
@@ -913,7 +959,7 @@
               var opened = window.open(data.action.url, "_blank", "noopener");
 
               if (!opened) {
-                addMessage("[Open page](" + data.action.url + ")", "bot");
+                addRedirectFallback(data.action.url);
               }
             }, Number(data.action.delayMs || 1200));
           }
