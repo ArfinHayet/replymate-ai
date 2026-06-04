@@ -14,7 +14,7 @@
   var botName = currentScript.getAttribute("data-name") || "AI Assistant";
   var brandName = currentScript.getAttribute("data-brand") || "SupportMate Ai";
   var brandUrl =
-    currentScript.getAttribute("data-brand-url") || "https://supportmateai.online";
+    currentScript.getAttribute("data-brand-url") || "https://supportmate.online";
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
