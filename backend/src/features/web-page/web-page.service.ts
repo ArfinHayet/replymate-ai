@@ -17,6 +17,7 @@ const EMBED_BATCH_SIZE = 10;
 const DEFAULT_CRAWL_MAX_PAGES = 30;
 const DEFAULT_SCRAPINGANT_TIMEOUT_SECONDS = 30;
 const DEFAULT_SCRAPINGANT_MAX_PAGES_PER_INGEST = 10;
+const HARD_SCRAPINGANT_MAX_PAGES_PER_INGEST = 100;
 const DISCOVERY_TIMEOUT_MS = 15_000;
 const READABLE_TEXT_MIN_LENGTH = 80;
 const COMMON_SITEMAP_PATHS = ['/sitemap.xml', '/sitemap_index.xml', '/wp-sitemap.xml'];
@@ -225,7 +226,7 @@ export class WebPageService {
       maxPagesPerIngest: Math.max(
         0,
         Math.min(
-          DEFAULT_SCRAPINGANT_MAX_PAGES_PER_INGEST,
+          HARD_SCRAPINGANT_MAX_PAGES_PER_INGEST,
           this.config.get<number>('web.scrapingAnt.maxPagesPerIngest') ??
             DEFAULT_SCRAPINGANT_MAX_PAGES_PER_INGEST,
         ),
@@ -239,6 +240,7 @@ export class WebPageService {
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
 
       parsed.hash = '';
+      parsed.searchParams.delete('_rsc');
       if (!this.isCrawlablePath(parsed.pathname)) return null;
 
       return parsed.toString();
@@ -789,6 +791,22 @@ export class WebPageService {
     }
   }
 
+  private getScrapingAntXhrStatus(item: Record<string, unknown>): number | null {
+    const rawStatus = item.status ?? item.status_code ?? item.statusCode;
+    return typeof rawStatus === 'number' ? rawStatus : null;
+  }
+
+  private getScrapingAntXhrBody(item: Record<string, unknown>): unknown {
+    return (
+      item.body ??
+      item.response_body ??
+      item.responseBody ??
+      item.text ??
+      item.content ??
+      item.data
+    );
+  }
+
   private extractScrapingAntReadableContent(
     response: ScrapingAntExtendedResponse,
     pageUrl: string,
@@ -807,18 +825,16 @@ export class WebPageService {
     const xhrPieces: string[] = [];
     if (Array.isArray(response.xhrs)) {
       for (const xhr of response.xhrs) {
-        const item = xhr as { url?: unknown; body?: unknown; status?: unknown };
+        const item = xhr as Record<string, unknown>;
         if (typeof item.url !== 'string' || !this.isSameDomainXhr(item.url, rootUrl)) {
           continue;
         }
-        if (
-          typeof item.status === 'number' &&
-          (item.status < 200 || item.status >= 300)
-        ) {
+        const status = this.getScrapingAntXhrStatus(item);
+        if (status != null && (status < 200 || status >= 300)) {
           continue;
         }
 
-        const body = item.body;
+        const body = this.getScrapingAntXhrBody(item);
         if (body == null) continue;
 
         let text = '';
@@ -884,12 +900,10 @@ export class WebPageService {
 
     if (Array.isArray(response.xhrs)) {
       for (const xhr of response.xhrs) {
-        const item = xhr as { url?: unknown; status?: unknown };
+        const item = xhr as Record<string, unknown>;
         if (typeof item.url !== 'string') continue;
-        if (
-          typeof item.status === 'number' &&
-          (item.status < 200 || item.status >= 300)
-        ) {
+        const status = this.getScrapingAntXhrStatus(item);
+        if (status != null && (status < 200 || status >= 300)) {
           continue;
         }
         if (!CONTENT_API_KEYWORD_REGEX.test(item.url)) continue;
@@ -916,7 +930,18 @@ export class WebPageService {
       }
     }
 
-    const fetched = await this.fetchMarkdown(url);
+    let fetched: { title: string; markdown: string };
+    let jinaError: Error | null = null;
+    try {
+      fetched = await this.fetchMarkdown(url);
+    } catch (err) {
+      jinaError = err as Error;
+      fetched = { title: this.titleFromUrl(url), markdown: '' };
+      this.logger.warn(
+        `Jina fetch failed for ${url}; trying fallback extractors: ${jinaError.message}`,
+      );
+    }
+
     const rawHtml = await this.fetchRawHtml(url);
     const isClientRenderedShell = rawHtml
       ? this.isLikelyClientRenderedShell(rawHtml)
@@ -926,7 +951,9 @@ export class WebPageService {
     if (hasMeaningfulJinaMarkdown && !isClientRenderedShell) return fetched;
 
     this.logger.warn(
-      isClientRenderedShell
+      jinaError
+        ? `Jina was unavailable for ${url}; trying rendered fallback`
+        : isClientRenderedShell
         ? `Jina returned static app-shell content for ${url}; trying rendered fallback`
         : `Jina returned metadata-only content for ${url}`,
     );
@@ -942,7 +969,11 @@ export class WebPageService {
       }
     }
 
+    let scrapingAntReturnedEmpty = false;
+    let scrapingAntCapReachedBeforeCall = false;
     if (scrapingAnt?.enabled) {
+      scrapingAntCapReachedBeforeCall =
+        scrapingAntUsage.calls >= scrapingAnt.maxPagesPerIngest;
       const scrapingAntResponse = await this.fetchScrapingAntExtended(
         url,
         scrapingAnt,
@@ -962,6 +993,7 @@ export class WebPageService {
             scrapingAnt: scrapingAntResponse,
           };
         }
+        scrapingAntReturnedEmpty = true;
       }
     }
 
@@ -981,6 +1013,26 @@ export class WebPageService {
             markdown: `Title: ${fetched.title}\nURL Source: ${url}\nAPI Source: ${apiUrl}\n\n${apiText}`,
           };
         }
+      }
+    }
+
+    if (isClientRenderedShell) {
+      if (!scrapingAnt?.enabled) {
+        throw new Error(
+          `No readable content found for ${url}. This is a client-rendered JavaScript app shell and ScrapingAnt is not configured or enabled in this environment. Set SCRAPINGANT_API_KEY and ensure SCRAPINGANT_ENABLED is not false.`,
+        );
+      }
+
+      if (scrapingAntCapReachedBeforeCall) {
+        throw new Error(
+          `No readable content found for ${url}. This is a client-rendered JavaScript app shell, but the ScrapingAnt fallback cap was reached (${scrapingAnt.maxPagesPerIngest}). Increase SCRAPINGANT_MAX_PAGES_PER_INGEST.`,
+        );
+      }
+
+      if (scrapingAntReturnedEmpty) {
+        throw new Error(
+          `No readable content found for ${url}. ScrapingAnt rendered the client app but returned no readable text or content XHR bodies. Increase SCRAPINGANT_TIMEOUT_SECONDS or inspect the ScrapingAnt response shape/logs.`,
+        );
       }
     }
 

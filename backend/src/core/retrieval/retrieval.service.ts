@@ -12,6 +12,24 @@ export interface RetrievedChunk {
 
 /** Cosine distance above which a chunk is considered irrelevant */
 const DOC_THRESHOLD = 0.7;
+const LEXICAL_STOP_WORDS = new Set([
+  'and',
+  'are',
+  'can',
+  'condition',
+  'conditions',
+  'current',
+  'for',
+  'from',
+  'question',
+  'recent',
+  'the',
+  'this',
+  'tool',
+  'user',
+  'what',
+  'with',
+]);
 
 @Injectable()
 export class RetrievalService {
@@ -27,18 +45,18 @@ export class RetrievalService {
   }
 
   /**
-   * MCP tool executor — called when the chat model issues a
+   * MCP tool executor - called when the chat model issues a
    * search_documents function call.
    *
    * Embeds the query, runs pgvector cosine search, and returns relevant
    * chunks as a plain string. The result is sent back to the model as a
-   * function_response message — it never touches the system prompt.
+   * function_response message - it never touches the system prompt.
    */
   async searchDocuments(query: string, userId: string): Promise<string> {
     this.logger.log(`Tool call: search_documents("${query.slice(0, 80)}") for user ${userId}`);
 
     const queryVector = await this.embeddings.embedQuery(query);
-    const topK = this.config.get<number>('rag.topK');
+    const topK = this.config.get<number>('rag.topK') ?? 15;
 
     const rows: { content: string; distance: string }[] =
       await this.dataSource.query(
@@ -126,7 +144,7 @@ export class RetrievalService {
     this.logger.log(`Tool call: search_images("${query.slice(0, 80)}") for user ${userId}`);
 
     const queryVector = await this.embeddings.embedQuery(query);
-    const topK = this.config.get<number>('rag.topK');
+    const topK = this.config.get<number>('rag.topK') ?? 15;
 
     const rows: { title: string; description: string; storage_url: string; distance: string }[] =
       await this.dataSource.query(
@@ -163,7 +181,7 @@ export class RetrievalService {
     this.logger.log(`Tool call: search_web_pages("${query.slice(0, 80)}") for user ${userId}`);
 
     const queryVector = await this.embeddings.embedQuery(query);
-    const topK = this.config.get<number>('rag.topK');
+    const topK = this.config.get<number>('rag.topK') ?? 15;
 
     const rows: { content: string; url: string; distance: string }[] =
       await this.dataSource.query(
@@ -179,15 +197,73 @@ export class RetrievalService {
     const relevant = rows.filter((r) => parseFloat(r.distance) < DOC_THRESHOLD);
 
     if (relevant.length === 0) {
+      const lexicalRows = await this.searchWebPagesLexically(query, userId, topK);
+      if (lexicalRows.length > 0) {
+        this.logger.log(`Lexical web page fallback found ${lexicalRows.length} chunk(s) for: "${query}"`);
+        return this.formatWebPageRows(lexicalRows);
+      }
+
       this.logger.log(`No relevant web page chunks found for: "${query}"`);
       return 'No relevant web page content found for this query.';
     }
 
-    return relevant
+    return this.formatWebPageRows(relevant);
+  }
+
+  private formatWebPageRows(rows: { content: string; url: string }[]): string {
+    return rows
       .map(
         (r, i) =>
-          `[Web Page Excerpt ${i + 1} — ${r.url}]\n${r.content}`,
+          `[Web Page Excerpt ${i + 1} - ${r.url}]\n${r.content}`,
       )
       .join('\n\n');
+  }
+
+  private getLexicalSearchTerms(query: string): string[] {
+    const tokens = query
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .map((token) => token.trim())
+      .filter(
+        (token) =>
+          token.length >= 3 &&
+          !LEXICAL_STOP_WORDS.has(token) &&
+          !/^\d+$/.test(token),
+      );
+
+    return [...new Set(tokens)].slice(0, 8);
+  }
+
+  private async searchWebPagesLexically(
+    query: string,
+    userId: string,
+    topK: number,
+  ): Promise<{ content: string; url: string }[]> {
+    const terms = this.getLexicalSearchTerms(query);
+    if (terms.length === 0) return [];
+
+    const params: unknown[] = [userId, topK];
+    const conditions = terms.map((term, index) => {
+      params.push(`%${term}%`);
+      const paramIndex = index + 3;
+      return `(content ILIKE $${paramIndex} OR url ILIKE $${paramIndex})`;
+    });
+
+    return this.dataSource.query(
+      `SELECT content, url
+       FROM web_page_chunks
+       WHERE "userId" = $1
+         AND (${conditions.join(' OR ')})
+       ORDER BY
+         CASE
+           WHEN content ILIKE '%Terms and Condition%' THEN 0
+           WHEN content ILIKE '%Privacy Policy%' THEN 1
+           WHEN content ILIKE '%Refund Policy%' OR content ILIKE '%Return Policy%' THEN 2
+           ELSE 3
+         END,
+         "chunkIndex" ASC
+       LIMIT $2`,
+      params,
+    );
   }
 }

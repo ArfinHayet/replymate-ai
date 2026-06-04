@@ -118,6 +118,82 @@ describe('AiService agent tools', () => {
   });
 });
 
+describe('AiService query intent classifier', () => {
+  function createClassifierService(invoke: jest.Mock) {
+    const config = {
+      get: jest.fn().mockReturnValue(10),
+    };
+    const withStructuredOutput = jest.fn().mockReturnValue({ invoke });
+    const llmFactory = {
+      getChatModel: jest.fn().mockReturnValue({ withStructuredOutput }),
+      getChatModelName: jest.fn().mockReturnValue('test-model'),
+      getEmbeddings: jest.fn(),
+    };
+    const retrievalService = {
+      searchDocuments: jest.fn(),
+      searchImages: jest.fn(),
+      searchWebPages: jest.fn(),
+    };
+    const toolRetrievalService = {
+      cityToAirport: jest.fn(),
+      buildFlightRedirect: jest.fn(),
+      buildLiveAgentRedirect: jest.fn(),
+    };
+
+    return {
+      service: new AiService(
+        config as never,
+        llmFactory as never,
+        retrievalService as never,
+        toolRetrievalService as never,
+      ),
+      withStructuredOutput,
+      invoke,
+    };
+  }
+
+  it('returns a structured standalone retrieval query', async () => {
+    const { service, withStructuredOutput, invoke } = createClassifierService(
+      jest.fn().mockResolvedValue({
+        isFollowUp: true,
+        intent: 'follow_up',
+        resolvedQuery: 'Flights Nepal contact number phone support',
+      }),
+    );
+
+    const result = await service.classifyQueryIntent(
+      [
+        {
+          role: 'user',
+          parts: [{ text: 'Tell me about Flights Nepal' }],
+        },
+      ],
+      'contact number?',
+      'Flights Nepal',
+    );
+
+    expect(result).toEqual({
+      isFollowUp: true,
+      intent: 'follow_up',
+      resolvedQuery: 'Flights Nepal contact number phone support',
+    });
+    expect(withStructuredOutput).toHaveBeenCalled();
+    expect(invoke.mock.calls[0][0][0].content).toContain('Current user message: contact number?');
+  });
+
+  it('falls back to a direct query if classification fails', async () => {
+    const { service } = createClassifierService(
+      jest.fn().mockRejectedValue(new Error('model unavailable')),
+    );
+
+    await expect(service.classifyQueryIntent([], 'hello')).resolves.toEqual({
+      isFollowUp: false,
+      intent: 'direct',
+      resolvedQuery: 'hello',
+    });
+  });
+});
+
 describe('AiService PDF extraction', () => {
   function createPdfExtractionService(invoke: jest.Mock) {
     const config = {

@@ -40,6 +40,13 @@ function createService() {
     save: jest.fn().mockResolvedValue(undefined)
   };
   const aiService = {
+    classifyQueryIntent: jest.fn().mockImplementation(
+      async (_history, currentMessage) => ({
+        isFollowUp: false,
+        intent: "direct",
+        resolvedQuery: currentMessage
+      })
+    ),
     embedText: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]),
     runAgenticLoop: jest.fn().mockResolvedValue({ answer: "Agent answer" })
   };
@@ -88,6 +95,11 @@ describe("ChatService", () => {
   it("uses recent conversation context for follow-up retrieval and cache queries", async () => {
     const { service, chatRepo, aiService, cacheService, retrievalService } =
       createService();
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "follow_up",
+      resolvedQuery: "Flights Nepal office location address physical address branch contact"
+    });
     chatRepo.find.mockResolvedValue([
       makeMessage(
         "Flights Nepal can be contacted by phone and email.",
@@ -122,6 +134,11 @@ describe("ChatService", () => {
   it("rewrites contact number follow-ups with the latest user subject", async () => {
     const { service, chatRepo, aiService, cacheService, retrievalService } =
       createService();
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "follow_up",
+      resolvedQuery: "Flights Nepal contact number phone helpline WhatsApp"
+    });
     chatRepo.find.mockResolvedValue([
       makeMessage("tell me about flights nepal", "user"),
       makeMessage("Flights Nepal is a flight booking service.", "assistant")
@@ -157,6 +174,11 @@ describe("ChatService", () => {
 
   it("resolves contact number follow-ups from prior assistant contact details", async () => {
     const { service, chatRepo, aiService } = createService();
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "follow_up",
+      resolvedQuery: "Flights Nepal contact number phone helpline WhatsApp"
+    });
     chatRepo.find.mockResolvedValue([
       makeMessage("their office location?", "user"),
       makeMessage(
@@ -180,6 +202,11 @@ describe("ChatService", () => {
     ["website?", "Flights Nepal website url link"]
   ])("rewrites %s with the latest subject", async (message, expectedQuery) => {
     const { service, chatRepo, aiService } = createService();
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "follow_up",
+      resolvedQuery: expectedQuery
+    });
     chatRepo.find.mockResolvedValue([
       makeMessage("tell me about Flights Nepal", "user"),
       makeMessage("Flights Nepal is a travel booking platform.", "assistant")
@@ -195,6 +222,11 @@ describe("ChatService", () => {
   it("asks for clarification for unresolved follow-up references", async () => {
     const { service, chatRepo, aiService, cacheService, retrievalService } =
       createService();
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "clarification_needed",
+      resolvedQuery: ""
+    });
     chatRepo.find.mockResolvedValue([]);
 
     const result = await service.chat(
@@ -216,6 +248,11 @@ describe("ChatService", () => {
 
   it("does not treat generic small talk as useful follow-up context", async () => {
     const { service, chatRepo, aiService } = createService();
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "clarification_needed",
+      resolvedQuery: ""
+    });
     chatRepo.find.mockResolvedValue([
       makeMessage("Hello! How can I help?", "assistant"),
       makeMessage("hi", "user")
@@ -238,6 +275,11 @@ describe("ChatService", () => {
   it("asks for clarification for unresolved elliptical follow-ups", async () => {
     const { service, chatRepo, aiService, cacheService, retrievalService } =
       createService();
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "clarification_needed",
+      resolvedQuery: ""
+    });
     chatRepo.find.mockResolvedValue([]);
 
     const result = await service.chat("contact number?", "session-1", "user-1");
@@ -253,12 +295,53 @@ describe("ChatService", () => {
     expect(retrievalService.hasRelevantKnowledge).not.toHaveBeenCalled();
   });
 
+  it("treats standalone terms requests as knowledge page lookups", async () => {
+    const { service, chatRepo, aiService, retrievalService } = createService();
+    chatRepo.find.mockResolvedValue([]);
+    retrievalService.hasRelevantKnowledge.mockResolvedValue(false);
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: false,
+      intent: "standalone_knowledge_page",
+      resolvedQuery:
+        "terms and condition terms condition terms conditions using platform termination liability contact"
+    });
+
+    const result = await service.chat(
+      "Terms and condition",
+      "session-1",
+      "user-1"
+    );
+
+    expect(result).toEqual({
+      answer: "Agent answer",
+      cached: false,
+      usage: USAGE_SNAPSHOT
+    });
+    expect(aiService.embedText).toHaveBeenCalledWith(
+      "terms and condition terms condition terms conditions using platform termination liability contact"
+    );
+    expect(retrievalService.hasRelevantKnowledge).not.toHaveBeenCalled();
+    expect(aiService.runAgenticLoop).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Array),
+      "Terms and condition",
+      "user-1",
+      "terms and condition terms condition terms conditions using platform termination liability contact",
+      []
+    );
+  });
+
   it("uses the active company profile as context for follow-up references", async () => {
     const { service, chatRepo, aiService, companyService } = createService();
     chatRepo.find.mockResolvedValue([]);
     companyService.getActive.mockResolvedValue({
       name: "Flights Nepal",
       shortDescription: "Travel booking support"
+    });
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: true,
+      intent: "follow_up",
+      resolvedQuery: "Flights Nepal office location address physical address branch contact"
     });
 
     await service.chat("their office location?", "session-1", "user-1");
@@ -283,11 +366,14 @@ describe("ChatService", () => {
       take: 20
     });
 
-    const contextualQuery = aiService.embedText.mock.calls[0][0] as string;
-    expect(contextualQuery).toContain("message-24");
-    expect(contextualQuery).toContain("message-19");
-    expect(contextualQuery).not.toContain("message-18");
-    expect(contextualQuery).not.toContain("message-0");
+    const classifierHistory = aiService.classifyQueryIntent.mock.calls[0][0];
+    const classifierText = classifierHistory
+      .map((m) => m.parts.map((p) => p.text ?? "").join(""))
+      .join("\n");
+    expect(classifierText).toContain("message-24");
+    expect(classifierText).toContain("message-5");
+    expect(classifierText).not.toContain("message-4");
+    expect(classifierText).not.toContain("message-0");
   });
 
   it("does not cache fallback answers", async () => {

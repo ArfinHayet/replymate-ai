@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ChatMessage } from './chat-message.entity';
-import { AiService } from '../../core/ai/ai.service';
+import { AiService, type QueryIntentClassification } from '../../core/ai/ai.service';
 import { CacheService } from '../../core/cache/cache.service';
 import { CompanyService } from '../company/company.service';
 import { RetrievalService } from '../../core/retrieval/retrieval.service';
@@ -20,16 +20,6 @@ const RETRIEVAL_CONTEXT_CHAR_LIMIT = 1600;
 const CLARIFICATION_MESSAGE = 'Which company or organization do you mean?';
 const FALLBACK_MESSAGE =
   "That's outside the scope of what I can help with here. I'm only able to answer questions based on the available knowledge base - feel free to ask me anything related to it!";
-const FOLLOW_UP_REFERENCE_PATTERN =
-  /\b(their|there|it|its|they|them|that company|this company|that organization|this organization|that policy|this policy)\b/i;
-const NAMED_ENTITY_MATCH_PATTERN =
-  /[A-Z][A-Za-z0-9&.'-]*(?:[ \t]+[A-Z][A-Za-z0-9&.'-]*)+/g;
-const ELLIPTICAL_FOLLOW_UP_PATTERN =
-  /\b(contact|number|phone|mobile|call|helpline|whatsapp|email|address|location|office|hours|website|url|link|branch|price|cost|fare|rate|policy|terms|support)\b/i;
-const SUBJECT_CUE_PATTERN =
-  /\b(?:about|contact|for|with|called|named)\s+([a-z0-9&.'-]+(?:\s+[a-z0-9&.'-]+){1,5})/i;
-const SUBJECT_SUFFIX_PATTERN =
-  /\s+(overview|office location|office hours|contact information|contact number|phone numbers|email addresses|physical address|address|location|contact|information|recommendation|website|details|support)$/i;
 
 type ProviderHistoryMessage = {
   role: 'user' | 'model';
@@ -126,133 +116,11 @@ export class ChatService implements OnModuleInit {
       : message;
   }
 
-  private hasFollowUpReference(message: string): boolean {
-    return FOLLOW_UP_REFERENCE_PATTERN.test(message);
-  }
-
-  private isEllipticalFollowUp(message: string): boolean {
-    const cleaned = message.trim().replace(/[?!.\s]+$/g, '');
-    if (!cleaned) return false;
-
-    const wordCount = cleaned.split(/\s+/).filter(Boolean).length;
-    return wordCount <= 5 && ELLIPTICAL_FOLLOW_UP_PATTERN.test(cleaned);
-  }
-
-  private buildDeterministicRetrievalIntent(
-    history: ProviderHistoryMessage[],
-    message: string,
-    activeCompanyName?: string,
-  ): string | null {
-    const isFollowUp =
-      this.hasFollowUpReference(message) || this.isEllipticalFollowUp(message);
-    if (!isFollowUp) return null;
-
-    const subject =
-      this.extractLatestSubject(history, 'user') ??
-      this.extractLatestSubject(history, 'model') ??
-      activeCompanyName ??
-      null;
-    if (!subject) return null;
-
-    const keywords = this.expandFollowUpKeywords(message);
-    return [subject, ...keywords].join(' ').replace(/\s+/g, ' ').trim();
-  }
-
-  private extractLatestSubject(
-    history: ProviderHistoryMessage[],
-    preferredRole: 'model' | 'user',
-  ): string | null {
-    const messages = history
-      .filter((m) => m.role === preferredRole)
-      .slice()
-      .reverse();
-
-    for (const message of messages) {
-      const text = message.parts.map((p) => p.text ?? '').join(' ').trim();
-      const subject = this.extractSubjectFromText(text);
-      if (subject) return subject;
-    }
-
-    return null;
-  }
-
-  private extractSubjectFromText(text: string): string | null {
-    const cueMatch = text.match(SUBJECT_CUE_PATTERN);
-    if (cueMatch?.[1]) {
-      const subject = this.cleanSubjectCandidate(cueMatch[1]);
-      if (subject) return this.toTitleCase(subject);
-    }
-
-    const candidates = text.match(NAMED_ENTITY_MATCH_PATTERN) ?? [];
-    for (const candidate of candidates) {
-      const subject = this.cleanSubjectCandidate(candidate);
-      if (subject) return subject;
-    }
-
-    return null;
-  }
-
-  private cleanSubjectCandidate(candidate: string): string | null {
-    let subject = candidate
-      .replace(/[#*_`[\]():|]/g, ' ')
-      .replace(/\b(can|could|would|should|has|have|is|are|was|were|their|the|a|an)\b.*$/i, '')
-      .replace(/[?!.,;:]+$/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    let previous: string;
-    do {
-      previous = subject;
-      subject = subject.replace(SUBJECT_SUFFIX_PATTERN, '').trim();
-    } while (subject !== previous);
-
-    const words = subject.split(/\s+/).filter(Boolean);
-    if (words.length < 2 || words.length > 5) return null;
-    if (!/[a-z0-9]/i.test(subject)) return null;
-
-    return subject;
-  }
-
-  private toTitleCase(value: string): string {
-    return value
-      .split(/\s+/)
-      .map((word) =>
-        word.length <= 3 && word === word.toUpperCase()
-          ? word
-          : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
-      )
-      .join(' ');
-  }
-
-  private expandFollowUpKeywords(message: string): string[] {
-    const lower = message.toLowerCase();
-    const keywords = new Set<string>();
-
-    if (/\b(contact|number|phone|mobile|call|helpline|whatsapp|support)\b/.test(lower)) {
-      ['contact', 'number', 'phone', 'helpline', 'WhatsApp'].forEach((k) => keywords.add(k));
-    }
-    if (/\b(email|mail)\b/.test(lower)) {
-      ['email', 'support', 'contact'].forEach((k) => keywords.add(k));
-    }
-    const asksHours = /\b(hours|open|opening|closing|time)\b/.test(lower);
-
-    if (/\b(address|location|branch)\b/.test(lower) || (/\boffice\b/.test(lower) && !asksHours)) {
-      ['office location', 'address', 'physical address', 'branch', 'contact'].forEach((k) => keywords.add(k));
-    }
-    if (asksHours) {
-      ['office hours', 'opening hours', 'hours'].forEach((k) => keywords.add(k));
-    }
-    if (/\b(website|url|link)\b/.test(lower)) {
-      ['website', 'url', 'link'].forEach((k) => keywords.add(k));
-    }
-    if (/\b(price|cost|fare|rate)\b/.test(lower)) {
-      ['price', 'cost', 'fare', 'rate'].forEach((k) => keywords.add(k));
-    }
-    if (/\b(policy|terms)\b/.test(lower)) {
-      ['policy', 'terms'].forEach((k) => keywords.add(k));
-    }
-
-    return Array.from(keywords);
+  private shouldAskClarification(classification: QueryIntentClassification): boolean {
+    return (
+      classification.intent === 'clarification_needed' ||
+      (classification.isFollowUp && !classification.resolvedQuery.trim())
+    );
   }
 
   async chat(
@@ -269,15 +137,14 @@ export class ChatService implements OnModuleInit {
     ]);
     const enabledChatToolConfigs = chatToolConfigs.filter((config) => config.enabled);
     const hasCompanyProfile = Boolean(systemPrompt.activeCompanyName);
-    const retrievalIntent = this.buildDeterministicRetrievalIntent(
+    const classification = await this.aiService.classifyQueryIntent(
       history,
       message,
       systemPrompt.activeCompanyName,
     );
-    const isFollowUp =
-      this.hasFollowUpReference(message) || this.isEllipticalFollowUp(message);
+    const retrievalIntent = classification.resolvedQuery.trim() || null;
 
-    if (isFollowUp && !retrievalIntent) {
+    if (this.shouldAskClarification(classification)) {
       await this.saveTurn(sessionId, userId, message, CLARIFICATION_MESSAGE);
       return { answer: CLARIFICATION_MESSAGE, cached: false, usage };
     }
@@ -286,7 +153,8 @@ export class ChatService implements OnModuleInit {
     // and cache save so short follow-ups such as "their office location?"
     // are searched as part of the current conversation instead of in isolation.
     const retrievalQuery =
-      retrievalIntent ?? this.buildContextualRetrievalQuery(history, message);
+      retrievalIntent ??
+      this.buildContextualRetrievalQuery(history, message);
     const queryVector = await this.aiService.embedText(retrievalQuery);
 
     if (enabledChatToolConfigs.length === 0) {
@@ -299,6 +167,7 @@ export class ChatService implements OnModuleInit {
 
     const hasKnowledge =
       hasCompanyProfile ||
+      classification.intent === 'standalone_knowledge_page' ||
       (await this.retrievalService.hasRelevantKnowledge(queryVector, userId));
     if (!hasKnowledge && enabledChatToolConfigs.length === 0) {
       this.logger.log('No relevant chunks in KB - returning fallback without calling LLM');
@@ -315,7 +184,7 @@ export class ChatService implements OnModuleInit {
         history,
         message,
         userId,
-        retrievalIntent ?? undefined,
+        classification.intent === 'direct' ? undefined : retrievalIntent ?? undefined,
         enabledChatToolConfigs,
       );
       answer = agentResult.answer;
