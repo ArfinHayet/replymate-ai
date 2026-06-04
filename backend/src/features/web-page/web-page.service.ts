@@ -534,6 +534,23 @@ export class WebPageService {
     );
   }
 
+  private isLikelyClientRenderedShell(html: string): boolean {
+    const hasClientAppMarkers =
+      /\/_next\/static\//i.test(html) ||
+      /self\.__next_f/i.test(html) ||
+      /__NEXT_DATA__/i.test(html);
+    if (!hasClientAppMarkers) return false;
+
+    const $ = cheerio.load(html);
+    $('script, style, noscript, svg, canvas, iframe').remove();
+    const bodyText = this.normalizeReadableText($('body').text());
+
+    return (
+      bodyText.length < READABLE_TEXT_MIN_LENGTH ||
+      /^loading\b/i.test(bodyText)
+    );
+  }
+
   private containsHtml(value: string): boolean {
     return /<\/?[a-z][\s\S]*>/i.test(value);
   }
@@ -900,12 +917,21 @@ export class WebPageService {
     }
 
     const fetched = await this.fetchMarkdown(url);
-    if (this.isMeaningfulMarkdown(fetched.markdown)) return fetched;
-
-    this.logger.warn(`Jina returned metadata-only content for ${url}`);
-
     const rawHtml = await this.fetchRawHtml(url);
-    if (rawHtml) {
+    const isClientRenderedShell = rawHtml
+      ? this.isLikelyClientRenderedShell(rawHtml)
+      : false;
+    const hasMeaningfulJinaMarkdown = this.isMeaningfulMarkdown(fetched.markdown);
+
+    if (hasMeaningfulJinaMarkdown && !isClientRenderedShell) return fetched;
+
+    this.logger.warn(
+      isClientRenderedShell
+        ? `Jina returned static app-shell content for ${url}; trying rendered fallback`
+        : `Jina returned metadata-only content for ${url}`,
+    );
+
+    if (rawHtml && !isClientRenderedShell) {
       const htmlText = this.htmlToReadableText(rawHtml, url);
       if (htmlText) {
         this.logger.log(`Using raw HTML fallback for ${url}`);
