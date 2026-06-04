@@ -20,8 +20,19 @@ const DEFAULT_SCRAPINGANT_MAX_PAGES_PER_INGEST = 10;
 const DISCOVERY_TIMEOUT_MS = 15_000;
 const READABLE_TEXT_MIN_LENGTH = 80;
 const COMMON_SITEMAP_PATHS = ['/sitemap.xml', '/sitemap_index.xml', '/wp-sitemap.xml'];
-const CONTENT_API_KEYWORD_REGEX = /(api|content|page|post|article|cms|about|contact|terms|policy|faq|privacy|refund)/i;
+const CONTENT_API_KEYWORD_REGEX =
+  /(content|page|post|article|cms|about|contact|terms|policy|faq|privacy|refund|return-policy|service|services|company|companies|partner|partners|slider|sliders|blog|blogs|domain-info)/i;
+const API_PATH_REGEX = /(^|\/)api(\/|$)/i;
 const SCRAPINGANT_BLOCKED_RESOURCES = ['image', 'media', 'font', 'stylesheet'];
+const INTERNAL_PATH_PREFIXES = [
+  '/_next/',
+  '/static/',
+  '/assets/',
+  '/dist/',
+  '/build/',
+  '/node_modules/',
+];
+const CODE_LIKE_PATH_REGEX = /[{}[\]()"`<>\\]|%[0-9a-f]{0,1}$/i;
 const HIGHEST_PRIORITY_SEGMENTS = [
   'product',
   'projects',
@@ -228,7 +239,7 @@ export class WebPageService {
       if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
 
       parsed.hash = '';
-      if (this.isStaticAssetPath(parsed.pathname)) return null;
+      if (!this.isCrawlablePath(parsed.pathname)) return null;
 
       return parsed.toString();
     } catch {
@@ -247,6 +258,34 @@ export class WebPageService {
     const lastSegment = lowerPath.split('/').pop() ?? '';
     const extension = lastSegment.match(/\.[a-z0-9]+$/)?.[0];
     return extension ? STATIC_ASSET_EXTENSIONS.has(extension) : false;
+  }
+
+  private isInternalFrameworkPath(pathname: string): boolean {
+    const lowerPath = pathname.toLowerCase();
+    return INTERNAL_PATH_PREFIXES.some((prefix) => lowerPath.startsWith(prefix));
+  }
+
+  private isCodeLikePath(pathname: string): boolean {
+    let decoded = pathname;
+    try {
+      decoded = decodeURIComponent(pathname);
+    } catch {
+      return true;
+    }
+
+    if (CODE_LIKE_PATH_REGEX.test(decoded)) return true;
+    if (/\s/.test(decoded)) return true;
+    if (decoded.length > 180) return true;
+
+    return false;
+  }
+
+  private isCrawlablePath(pathname: string): boolean {
+    if (this.isStaticAssetPath(pathname)) return false;
+    if (this.isInternalFrameworkPath(pathname)) return false;
+    if (this.isCodeLikePath(pathname)) return false;
+
+    return true;
   }
 
   private getDomainKey(hostname: string): string {
@@ -281,6 +320,35 @@ export class WebPageService {
     }
 
     return this.getDomainKey(rootHost) === this.getDomainKey(candidateHost);
+  }
+
+  private isLikelyContentApiUrl(url: string): boolean {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+
+      const pathAndQuery = `${parsed.pathname}${parsed.search}`;
+      return API_PATH_REGEX.test(parsed.pathname) && CONTENT_API_KEYWORD_REGEX.test(pathAndQuery);
+    } catch {
+      return false;
+    }
+  }
+
+  private isAllowedDiscoveredApiUrl(url: string, rootUrl: string): boolean {
+    return this.isSameDomain(rootUrl, url);
+  }
+
+  private titleFromUrl(url: string): string {
+    const parsed = new URL(url);
+    const lastSegment = parsed.pathname.split('/').filter(Boolean).pop();
+    if (!lastSegment) return parsed.hostname;
+
+    return lastSegment
+      .replace(/\.[a-z0-9]+$/i, '')
+      .split(/[-_]+/)
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
   }
 
   private scoreCrawlUrl(url: string, rootUrl: string): number {
@@ -529,7 +597,7 @@ export class WebPageService {
 
     for (const candidate of candidates) {
       const normalized = this.normalizeCrawlUrl(candidate, baseUrl);
-      if (!normalized || !this.isSameDomain(rootUrl, normalized)) continue;
+      if (!normalized || !this.isAllowedDiscoveredApiUrl(normalized, rootUrl)) continue;
       if (!CONTENT_API_KEYWORD_REGEX.test(normalized)) continue;
       urls.add(normalized);
     }
@@ -557,8 +625,8 @@ export class WebPageService {
     });
 
     const apiUrls = new Set<string>();
-    const endpointRegex = /["'`]([^"'`]*?(?:api|content|page|post|article|cms|about|contact|terms|policy|faq|privacy|refund)[^"'`]*?)["'`]/gi;
-    const baseUrlRegex = /baseURL\s*=\s*["'`]([^"'`]+\/api\/?)["'`]/gi;
+    const endpointRegex = /["'`]([^"'`]*?(?:api|content|page|post|article|cms|about|contact|terms|policy|faq|privacy|refund|return|service|services|company|companies|partner|partners|slider|sliders|blog|blogs|domain-info)[^"'`]*?)["'`]/gi;
+    const baseUrlRegex = /["'`](https?:\/\/[^"'`<>\s]+\/api\/?)["'`]/gi;
 
     for (const scriptUrl of scriptUrls) {
       try {
@@ -582,7 +650,7 @@ export class WebPageService {
           const normalized = this.normalizeCrawlUrl(candidate, scriptUrl);
           if (
             normalized &&
-            this.isSameDomain(rootUrl, normalized) &&
+            this.isAllowedDiscoveredApiUrl(normalized, rootUrl) &&
             CONTENT_API_KEYWORD_REGEX.test(normalized)
           ) {
             apiUrls.add(normalized);
@@ -591,7 +659,9 @@ export class WebPageService {
           if (!candidate.includes('/') && CONTENT_API_KEYWORD_REGEX.test(candidate)) {
             for (const apiBase of apiBases) {
               const combined = this.normalizeCrawlUrl(candidate, apiBase);
-              if (combined && this.isSameDomain(rootUrl, combined)) apiUrls.add(combined);
+              if (combined && this.isAllowedDiscoveredApiUrl(combined, rootUrl)) {
+                apiUrls.add(combined);
+              }
             }
           }
         }
@@ -653,7 +723,8 @@ export class WebPageService {
       const parsed = new URL(url);
       return (
         (parsed.protocol === 'http:' || parsed.protocol === 'https:') &&
-        this.isSameDomain(rootUrl, parsed.toString())
+        (this.isSameDomain(rootUrl, parsed.toString()) ||
+          this.isLikelyContentApiUrl(parsed.toString()))
       );
     } catch {
       return false;
@@ -818,6 +889,16 @@ export class WebPageService {
     scrapingAnt: ScrapingAntConfig | null,
     scrapingAntUsage: ScrapingAntUsage,
   ): Promise<ReadablePageContent> {
+    if (this.isLikelyContentApiUrl(url) && this.isSameDomain(rootUrl, url)) {
+      const apiText = await this.fetchApiReadableContent(url);
+      if (apiText) {
+        return {
+          title: this.titleFromUrl(url),
+          markdown: `Title: ${this.titleFromUrl(url)}\nURL Source: ${url}\nAPI Source: ${url}\n\n${apiText}`,
+        };
+      }
+    }
+
     const fetched = await this.fetchMarkdown(url);
     if (this.isMeaningfulMarkdown(fetched.markdown)) return fetched;
 
@@ -832,23 +913,6 @@ export class WebPageService {
           title: fetched.title,
           markdown: `Title: ${fetched.title}\nURL Source: ${url}\n\n${htmlText}`,
         };
-      }
-
-      const apiUrls = [
-        ...this.discoverApiUrlsFromHtml(rawHtml, url, rootUrl),
-        ...(await this.discoverApiUrlsFromScripts(rawHtml, url, rootUrl)),
-      ].sort(
-        (a, b) => this.scoreApiUrlForPage(b, url) - this.scoreApiUrlForPage(a, url),
-      );
-      for (const apiUrl of [...new Set(apiUrls)]) {
-        const apiText = await this.fetchApiReadableContent(apiUrl);
-        if (apiText) {
-          this.logger.log(`Using API content fallback for ${url} via ${apiUrl}`);
-          return {
-            title: fetched.title,
-            markdown: `Title: ${fetched.title}\nURL Source: ${url}\nAPI Source: ${apiUrl}\n\n${apiText}`,
-          };
-        }
       }
     }
 
@@ -875,6 +939,25 @@ export class WebPageService {
       }
     }
 
+    if (rawHtml) {
+      const apiUrls = [
+        ...this.discoverApiUrlsFromHtml(rawHtml, url, rootUrl),
+        ...(await this.discoverApiUrlsFromScripts(rawHtml, url, rootUrl)),
+      ].sort(
+        (a, b) => this.scoreApiUrlForPage(b, url) - this.scoreApiUrlForPage(a, url),
+      );
+      for (const apiUrl of [...new Set(apiUrls)]) {
+        const apiText = await this.fetchApiReadableContent(apiUrl);
+        if (apiText) {
+          this.logger.log(`Using API content fallback for ${url} via ${apiUrl}`);
+          return {
+            title: fetched.title,
+            markdown: `Title: ${fetched.title}\nURL Source: ${url}\nAPI Source: ${apiUrl}\n\n${apiText}`,
+          };
+        }
+      }
+    }
+
     throw new Error(`No readable content found for ${url}`);
   }
 
@@ -886,13 +969,19 @@ export class WebPageService {
   ): Promise<string[]> {
     const markdownLinks = this.extractMarkdownLinks(markdown, currentUrl, rootUrl);
     let htmlLinks: string[] = [];
+    let apiLinks: string[] = [];
 
     try {
       const { data } = await axios.get<string>(currentUrl, {
         headers: { Accept: 'text/html' },
         timeout: DISCOVERY_TIMEOUT_MS,
       });
-      htmlLinks = this.extractHtmlLinks(String(data), currentUrl, rootUrl);
+      const html = String(data);
+      htmlLinks = this.extractHtmlLinks(html, currentUrl, rootUrl);
+      apiLinks = [
+        ...this.discoverApiUrlsFromHtml(html, currentUrl, rootUrl),
+        ...(await this.discoverApiUrlsFromScripts(html, currentUrl, rootUrl)),
+      ];
     } catch (err) {
       this.logger.warn(
         `Failed to fetch raw HTML links for "${currentUrl}": ${(err as Error).message}`,
@@ -906,10 +995,10 @@ export class WebPageService {
     );
 
     this.logger.log(
-      `Discovered ${markdownLinks.length} markdown links, ${htmlLinks.length} html links, ${scrapingAntLinks.length} rendered links for ${currentUrl}`,
+      `Discovered ${markdownLinks.length} markdown links, ${htmlLinks.length} html links, ${apiLinks.length} api links, ${scrapingAntLinks.length} rendered links for ${currentUrl}`,
     );
 
-    return [...new Set([...markdownLinks, ...htmlLinks, ...scrapingAntLinks])];
+    return [...new Set([...markdownLinks, ...htmlLinks, ...apiLinks, ...scrapingAntLinks])];
   }
 
   private parseSitemapLocations(xml: string): string[] {

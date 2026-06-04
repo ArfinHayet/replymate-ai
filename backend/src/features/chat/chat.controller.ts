@@ -18,7 +18,7 @@ export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly chatSuggestionService: ChatSuggestionService,
-  ) {}
+  ) { }
 
   @Get('history')
   @UseGuards(JwtAuthGuard)
@@ -27,7 +27,7 @@ export class ChatController {
     return this.chatService.getHistory(userId);
   }
 
-    @Post()
+  @Post()
   @UseGuards(JwtAuthGuard)
   async chat(@Body() body: ChatRequestDto, @Req() req: Request) {
     if (!body.message?.trim()) throw new BadRequestException('message is required');
