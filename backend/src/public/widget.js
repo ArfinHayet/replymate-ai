@@ -17,6 +17,8 @@
     currentScript.getAttribute("data-brand-url") || "https://supportmate.online";
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
+  var flightCardSelector =
+    (currentScript.getAttribute("data-flight-card-selector") || "").trim();
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
   var isPageMode = displayMode === "page";
   var supportMateIconUrl = "https://www.supportmate.online/favicon.svg";
@@ -733,6 +735,16 @@
     var hasOpened = false;
     var hasSentMessage = false;
     var widgetSuggestions = [];
+    var flightListContext = null;
+    var flightCountMessage = null;
+    var flightObserverTimer = null;
+    var highlightedFlightCard = null;
+    var highlightedFlightLabel = null;
+    var flightSuggestions = [
+      "Find cheapest flight",
+      "Find fastest flight",
+      "Best baggage option"
+    ];
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
     function scrollToBottom() {
@@ -753,6 +765,17 @@
       scrollToBottom();
 
       return el;
+    }
+
+    function addOrUpdateFlightCountMessage(count) {
+      var text = count + " flights found";
+
+      if (flightCountMessage) {
+        flightCountMessage.textContent = text;
+        return;
+      }
+
+      flightCountMessage = addMessage(text, "bot");
     }
 
     function addRedirectFallback(url) {
@@ -804,20 +827,28 @@
     function renderSuggestions() {
       suggestionsEl.innerHTML = "";
 
-      if (hasSentMessage || !widgetSuggestions.length) {
+      if (hasSentMessage) {
         suggestionsEl.classList.remove("visible");
         return;
       }
 
-      widgetSuggestions.slice(0, 3).forEach(function (suggestion) {
+      var suggestions = flightListContext
+        ? flightSuggestions
+        : widgetSuggestions.slice(0, 3);
+
+      if (!suggestions.length) {
+        suggestionsEl.classList.remove("visible");
+        return;
+      }
+
+      suggestions.forEach(function (suggestion) {
         var btn = document.createElement("button");
         btn.type = "button";
         btn.className = "suggestion-btn";
         btn.textContent = suggestion;
         btn.title = suggestion;
         btn.addEventListener("click", function () {
-          userInput.value = suggestion;
-          userInput.focus();
+          sendMessage(suggestion);
         });
         suggestionsEl.appendChild(btn);
       });
@@ -845,6 +876,183 @@
           widgetSuggestions = [];
           renderSuggestions();
         });
+    }
+
+    function safeQueryFlightCards() {
+      if (!flightCardSelector) {
+        return [];
+      }
+
+      try {
+        return Array.prototype.slice.call(
+          document.querySelectorAll(flightCardSelector)
+        );
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function normalizeCardText(text) {
+      return String(text || "").replace(/\s+/g, " ").trim();
+    }
+
+    function matchText(text, pattern) {
+      var match = text.match(pattern);
+      return match ? normalizeCardText(match[0]) : null;
+    }
+
+    function extractPrice(text) {
+      return matchText(
+        text,
+        /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9][0-9,]*(?:\.[0-9]+)?|[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i
+      );
+    }
+
+    function extractBaggage(text) {
+      return matchText(
+        text,
+        /(?:\d+(?:\.\d+)?\s*(?:kg|kgs|lb|lbs)|(?:checked|cabin|carry[- ]?on)\s+baggage|baggage\s*(?:included|allowance)?)/i
+      );
+    }
+
+    function extractDuration(text) {
+      return matchText(
+        text,
+        /\d+(?:\.\d+)?\s*(?:h|hr|hrs|hour|hours)(?:\s*\d+\s*(?:m|min|mins|minute|minutes))?|\d+\s*(?:m|min|mins|minute|minutes)/i
+      );
+    }
+
+    function extractTime(text, occurrence) {
+      var matches = text.match(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g) || [];
+      return matches[occurrence] || null;
+    }
+
+    function extractRouteCode(text, occurrence) {
+      var matches = text.match(/\b[A-Z]{3}\b/g) || [];
+      return matches[occurrence] || null;
+    }
+
+    function extractStops(text) {
+      return matchText(text, /\b(?:nonstop|non-stop|direct|\d+\s+stops?|\d+\s+layovers?)\b/i);
+    }
+
+    function extractAirline(text) {
+      var firstChunk = normalizeCardText(text)
+        .split(/(?:\b[A-Z]{3}\b|\b(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR)\b|৳|\$|€|£|\d{1,2}:\d{2})/)[0]
+        .trim();
+
+      return firstChunk || null;
+    }
+
+    function extractFlightFromCard(card, index) {
+      var rawText = normalizeCardText(card.innerText || card.textContent || "");
+
+      return {
+        index: index + 1,
+        rawText: rawText,
+        origin: extractRouteCode(rawText, 0),
+        destination: extractRouteCode(rawText, 1),
+        price: extractPrice(rawText),
+        baggage: extractBaggage(rawText),
+        airline: extractAirline(rawText),
+        duration: extractDuration(rawText),
+        departure: extractTime(rawText, 0),
+        arrival: extractTime(rawText, 1),
+        stops: extractStops(rawText)
+      };
+    }
+
+    function refreshFlightListContext() {
+      var cards = safeQueryFlightCards();
+
+      if (!cards.length) {
+        flightListContext = null;
+        renderSuggestions();
+        return;
+      }
+
+      flightListContext = {
+        type: "flight_list",
+        url: window.location.href,
+        detectedAt: new Date().toISOString(),
+        totalFlights: cards.length,
+        flights: cards.map(extractFlightFromCard)
+      };
+
+      addOrUpdateFlightCountMessage(cards.length);
+      renderSuggestions();
+    }
+
+    function scheduleFlightContextRefresh() {
+      if (!flightCardSelector) {
+        return;
+      }
+
+      clearTimeout(flightObserverTimer);
+      flightObserverTimer = setTimeout(refreshFlightListContext, 180);
+    }
+
+    function clearFlightHighlight() {
+      if (highlightedFlightCard) {
+        highlightedFlightCard.style.outline = "";
+        highlightedFlightCard.style.boxShadow = "";
+        highlightedFlightCard.style.position = highlightedFlightCard.dataset.compbotOriginalPosition || "";
+        delete highlightedFlightCard.dataset.compbotOriginalPosition;
+        highlightedFlightCard = null;
+      }
+
+      if (highlightedFlightLabel) {
+        highlightedFlightLabel.remove();
+        highlightedFlightLabel = null;
+      }
+    }
+
+    function handleDomManipulation(dommanipulate) {
+      if (
+        !dommanipulate ||
+        dommanipulate.type !== "highlight_flight_card" ||
+        !flightCardSelector
+      ) {
+        return;
+      }
+
+      var cards = safeQueryFlightCards();
+      var index = Number(dommanipulate.flightIndex || 0) - 1;
+      var card = cards[index];
+
+      if (!card) {
+        return;
+      }
+
+      clearFlightHighlight();
+
+      if (!card.style.position) {
+        card.dataset.compbotOriginalPosition = "";
+        card.style.position = "relative";
+      } else {
+        card.dataset.compbotOriginalPosition = card.style.position;
+      }
+
+      card.style.outline = "3px solid #2563eb";
+      card.style.boxShadow = "0 0 0 5px rgba(37,99,235,.18),0 18px 44px rgba(37,99,235,.18)";
+
+      highlightedFlightLabel = document.createElement("div");
+      highlightedFlightLabel.textContent = dommanipulate.label || "Selected flight";
+      highlightedFlightLabel.style.position = "absolute";
+      highlightedFlightLabel.style.top = "10px";
+      highlightedFlightLabel.style.right = "10px";
+      highlightedFlightLabel.style.zIndex = "2147483645";
+      highlightedFlightLabel.style.padding = "6px 10px";
+      highlightedFlightLabel.style.borderRadius = "999px";
+      highlightedFlightLabel.style.background = "#2563eb";
+      highlightedFlightLabel.style.color = "#ffffff";
+      highlightedFlightLabel.style.font = "700 12px Inter, system-ui, sans-serif";
+      highlightedFlightLabel.style.boxShadow = "0 8px 18px rgba(37,99,235,.26)";
+      highlightedFlightLabel.dataset.compbotFlightHighlightLabel = "true";
+      card.appendChild(highlightedFlightLabel);
+
+      highlightedFlightCard = card;
+      card.scrollIntoView({ behavior: "smooth", block: "center" });
     }
 
     function openChat() {
@@ -900,8 +1108,8 @@
     });
 
     // ─── Send Message ──────────────────────────────────────────────────────────
-    function sendMessage() {
-      var text = userInput.value.trim();
+    function sendMessage(forcedText) {
+      var text = String(forcedText || userInput.value).trim();
 
       if (!text || isLoading) {
         return;
@@ -916,15 +1124,23 @@
       setLoading(true);
       showTyping();
 
+      var payload = {
+        message: text,
+        sessionId: sessionId
+      };
+
+      refreshFlightListContext();
+
+      if (flightListContext) {
+        payload.flightListContext = flightListContext;
+      }
+
       fetch(apiBase + "/widget/" + widgetKey + "/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({
-          message: text,
-          sessionId: sessionId
-        })
+        body: JSON.stringify(payload)
       })
         .then(function (res) {
           if (!res.ok) {
@@ -946,9 +1162,10 @@
           hideTyping();
 
           var reply =
-            data.answer || data.response || data.message || "No response";
+            data.message || data.answer || data.response || "No response";
 
           addMessage(reply, "bot");
+          handleDomManipulation(data.dommanipulate);
 
           if (
             data.action &&
@@ -987,6 +1204,16 @@
     }
 
     loadSuggestions();
+    refreshFlightListContext();
+
+    if (flightCardSelector) {
+      var flightObserver = new MutationObserver(scheduleFlightContextRefresh);
+      flightObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+    }
 
     /*
       Important:

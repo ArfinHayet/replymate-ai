@@ -168,7 +168,8 @@ describe("ChatService", () => {
       "contact number?",
       "user-1",
       expect.stringContaining("Flights Nepal contact number phone"),
-      []
+      [],
+      undefined
     );
   });
 
@@ -327,7 +328,8 @@ describe("ChatService", () => {
       "Terms and condition",
       "user-1",
       "terms and condition terms condition terms conditions using platform termination liability contact",
-      []
+      [],
+      undefined
     );
   });
 
@@ -457,7 +459,8 @@ describe("ChatService", () => {
           enabled: true,
           config: { redirectUrl: "https://wa.me/8801000000000" }
         }
-      ]
+      ],
+      undefined
     );
   });
 
@@ -501,6 +504,118 @@ describe("ChatService", () => {
     });
     expect(cacheService.findHit).not.toHaveBeenCalled();
     expect(cacheService.save).not.toHaveBeenCalled();
+  });
+
+  it("passes flight list context through the existing agent flow and returns DOM instructions", async () => {
+    const {
+      service,
+      chatRepo,
+      aiService,
+      cacheService,
+      retrievalService,
+      chatToolsService
+    } = createService();
+    const flightListContext = {
+      type: "flight_list" as const,
+      url: "https://ota.example/flights",
+      totalFlights: 2,
+      flights: [
+        {
+          index: 1,
+          rawText: "Example Air DAC DXB 5h 10m USD 420 20kg",
+          origin: "DAC",
+          destination: "DXB",
+          price: "USD 420",
+          baggage: "20kg",
+          airline: "Example Air",
+          duration: "5h 10m",
+          departure: null,
+          arrival: null,
+          stops: null
+        },
+        {
+          index: 2,
+          rawText: "Budget Air DAC DXB 6h USD 390 15kg",
+          origin: "DAC",
+          destination: "DXB",
+          price: "USD 390",
+          baggage: "15kg",
+          airline: "Budget Air",
+          duration: "6h",
+          departure: null,
+          arrival: null,
+          stops: null
+        }
+      ]
+    };
+    chatRepo.find.mockResolvedValue([]);
+    chatToolsService.list.mockResolvedValue([
+      {
+        toolKey: "flight_search",
+        enabled: true,
+        config: {
+          oneWayTemplateUrl: "https://example.com/flights?trips=DAC,DXB,2026-12-12"
+        }
+      }
+    ]);
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: false,
+      intent: "flight_list_query",
+      resolvedQuery: "find cheapest visible flight"
+    });
+    aiService.runAgenticLoop.mockResolvedValue({
+      answer: "This is the cheapest flight: Budget Air for USD 390.",
+      usedToolKeys: ["analyze_visible_flights"],
+      dommanipulate: {
+        type: "highlight_flight_card",
+        flightIndex: 2,
+        label: "Cheapest flight"
+      }
+    });
+
+    const result = await service.chat(
+      "Find me cheapest flight",
+      "session-1",
+      "user-1",
+      flightListContext
+    );
+
+    expect(result).toEqual({
+      answer: "This is the cheapest flight: Budget Air for USD 390.",
+      cached: false,
+      usage: USAGE_SNAPSHOT,
+      dommanipulate: {
+        type: "highlight_flight_card",
+        flightIndex: 2,
+        label: "Cheapest flight"
+      }
+    });
+    expect(retrievalService.hasRelevantKnowledge).not.toHaveBeenCalled();
+    expect(cacheService.findHit).not.toHaveBeenCalled();
+    expect(cacheService.save).not.toHaveBeenCalled();
+    expect(aiService.classifyQueryIntent).toHaveBeenCalledWith(
+      expect.any(Array),
+      "Find me cheapest flight",
+      undefined,
+      flightListContext
+    );
+    expect(aiService.runAgenticLoop).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Array),
+      "Find me cheapest flight",
+      "user-1",
+      "find cheapest visible flight",
+      [
+        {
+          toolKey: "flight_search",
+          enabled: true,
+          config: {
+            oneWayTemplateUrl: "https://example.com/flights?trips=DAC,DXB,2026-12-12"
+          }
+        }
+      ],
+      flightListContext
+    );
   });
 
   it("does not save or answer when the monthly message quota is exceeded", async () => {

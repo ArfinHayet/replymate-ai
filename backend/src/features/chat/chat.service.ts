@@ -12,6 +12,10 @@ import { RetrievalService } from '../../core/retrieval/retrieval.service';
 import { MessageUsageSnapshot, UsageService } from '../usage/usage.service';
 import { ChatRedirectAction } from '../chat-tools/chat-tools.types';
 import { ChatToolsService } from '../chat-tools/chat-tools.service';
+import type {
+  FlightListContext,
+  WidgetDomManipulation,
+} from './flight-list-context';
 
 /** Max stored messages loaded per session (10 full turns) */
 const MAX_HISTORY = 20;
@@ -127,7 +131,15 @@ export class ChatService implements OnModuleInit {
     message: string,
     sessionId: string,
     userId: string,
-  ): Promise<{ answer: string; cached: boolean; usage: MessageUsageSnapshot; action?: ChatRedirectAction }> {
+    flightListContext?: FlightListContext,
+  ): Promise<{
+    answer: string;
+    message?: string;
+    cached: boolean;
+    usage: MessageUsageSnapshot;
+    action?: ChatRedirectAction;
+    dommanipulate?: WidgetDomManipulation;
+  }> {
     const usage = await this.usageService.incrementOrThrow(userId);
 
     const [history, systemPrompt, chatToolConfigs] = await Promise.all([
@@ -141,6 +153,7 @@ export class ChatService implements OnModuleInit {
       history,
       message,
       systemPrompt.activeCompanyName,
+      flightListContext,
     );
     const retrievalIntent = classification.resolvedQuery.trim() || null;
 
@@ -167,6 +180,7 @@ export class ChatService implements OnModuleInit {
 
     const hasKnowledge =
       hasCompanyProfile ||
+      classification.intent === 'flight_list_query' ||
       classification.intent === 'standalone_knowledge_page' ||
       (await this.retrievalService.hasRelevantKnowledge(queryVector, userId));
     if (!hasKnowledge && enabledChatToolConfigs.length === 0) {
@@ -177,6 +191,7 @@ export class ChatService implements OnModuleInit {
 
     let answer: string;
     let action: ChatRedirectAction | undefined;
+    let dommanipulate: WidgetDomManipulation | undefined;
     let usedToolKeys: string[] = [];
     try {
       const agentResult = await this.aiService.runAgenticLoop(
@@ -186,9 +201,11 @@ export class ChatService implements OnModuleInit {
         userId,
         classification.intent === 'direct' ? undefined : retrievalIntent ?? undefined,
         enabledChatToolConfigs,
+        flightListContext,
       );
       answer = agentResult.answer;
       action = agentResult.action;
+      dommanipulate = agentResult.dommanipulate;
       usedToolKeys = agentResult.usedToolKeys ?? [];
     } catch (err) {
       this.logger.error('Agentic loop failed', err);
@@ -197,13 +214,13 @@ export class ChatService implements OnModuleInit {
 
     const isFallback = answer.trim() === this.fallbackMessage.trim();
     const usedFlightTool = usedToolKeys.some((toolKey) =>
-      ['city_to_airport', 'flight_search'].includes(toolKey),
+      ['city_to_airport', 'flight_search', 'analyze_visible_flights'].includes(toolKey),
     );
 
     const tasks: Promise<unknown>[] = [
       this.saveTurn(sessionId, userId, message, answer),
     ];
-    if (!isFallback && !action && !usedFlightTool) {
+    if (!isFallback && !action && !usedFlightTool && classification.intent !== 'flight_list_query') {
       tasks.push(this.cacheService.save(retrievalQuery, queryVector, answer, userId));
     }
     await Promise.all(tasks);
@@ -213,6 +230,7 @@ export class ChatService implements OnModuleInit {
       cached: false,
       usage,
       ...(action ? { action } : {}),
+      ...(dommanipulate ? { dommanipulate } : {}),
     };
   }
 

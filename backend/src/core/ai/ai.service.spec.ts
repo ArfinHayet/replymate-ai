@@ -96,6 +96,62 @@ describe('AiService agent tools', () => {
     ]);
   });
 
+  it('registers visible flight analysis only when flight search is enabled and context exists', async () => {
+    const service = createService();
+
+    await service.runAgenticLoop('system', [], 'Find cheapest flight', 'user-1', undefined, [
+      {
+        toolKey: 'flight_search',
+        enabled: true,
+        config: {
+          oneWayTemplateUrl: 'https://example.com/one-way',
+        },
+      },
+    ], {
+      type: 'flight_list',
+      totalFlights: 1,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Example Air DAC DXB USD 420 5h 20kg',
+          price: 'USD 420',
+          duration: '5h',
+          baggage: '20kg',
+        },
+      ],
+    });
+
+    expect(registeredToolNames()).toEqual([
+      'search_documents',
+      'search_images',
+      'search_web_pages',
+      'city_to_airport',
+      'flight_search',
+      'analyze_visible_flights',
+    ]);
+  });
+
+  it('does not register visible flight analysis when flight search is disabled', async () => {
+    const service = createService();
+
+    await service.runAgenticLoop('system', [], 'Find cheapest flight', 'user-1', undefined, [], {
+      type: 'flight_list',
+      totalFlights: 1,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Example Air DAC DXB USD 420',
+        },
+      ],
+    });
+
+    expect(registeredToolNames()).toEqual([
+      'search_documents',
+      'search_images',
+      'search_web_pages',
+    ]);
+  });
+
   it('registers live agent tool only when live agent contact is enabled', async () => {
     const service = createService();
 
@@ -179,6 +235,41 @@ describe('AiService query intent classifier', () => {
     });
     expect(withStructuredOutput).toHaveBeenCalled();
     expect(invoke.mock.calls[0][0][0].content).toContain('Current user message: contact number?');
+  });
+
+  it('includes flight list context in classification prompts', async () => {
+    const { service, invoke } = createClassifierService(
+      jest.fn().mockResolvedValue({
+        isFollowUp: false,
+        intent: 'flight_list_query',
+        resolvedQuery: 'find cheapest visible flight',
+      }),
+    );
+
+    const result = await service.classifyQueryIntent(
+      [],
+      'Find cheapest flight',
+      undefined,
+      {
+        type: 'flight_list',
+        totalFlights: 3,
+        flights: [
+          {
+            index: 1,
+            rawText: 'Example Air DAC DXB USD 420',
+          },
+        ],
+      },
+    );
+
+    expect(result).toEqual({
+      isFollowUp: false,
+      intent: 'flight_list_query',
+      resolvedQuery: 'find cheapest visible flight',
+    });
+    expect(invoke.mock.calls[0][0][0].content).toContain(
+      'Flight list context: present with 3 visible flights',
+    );
   });
 
   it('falls back to a direct query if classification fails', async () => {

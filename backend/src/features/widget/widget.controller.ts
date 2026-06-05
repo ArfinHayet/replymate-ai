@@ -15,6 +15,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ChatService } from '../chat/chat.service';
 import { ChatSuggestionService } from '../chat/chat-suggestion.service';
+import type { FlightListContext } from '../chat/flight-list-context';
 import { WidgetKeyGuard } from './widget-key.guard';
 import type { WidgetRequest } from './widget-key.guard';
 import { WidgetKeyService } from './widget-key.service';
@@ -22,6 +23,7 @@ import { WidgetKeyService } from './widget-key.service';
 class WidgetChatDto {
   message!: string;
   sessionId!: string;
+  flightListContext?: FlightListContext;
 }
 
 function firstHeaderValue(value: string | string[] | undefined): string | undefined {
@@ -137,12 +139,15 @@ export class WidgetController {
       body.message.trim(),
       scopedSessionId,
       req.widgetUserId,
+      body.flightListContext,
     );
 
     return {
+      message: response.message ?? response.answer,
       answer: response.answer,
       cached: response.cached,
       ...(response.action ? { action: response.action } : {}),
+      ...(response.dommanipulate ? { dommanipulate: response.dommanipulate } : {}),
     };
   }
 

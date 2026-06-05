@@ -15,6 +15,10 @@ import {
   ChatRedirectAction,
   ChatToolConfigResponse,
 } from '../../features/chat-tools/chat-tools.types';
+import type {
+  FlightListContext,
+  WidgetDomManipulation,
+} from '../../features/chat/flight-list-context';
 import {
   FlightSearchToolInput,
   ToolRetrievalService,
@@ -33,6 +37,7 @@ const queryIntentOutputSchema = z.object({
     'direct',
     'follow_up',
     'standalone_knowledge_page',
+    'flight_list_query',
     'clarification_needed',
   ]),
   resolvedQuery: z.string().describe(
@@ -51,6 +56,7 @@ export type QueryIntentClassification = z.infer<typeof queryIntentOutputSchema>;
 export type AgenticLoopResult = {
   answer: string;
   action?: ChatRedirectAction;
+  dommanipulate?: WidgetDomManipulation;
   usedToolKeys?: string[];
 };
 
@@ -115,6 +121,7 @@ export class AiService {
     history: Message[],
     userMessage: string,
     activeCompanyName?: string,
+    flightListContext?: FlightListContext,
   ): Promise<QueryIntentClassification> {
     const recentHistory = history
       .slice(-8)
@@ -136,15 +143,20 @@ export class AiService {
       '- direct: the message is already answerable as a standalone request.',
       '- follow_up: the message depends on a subject from recent history or the active company profile.',
       '- standalone_knowledge_page: the user is asking for a common website page such as terms and conditions, privacy policy, refund policy, return policy, FAQ, about us, or contact us.',
+      '- flight_list_query: flightListContext is present and the user asks to compare, rank, filter, select, or explain flights from the visible flight results list.',
       '- clarification_needed: the message is a follow-up, but no subject can be resolved from history or the active company profile.',
       '',
       'Rules:',
+      '- Use flight_list_query only when flightListContext is present. The resolvedQuery should describe the user goal over the visible flight list.',
       '- For follow_up, resolve the missing subject from recent history first, then the active company profile.',
       '- For standalone_knowledge_page, do not mark it as a follow-up. Build a rich retrieval query that includes the page title and likely section words.',
       '- For direct, resolvedQuery should be the best concise standalone retrieval query for the message.',
       '- For clarification_needed, resolvedQuery must be an empty string.',
       '',
       activeCompanyName ? `Active company profile: ${activeCompanyName}` : 'Active company profile: none',
+      flightListContext
+        ? `Flight list context: present with ${flightListContext.totalFlights} visible flights`
+        : 'Flight list context: none',
       recentHistory ? `Recent history:\n${recentHistory}` : 'Recent history: none',
       `Current user message: ${userMessage}`,
     ].join('\n');
@@ -183,6 +195,7 @@ export class AiService {
     userId: string,
     retrievalIntent?: string,
     chatToolConfigs: ChatToolConfigResponse[] = [],
+    flightListContext?: FlightListContext,
   ): Promise<AgenticLoopResult> {
     const maxIterations = this.config.get<number>('rag.maxToolIterations') ?? 10;
 
@@ -191,6 +204,7 @@ export class AiService {
     // can restore any URLs the LLM inadvertently mutates in its final answer.
     const imageUrls: { title: string; url: string }[] = [];
     const redirectActions: ChatRedirectAction[] = [];
+    const domActions: WidgetDomManipulation[] = [];
     const usedToolKeys = new Set<string>();
 
     const searchDocumentsTool = tool(
@@ -358,6 +372,34 @@ export class AiService {
       );
 
       tools.push(cityToAirportTool, flightSearchTool);
+
+      if (flightListContext?.type === 'flight_list' && flightListContext.flights.length > 0) {
+        const analyzeVisibleFlightsTool = tool(
+          async ({ query }: { query: string }): Promise<string> => {
+            this.logger.log(`Tool: analyze_visible_flights("${query.slice(0, 80)}")`);
+            usedToolKeys.add('analyze_visible_flights');
+            const result = this.analyzeVisibleFlights(query, flightListContext);
+            if (result.dommanipulate) {
+              domActions.push(result.dommanipulate);
+            }
+            return JSON.stringify(result);
+          },
+          {
+            name: 'analyze_visible_flights',
+            description:
+              'Analyze the visible OTA flight result cards supplied by the widget. ' +
+              'Use this for questions such as cheapest flight, fastest flight, best baggage option, best flight, or comparing flights in the current list. ' +
+              'Answers must use only the supplied visible flight JSON and must include the selected flight index when a single card is best.',
+            schema: z.object({
+              query: z.string().describe(
+                'The user goal for the visible flight list, such as find cheapest flight, fastest flight, or best baggage option.',
+              ),
+            }),
+          },
+        );
+
+        tools.push(analyzeVisibleFlightsTool);
+      }
     }
 
     if (liveAgentConfig) {
@@ -401,7 +443,7 @@ export class AiService {
     const agent = createAgent({
       model: llm,
       tools,
-      systemPrompt: systemPrompt,
+      systemPrompt: this.buildAgentSystemPrompt(systemPrompt, flightListContext),
     });
 
     const result = await agent.invoke(
@@ -445,7 +487,112 @@ export class AiService {
     return {
       answer: this.restoreImageUrls(unescaped, imageUrls),
       action: redirectActions.at(-1),
+      dommanipulate: domActions.at(-1),
       usedToolKeys: Array.from(usedToolKeys),
+    };
+  }
+
+  private buildAgentSystemPrompt(
+    systemPrompt: string,
+    flightListContext?: FlightListContext,
+  ): string {
+    if (!flightListContext?.flights.length) return systemPrompt;
+
+    return [
+      systemPrompt,
+      '',
+      'VISIBLE FLIGHT LIST RULES:',
+      '- If the user asks about the currently visible flight results, such as cheapest, fastest, best baggage, best option, compare, rank, or select a flight, call analyze_visible_flights.',
+      '- For visible flight list answers, use only the flight JSON supplied by the widget.',
+      '- If analyze_visible_flights returns a selectedFlight, describe that flight naturally and mention any missing details as unavailable.',
+      '- Do not invent prices, baggage, routes, times, durations, or airlines that are not present in the visible flight data.',
+    ].join('\n');
+  }
+
+  private analyzeVisibleFlights(
+    query: string,
+    flightListContext: FlightListContext,
+  ): {
+    answer: string;
+    selectedFlight?: FlightListContext['flights'][number];
+    rankedFlights?: FlightListContext['flights'];
+    dommanipulate?: WidgetDomManipulation;
+  } {
+    const normalizedQuery = query.toLowerCase();
+    const flights = flightListContext.flights.filter((flight) => flight.rawText?.trim());
+
+    if (flights.length === 0) {
+      return { answer: 'No visible flight cards were available to analyze.' };
+    }
+
+    if (/\b(fast|fastest|quick|quickest|shortest duration)\b/.test(normalizedQuery)) {
+      const ranked = flights
+        .map((flight) => ({ flight, minutes: parseDurationMinutes(flight.duration ?? flight.rawText) }))
+        .filter((item) => item.minutes !== null)
+        .sort((a, b) => (a.minutes ?? 0) - (b.minutes ?? 0));
+
+      if (ranked.length > 0) {
+        return this.buildVisibleFlightResult(
+          'Fastest flight',
+          'This is the fastest flight from the visible results.',
+          ranked[0].flight,
+          ranked.map((item) => item.flight),
+        );
+      }
+    }
+
+    if (/\b(baggage|bag|luggage|checked)\b/.test(normalizedQuery)) {
+      const ranked = flights
+        .map((flight) => ({ flight, weight: parseBaggageWeight(flight.baggage ?? flight.rawText) }))
+        .filter((item) => item.weight !== null)
+        .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0));
+
+      if (ranked.length > 0) {
+        return this.buildVisibleFlightResult(
+          'Best baggage option',
+          'This visible flight appears to have the best baggage option.',
+          ranked[0].flight,
+          ranked.map((item) => item.flight),
+        );
+      }
+    }
+
+    const ranked = flights
+      .map((flight) => ({ flight, price: parsePriceAmount(flight.price ?? flight.rawText) }))
+      .filter((item) => item.price !== null)
+      .sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+
+    if (ranked.length > 0) {
+      return this.buildVisibleFlightResult(
+        'Cheapest flight',
+        'This is the cheapest flight from the visible results.',
+        ranked[0].flight,
+        ranked.map((item) => item.flight),
+      );
+    }
+
+    return {
+      answer:
+        'I can see the visible flight results, but the available card text does not include enough structured price, duration, or baggage information to select a matching flight.',
+      rankedFlights: flights.slice(0, 5),
+    };
+  }
+
+  private buildVisibleFlightResult(
+    label: string,
+    answer: string,
+    selectedFlight: FlightListContext['flights'][number],
+    rankedFlights: FlightListContext['flights'],
+  ) {
+    return {
+      answer,
+      selectedFlight,
+      rankedFlights: rankedFlights.slice(0, 5),
+      dommanipulate: {
+        type: 'highlight_flight_card' as const,
+        flightIndex: selectedFlight.index,
+        label,
+      },
     };
   }
 
@@ -599,4 +746,57 @@ export class AiService {
   async embedText(text: string): Promise<number[]> {
     return this.llmFactory.getEmbeddings().embedQuery(text);
   }
+}
+
+function parsePriceAmount(value: string | null | undefined): number | null {
+  if (!value) return null;
+
+  const normalized = value.replace(/,/g, '');
+  const patterns = [
+    /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*([0-9]+(?:\.[0-9]+)?)/i,
+    /([0-9]+(?:\.[0-9]+)?)\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i,
+  ];
+
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    if (match) return Number(match[1]);
+  }
+
+  return null;
+}
+
+function parseDurationMinutes(value: string | null | undefined): number | null {
+  if (!value) return null;
+
+  const normalized = value.toLowerCase();
+  const hourMinute = normalized.match(
+    /(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes))?/,
+  );
+  if (hourMinute) {
+    return Math.round(Number(hourMinute[1]) * 60 + Number(hourMinute[2] ?? 0));
+  }
+
+  const minutes = normalized.match(/(\d+)\s*(?:m|min|mins|minute|minutes)\b/);
+  if (minutes) return Number(minutes[1]);
+
+  return null;
+}
+
+function parseBaggageWeight(value: string | null | undefined): number | null {
+  if (!value) return null;
+
+  const normalized = value.toLowerCase();
+  const kgMatches = Array.from(normalized.matchAll(/(\d+(?:\.\d+)?)\s*kg\b/g));
+  if (kgMatches.length > 0) {
+    return Math.max(...kgMatches.map((match) => Number(match[1])));
+  }
+
+  const lbMatches = Array.from(
+    normalized.matchAll(/(\d+(?:\.\d+)?)\s*(?:lb|lbs|pound|pounds)\b/g),
+  );
+  if (lbMatches.length > 0) {
+    return Math.max(...lbMatches.map((match) => Number(match[1]) * 0.453592));
+  }
+
+  return null;
 }

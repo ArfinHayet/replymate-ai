@@ -3,10 +3,12 @@ import type { Request } from 'express';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatSuggestionService } from './chat-suggestion.service';
+import type { FlightListContext } from './flight-list-context';
 
 class ChatRequestDto {
   'message': string;
   'sessionId': string;
+  'flightListContext'?: FlightListContext;
 }
 
 class UpdateChatSuggestionsDto {
@@ -33,7 +35,12 @@ export class ChatController {
     if (!body.message?.trim()) throw new BadRequestException('message is required');
     if (!body.sessionId?.trim()) throw new BadRequestException('sessionId is required');
     const userId = (req.user as { id: string }).id;
-    return this.chatService.chat(body.message.trim(), body.sessionId.trim(), userId);
+    return this.chatService.chat(
+      body.message.trim(),
+      body.sessionId.trim(),
+      userId,
+      body.flightListContext,
+    );
   }
 
   @Get('suggestions')
