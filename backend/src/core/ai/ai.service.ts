@@ -388,7 +388,7 @@ export class AiService {
             name: 'analyze_visible_flights',
             description:
               'Analyze the visible OTA flight result cards supplied by the widget. ' +
-              'Use this for questions such as cheapest flight, fastest flight, best baggage option, best flight, or comparing flights in the current list. ' +
+              'Use this for questions such as cheapest flight, fastest flight, best baggage option, airline filters, refundable or non-refundable flights, best flight, or comparing flights in the current list. ' +
               'Answers must use only the supplied visible flight JSON and must include the selected flight index when a single card is best.',
             schema: z.object({
               query: z.string().describe(
@@ -503,6 +503,7 @@ export class AiService {
       '',
       'VISIBLE FLIGHT LIST RULES:',
       '- If the user asks about the currently visible flight results, such as cheapest, fastest, best baggage, best option, compare, rank, or select a flight, call analyze_visible_flights.',
+      '- If the user asks to show visible flights for a specific airline or refundability, call analyze_visible_flights.',
       '- For visible flight list answers, use only the flight JSON supplied by the widget.',
       '- If analyze_visible_flights returns a selectedFlight, describe that flight naturally and mention any missing details as unavailable.',
       '- Do not invent prices, baggage, routes, times, durations, or airlines that are not present in the visible flight data.',
@@ -525,49 +526,97 @@ export class AiService {
       return { answer: 'No visible flight cards were available to analyze.' };
     }
 
+    const filters = getVisibleFlightFilters(normalizedQuery);
+    if (filters.length > 0) {
+      const matchingFlights = flights.filter((flight) =>
+        filters.every((filter) => filter.matches(flight)),
+      );
+      const label = buildCombinedFilterLabel(filters);
+
+      if (matchingFlights.length === 0) {
+        return {
+          answer: `I could not find any visible flights matching ${buildCombinedNoMatchLabel(filters)}.`,
+          rankedFlights: [],
+        };
+      }
+
+      if (/\b(cheap|cheapest|lowest price|lowest fare|least expensive)\b/.test(normalizedQuery)) {
+        const ranked = rankFlightsByPrice(matchingFlights);
+        if (ranked.length > 0) {
+          return this.buildVisibleFlightResult(
+            `Cheapest ${label}`,
+            `This is the cheapest visible flight matching ${label}.`,
+            ranked[0],
+            ranked,
+          );
+        }
+      }
+
+      if (/\b(fast|fastest|quick|quickest|shortest duration)\b/.test(normalizedQuery)) {
+        const ranked = rankFlightsByDuration(matchingFlights);
+        if (ranked.length > 0) {
+          return this.buildVisibleFlightResult(
+            `Fastest ${label}`,
+            `This is the fastest visible flight matching ${label}.`,
+            ranked[0],
+            ranked,
+          );
+        }
+      }
+
+      if (/\b(baggage|bag|luggage|checked)\b/.test(normalizedQuery)) {
+        const ranked = rankFlightsByBaggage(matchingFlights);
+        if (ranked.length > 0) {
+          return this.buildVisibleFlightResult(
+            `Best baggage option, ${label}`,
+            `This visible flight appears to have the best baggage option matching ${label}.`,
+            ranked[0],
+            ranked,
+          );
+        }
+      }
+
+      return this.buildVisibleFlightGroupResult(
+        label,
+        `These visible flights match ${label}.`,
+        matchingFlights,
+      );
+    }
+
     if (/\b(fast|fastest|quick|quickest|shortest duration)\b/.test(normalizedQuery)) {
-      const ranked = flights
-        .map((flight) => ({ flight, minutes: parseDurationMinutes(flight.duration ?? flight.rawText) }))
-        .filter((item) => item.minutes !== null)
-        .sort((a, b) => (a.minutes ?? 0) - (b.minutes ?? 0));
+      const ranked = rankFlightsByDuration(flights);
 
       if (ranked.length > 0) {
         return this.buildVisibleFlightResult(
           'Fastest flight',
           'This is the fastest flight from the visible results.',
-          ranked[0].flight,
-          ranked.map((item) => item.flight),
+          ranked[0],
+          ranked,
         );
       }
     }
 
     if (/\b(baggage|bag|luggage|checked)\b/.test(normalizedQuery)) {
-      const ranked = flights
-        .map((flight) => ({ flight, weight: parseBaggageWeight(flight.baggage ?? flight.rawText) }))
-        .filter((item) => item.weight !== null)
-        .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0));
+      const ranked = rankFlightsByBaggage(flights);
 
       if (ranked.length > 0) {
         return this.buildVisibleFlightResult(
           'Best baggage option',
           'This visible flight appears to have the best baggage option.',
-          ranked[0].flight,
-          ranked.map((item) => item.flight),
+          ranked[0],
+          ranked,
         );
       }
     }
 
-    const ranked = flights
-      .map((flight) => ({ flight, price: parsePriceAmount(flight.price ?? flight.rawText) }))
-      .filter((item) => item.price !== null)
-      .sort((a, b) => (a.price ?? 0) - (b.price ?? 0));
+    const ranked = rankFlightsByPrice(flights);
 
     if (ranked.length > 0) {
       return this.buildVisibleFlightResult(
         'Cheapest flight',
         'This is the cheapest flight from the visible results.',
-        ranked[0].flight,
-        ranked.map((item) => item.flight),
+        ranked[0],
+        ranked,
       );
     }
 
@@ -591,6 +640,23 @@ export class AiService {
       dommanipulate: {
         type: 'highlight_flight_card' as const,
         flightIndex: selectedFlight.index,
+        label,
+      },
+    };
+  }
+
+  private buildVisibleFlightGroupResult(
+    label: string,
+    answer: string,
+    rankedFlights: FlightListContext['flights'],
+  ) {
+    return {
+      answer,
+      selectedFlight: rankedFlights[0],
+      rankedFlights: rankedFlights.slice(0, 25),
+      dommanipulate: {
+        type: 'highlight_flight_cards' as const,
+        flightIndexes: rankedFlights.map((flight) => flight.index),
         label,
       },
     };
@@ -748,6 +814,255 @@ export class AiService {
   }
 }
 
+type RequestedAirline = {
+  label: string;
+  aliases: string[];
+};
+
+type VisibleFlight = FlightListContext['flights'][number];
+
+type VisibleFlightFilter = {
+  label: string;
+  combinedLabel: string;
+  matches: (flight: VisibleFlight) => boolean;
+};
+
+const AIRLINE_ALIASES: RequestedAirline[] = [
+  {
+    label: 'Qatar Airways',
+    aliases: ['qatar airways', 'qatar', 'qatar airw', 'qr'],
+  },
+  {
+    label: 'US-Bangla',
+    aliases: ['us bangla', 'us-bangla', 'usbangla', 'bs'],
+  },
+  {
+    label: 'Biman Bangladesh',
+    aliases: ['biman bangladesh', 'biman', 'biman bang', 'bg'],
+  },
+  {
+    label: 'China Southern',
+    aliases: ['china southern', 'cz'],
+  },
+  {
+    label: 'Malaysia Airlines',
+    aliases: ['malaysia airlines', 'malaysia', 'malaysia a', 'mh'],
+  },
+];
+
+const AIRLINE_QUERY_STOP_WORDS = new Set([
+  'airline',
+  'airlines',
+  'airways',
+  'flight',
+  'flights',
+  'from',
+  'show',
+  'find',
+  'me',
+  'all',
+  'visible',
+  'the',
+  'for',
+  'with',
+  'please',
+]);
+
+function normalizeForMatching(value: string | null | undefined): string {
+  return String(value ?? '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function parseRefundability(value: string | null | undefined): 'refundable' | 'non-refundable' | null {
+  const normalized = normalizeForMatching(value);
+  if (!normalized) return null;
+  if (/\bnon\s?refundable\b/.test(normalized)) return 'non-refundable';
+  if (/\brefundable\b/.test(normalized)) return 'refundable';
+  return null;
+}
+
+function getRequestedRefundability(query: string): 'refundable' | 'non-refundable' | null {
+  return parseRefundability(query);
+}
+
+function getVisibleFlightFilters(query: string): VisibleFlightFilter[] {
+  const filters: VisibleFlightFilter[] = [];
+
+  const requestedRefundability = getRequestedRefundability(query);
+  if (requestedRefundability) {
+    const label =
+      requestedRefundability === 'non-refundable'
+        ? 'Non-refundable flights'
+        : 'Refundable flights';
+    filters.push({
+      label,
+      combinedLabel: label,
+      matches: (flight) => parseRefundability(flight.refundability ?? flight.rawText) === requestedRefundability,
+    });
+  }
+
+  const requestedAirline = getRequestedAirline(query);
+  if (requestedAirline) {
+    filters.push({
+      label: `${requestedAirline.label} flights`,
+      combinedLabel: `${requestedAirline.label} flights`,
+      matches: (flight) => flightMatchesAirline(flight, requestedAirline),
+    });
+  }
+
+  const fareThreshold = getRequestedFareThreshold(query);
+  if (fareThreshold) {
+    const label =
+      fareThreshold.direction === 'above'
+        ? `Fare above ${fareThreshold.amount}`
+        : `Fare below ${fareThreshold.amount}`;
+    filters.push({
+      label,
+      combinedLabel:
+        fareThreshold.direction === 'above'
+          ? `fare above ${fareThreshold.amount}`
+          : `fare below ${fareThreshold.amount}`,
+      matches: (flight) => {
+        const price = parsePriceAmount(flight.price ?? flight.rawText);
+        if (price === null) return false;
+        return fareThreshold.direction === 'above'
+          ? price > fareThreshold.amount
+          : price < fareThreshold.amount;
+      },
+    });
+  }
+
+  const requestedStopCount = getRequestedStopCount(query);
+  if (requestedStopCount !== null) {
+    const label =
+      requestedStopCount === 0
+        ? '0 stops flights'
+        : `${requestedStopCount} stop${requestedStopCount === 1 ? '' : 's'} flights`;
+    filters.push({
+      label,
+      combinedLabel: label,
+      matches: (flight) => parseStopsCount(flight.stops ?? flight.rawText) === requestedStopCount,
+    });
+  }
+
+  return filters;
+}
+
+function buildCombinedFilterLabel(filters: VisibleFlightFilter[]): string {
+  if (filters.length === 1) return filters[0].label;
+  return filters.map((filter) => filter.combinedLabel).join(', ');
+}
+
+function buildCombinedNoMatchLabel(filters: VisibleFlightFilter[]): string {
+  return filters.map((filter) => filter.combinedLabel).join(', ');
+}
+
+function getRequestedAirline(query: string): RequestedAirline | null {
+  const normalizedQuery = normalizeForMatching(query);
+  if (!normalizedQuery) return null;
+
+  const knownAirline = AIRLINE_ALIASES.find((airline) =>
+    airline.aliases.some((alias) => hasNormalizedPhrase(normalizedQuery, normalizeForMatching(alias))),
+  );
+  if (knownAirline) return knownAirline;
+
+  const genericCandidate = getGenericAirlineCandidate(normalizedQuery);
+  if (!genericCandidate) return null;
+
+  return {
+    label: toTitleCase(genericCandidate),
+    aliases: [genericCandidate],
+  };
+}
+
+function getGenericAirlineCandidate(normalizedQuery: string): string | null {
+  const fromMatch = normalizedQuery.match(/\bflights?\s+from\s+([a-z0-9 ]+)\b/);
+  const trailingMatch = normalizedQuery.match(/\b(?:show|find)\s+([a-z0-9 ]+?)(?:\s+flights?)?\b/);
+  const suffixMatch = normalizedQuery.match(/\b([a-z0-9 ]+?)\s+flights?\b/);
+  const candidate = fromMatch?.[1] ?? trailingMatch?.[1] ?? suffixMatch?.[1] ?? null;
+  if (!candidate) return null;
+
+  const words = candidate
+    .split(' ')
+    .filter((word) => word && !AIRLINE_QUERY_STOP_WORDS.has(word));
+
+  if (words.length === 0) return null;
+  if (words.some((word) => ['cheap', 'cheapest', 'fast', 'fastest', 'quick', 'quickest', 'baggage', 'bag', 'luggage', 'nonstop', 'direct', 'stop', 'stops', 'fare', 'price', 'cost', 'refundable', 'nonrefundable', 'non'].includes(word))) {
+    return null;
+  }
+
+  return words.join(' ');
+}
+
+function flightMatchesAirline(
+  flight: FlightListContext['flights'][number],
+  requestedAirline: RequestedAirline,
+): boolean {
+  const searchableText = normalizeForMatching(`${flight.airline ?? ''} ${flight.rawText ?? ''}`);
+  return requestedAirline.aliases.some((alias) =>
+    hasNormalizedPhrase(searchableText, normalizeForMatching(alias)),
+  );
+}
+
+function hasNormalizedPhrase(text: string, phrase: string): boolean {
+  if (!text || !phrase) return false;
+  return new RegExp(`(?:^| )${escapeRegExp(phrase)}(?: |$)`).test(text);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function toTitleCase(value: string): string {
+  return value
+    .split(' ')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+function rankFlightsByPrice(flights: VisibleFlight[]): VisibleFlight[] {
+  return flights
+    .map((flight) => ({ flight, price: parsePriceAmount(flight.price ?? flight.rawText) }))
+    .filter((item) => item.price !== null)
+    .sort((a, b) => {
+      if (a.price === null && b.price === null) return a.flight.index - b.flight.index;
+      if (a.price === null) return 1;
+      if (b.price === null) return -1;
+      return a.price - b.price;
+    })
+    .map((item) => item.flight);
+}
+
+function rankFlightsByDuration(flights: VisibleFlight[]): VisibleFlight[] {
+  return flights
+    .map((flight) => ({ flight, minutes: parseDurationMinutes(flight.duration ?? flight.rawText) }))
+    .filter((item) => item.minutes !== null)
+    .sort((a, b) => {
+      if (a.minutes === null && b.minutes === null) return a.flight.index - b.flight.index;
+      if (a.minutes === null) return 1;
+      if (b.minutes === null) return -1;
+      return a.minutes - b.minutes;
+    })
+    .map((item) => item.flight);
+}
+
+function rankFlightsByBaggage(flights: VisibleFlight[]): VisibleFlight[] {
+  return flights
+    .map((flight) => ({ flight, weight: parseBaggageWeight(flight.baggage ?? flight.rawText) }))
+    .filter((item) => item.weight !== null)
+    .sort((a, b) => {
+      if (a.weight === null && b.weight === null) return a.flight.index - b.flight.index;
+      if (a.weight === null) return 1;
+      if (b.weight === null) return -1;
+      return b.weight - a.weight;
+    })
+    .map((item) => item.flight);
+}
+
 function parsePriceAmount(value: string | null | undefined): number | null {
   if (!value) return null;
 
@@ -763,6 +1078,31 @@ function parsePriceAmount(value: string | null | undefined): number | null {
   }
 
   return null;
+}
+
+function getRequestedFareThreshold(
+  query: string,
+): { direction: 'above' | 'below'; amount: number } | null {
+  const direction = /\b(?:above|over|greater\s+than|more\s+than|higher\s+than|at\s+least)\b/.test(query)
+    ? 'above'
+    : /\b(?:below|under|less\s+than|lower\s+than|at\s+most|cheaper\s+than)\b/.test(query)
+      ? 'below'
+      : null;
+
+  if (!direction) return null;
+
+  const amount = parsePriceAmount(query) ?? parseStandaloneAmount(query);
+  if (amount === null) return null;
+
+  return { direction, amount };
+}
+
+function parseStandaloneAmount(value: string): number | null {
+  const matches = Array.from(value.replace(/,/g, '').matchAll(/\b\d+(?:\.\d+)?\b/g))
+    .map((match) => Number(match[0]))
+    .filter((amount) => Number.isFinite(amount));
+
+  return matches.length > 0 ? Math.max(...matches) : null;
 }
 
 function parseDurationMinutes(value: string | null | undefined): number | null {
@@ -797,6 +1137,32 @@ function parseBaggageWeight(value: string | null | undefined): number | null {
   if (lbMatches.length > 0) {
     return Math.max(...lbMatches.map((match) => Number(match[1]) * 0.453592));
   }
+
+  return null;
+}
+
+function getRequestedStopCount(query: string): number | null {
+  if (/\b(?:non[-\s]?stop|direct|no\s+stops?)\b/.test(query)) return 0;
+  if (/\bzero\s+stops?\b/.test(query)) return 0;
+
+  const match = query.match(/\b(\d+)\s+stops?\b/);
+  if (!match) return null;
+
+  return Number(match[1]);
+}
+
+function parseStopsCount(value: string | null | undefined): number | null {
+  if (!value) return null;
+
+  const normalized = value.toLowerCase();
+  if (/\b(?:non[-\s]?stop|direct|no\s+stops?)\b/.test(normalized)) return 0;
+  if (/\bzero\s+stops?\b/.test(normalized)) return 0;
+
+  const stopMatch = normalized.match(/\b(\d+)\s+stops?\b/);
+  if (stopMatch) return Number(stopMatch[1]);
+
+  const layoverMatch = normalized.match(/\b(\d+)\s+layovers?\b/);
+  if (layoverMatch) return Number(layoverMatch[1]);
 
   return null;
 }

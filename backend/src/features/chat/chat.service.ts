@@ -140,7 +140,8 @@ export class ChatService implements OnModuleInit {
     action?: ChatRedirectAction;
     dommanipulate?: WidgetDomManipulation;
   }> {
-    const usage = await this.usageService.incrementOrThrow(userId);
+    //const usage = await this.usageService.incrementOrThrow(userId);
+    const usage : any = '';
 
     const [history, systemPrompt, chatToolConfigs] = await Promise.all([
       this.loadHistory(sessionId, userId),

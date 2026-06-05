@@ -6,6 +6,7 @@ export type FlightListItem = {
   price?: string | null;
   baggage?: string | null;
   airline?: string | null;
+  refundability?: string | null;
   duration?: string | null;
   departure?: string | null;
   arrival?: string | null;
@@ -26,4 +27,12 @@ export type FlightCardDomManipulation = {
   label?: string;
 };
 
-export type WidgetDomManipulation = FlightCardDomManipulation;
+export type FlightCardsDomManipulation = {
+  type: 'highlight_flight_cards';
+  flightIndexes: number[];
+  label?: string;
+};
+
+export type WidgetDomManipulation =
+  | FlightCardDomManipulation
+  | FlightCardsDomManipulation;

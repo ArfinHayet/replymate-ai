@@ -61,6 +61,49 @@
     document.head.appendChild(fl);
   }
 
+  if (!document.getElementById("compbot-flight-highlight-styles")) {
+    var highlightStyle = document.createElement("style");
+    highlightStyle.id = "compbot-flight-highlight-styles";
+    highlightStyle.textContent = [
+      ".compbot-flight-card-highlight{",
+      "position:relative!important;",
+      "isolation:isolate;",
+      "border-radius:12px;",
+      "box-shadow:0 0 0 5px rgba(37,99,235,.26),0 18px 54px rgba(37,99,235,.28)!important;",
+      "animation:compbot-flight-card-glow 1.9s ease-in-out infinite;",
+      "}",
+      ".compbot-flight-card-highlight::before{",
+      'content:"";position:absolute;inset:-5px;z-index:2147483644;',
+      "border-radius:inherit;padding:5px;pointer-events:none;",
+      "background:linear-gradient(90deg,#ff2d55,#ffcc00,#22c55e,#06b6d4,#2563eb,#a855f7,#ff2d55);",
+      "background-size:300% 300%;",
+      "animation:compbot-flight-border-flow 2.4s linear infinite;",
+      "-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);",
+      "-webkit-mask-composite:xor;",
+      "mask-composite:exclude;",
+      "}",
+      ".compbot-flight-card-highlight::after{",
+      'content:"";position:absolute;inset:-12px;z-index:-1;border-radius:inherit;pointer-events:none;',
+      "background:linear-gradient(90deg,rgba(255,45,85,.35),rgba(255,204,0,.25),rgba(34,197,94,.3),rgba(37,99,235,.35),rgba(168,85,247,.3));",
+      "filter:blur(18px);opacity:.78;",
+      "animation:compbot-flight-aura 2.6s ease-in-out infinite;",
+      "}",
+      "@keyframes compbot-flight-border-flow{",
+      "0%{background-position:0% 50%;}",
+      "100%{background-position:300% 50%;}",
+      "}",
+      "@keyframes compbot-flight-card-glow{",
+      "0%,100%{transform:translateZ(0);box-shadow:0 0 0 5px rgba(37,99,235,.26),0 18px 54px rgba(37,99,235,.28);}",
+      "50%{transform:translateZ(0) scale(1.01);box-shadow:0 0 0 8px rgba(168,85,247,.3),0 24px 70px rgba(6,182,212,.32);}",
+      "}",
+      "@keyframes compbot-flight-aura{",
+      "0%,100%{opacity:.55;transform:scale(.98);}",
+      "50%{opacity:.9;transform:scale(1.03);}",
+      "}"
+    ].join("");
+    document.head.appendChild(highlightStyle);
+  }
+
   // ─── SVG Icons ────────────────────────────────────────────────────────────────
   var ICON_SPARKLE =
     '<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">' +
@@ -122,10 +165,35 @@
     "box-shadow:0 18px 44px rgba(15,23,42,.24),0 8px 22px rgba(37,99,235,.26);",
     "transition:transform .28s ease,box-shadow .28s ease,background .28s ease,border-color .28s ease;",
     "}",
+    "#toggle-btn::before,#toggle-btn::after{content:none;}",
+    "#toggle-btn.compbot-dom-active::before,#toggle-btn.compbot-flight-page-active::before{",
+    'content:"";position:absolute;inset:0;border-radius:inherit;padding:4px;pointer-events:none;z-index:3;',
+    "background:linear-gradient(90deg,#ff2d55,#ffcc00,#22c55e,#06b6d4,#2563eb,#a855f7,#ff2d55);",
+    "background-size:300% 300%;",
+    "animation:compbot-bubble-border-flow 2.6s linear infinite;",
+    "-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);",
+    "-webkit-mask-composite:xor;",
+    "mask-composite:exclude;",
+    "}",
+    "#toggle-btn.compbot-dom-active::after,#toggle-btn.compbot-flight-page-active::after{",
+    'content:"";position:absolute;inset:2px;border-radius:inherit;pointer-events:none;z-index:2;',
+    "background:linear-gradient(90deg,rgba(255,45,85,.35),rgba(255,204,0,.25),rgba(34,197,94,.3),rgba(37,99,235,.35),rgba(168,85,247,.32));",
+    "filter:blur(9px);opacity:.8;",
+    "animation:compbot-bubble-aura 2.8s ease-in-out infinite;",
+    "}",
+    "@keyframes compbot-bubble-border-flow{",
+    "0%{background-position:0% 50%;}",
+    "100%{background-position:300% 50%;}",
+    "}",
+    "@keyframes compbot-bubble-aura{",
+    "0%,100%{opacity:.52;transform:scale(.96);}",
+    "50%{opacity:.9;transform:scale(1.06);}",
+    "}",
     "#toggle-btn:hover{",
     "transform:translateY(-3px) scale(1.04);",
     "box-shadow:0 24px 56px rgba(15,23,42,.28),0 12px 28px rgba(37,99,235,.34);",
     "}",
+    "#toggle-btn>*{position:relative;z-index:1;}",
     "#toggle-btn svg{width:25px;height:25px;color:#ffffff;}",
     "#toggle-btn img{width:100%;height:100%;display:block;object-fit:cover;transform:scale(1.32);}",
     "#toggle-btn.open{background:transparent;border-color:transparent;}",
@@ -250,11 +318,25 @@
     "}",
 
     "#suggestions{",
-    "display:none;flex-direction:column;align-items:center;justify-content:center;gap:9px;",
-    "width:100%;max-width:280px;margin:auto;padding:8px;",
-    "background:transparent;",
+    "display:none;flex-direction:column;align-items:center;gap:8px;",
+    "width:100%;padding:10px 14px 12px;",
+    "background:#ffffff;border-top:1px solid #eef2f7;",
+    "flex-shrink:0;",
     "}",
     "#suggestions.visible{display:flex;}",
+    "#flight-count-pill{",
+    "display:none;width:100%;max-width:280px;",
+    "padding:0 2px 3px;",
+    "background:transparent;border:0;",
+    "color:#64748b;font-size:11.5px;font-weight:800;text-align:left;",
+    "letter-spacing:.02em;text-transform:uppercase;",
+    "}",
+    "#flight-count-pill.visible{display:block;}",
+    "#flight-count-pill::before{",
+    'content:"";display:inline-block;width:7px;height:7px;border-radius:999px;',
+    "background:var(--rm-trip-success);margin-right:7px;",
+    "box-shadow:0 0 0 3px rgba(22,163,74,.12);vertical-align:1px;",
+    "}",
     ".suggestion-btn{",
     "width:100%;max-width:280px;border:1px solid #dbeafe;background:#ffffff;",
     "color:var(--rm-trip-brand);border-radius:999px;",
@@ -394,6 +476,7 @@
     ":host(.compbot-page-mode) #chat-window.hidden{transform:translateY(100%);}",
     "#chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
     "#messages{padding:14px 12px;}",
+    "#suggestions{padding:10px 12px 12px;}",
     "#input-row{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));}",
     "#chat-footer{padding-bottom:calc(9px + env(safe-area-inset-bottom));}",
     "}"
@@ -691,6 +774,10 @@
     var suggestionsEl = document.createElement("div");
     suggestionsEl.id = "suggestions";
 
+    var flightCountPill = document.createElement("div");
+    flightCountPill.id = "flight-count-pill";
+    suggestionsEl.appendChild(flightCountPill);
+
     // Input Row
     var inputRow = document.createElement("div");
     inputRow.id = "input-row";
@@ -722,9 +809,9 @@
 
     chatWindow.appendChild(header);
     chatWindow.appendChild(messages);
+    chatWindow.appendChild(suggestionsEl);
     chatWindow.appendChild(inputRow);
     chatWindow.appendChild(footer);
-    messages.appendChild(suggestionsEl);
 
     shadow.appendChild(chatWindow);
     document.body.appendChild(host);
@@ -736,14 +823,14 @@
     var hasSentMessage = false;
     var widgetSuggestions = [];
     var flightListContext = null;
-    var flightCountMessage = null;
     var flightObserverTimer = null;
-    var highlightedFlightCard = null;
-    var highlightedFlightLabel = null;
+    var highlightedFlightCards = [];
+    var highlightedFlightLabels = [];
+    var domActivityGlowTimer = null;
     var flightSuggestions = [
       "Find cheapest flight",
       "Find fastest flight",
-      "Best baggage option"
+      "Non stop flight"
     ];
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -765,17 +852,6 @@
       scrollToBottom();
 
       return el;
-    }
-
-    function addOrUpdateFlightCountMessage(count) {
-      var text = count + " flights found";
-
-      if (flightCountMessage) {
-        flightCountMessage.textContent = text;
-        return;
-      }
-
-      flightCountMessage = addMessage(text, "bot");
     }
 
     function addRedirectFallback(url) {
@@ -826,8 +902,10 @@
 
     function renderSuggestions() {
       suggestionsEl.innerHTML = "";
+      suggestionsEl.appendChild(flightCountPill);
 
       if (hasSentMessage) {
+        flightCountPill.classList.remove("visible");
         suggestionsEl.classList.remove("visible");
         return;
       }
@@ -837,8 +915,16 @@
         : widgetSuggestions.slice(0, 3);
 
       if (!suggestions.length) {
+        flightCountPill.classList.remove("visible");
         suggestionsEl.classList.remove("visible");
         return;
+      }
+
+      if (flightListContext) {
+        flightCountPill.textContent = flightListContext.totalFlights + " flights found";
+        flightCountPill.classList.add("visible");
+      } else {
+        flightCountPill.classList.remove("visible");
       }
 
       suggestions.forEach(function (suggestion) {
@@ -848,6 +934,10 @@
         btn.textContent = suggestion;
         btn.title = suggestion;
         btn.addEventListener("click", function () {
+          if (flightListContext && runFlightSuggestionAction(suggestion)) {
+            return;
+          }
+
           sendMessage(suggestion);
         });
         suggestionsEl.appendChild(btn);
@@ -936,6 +1026,10 @@
       return matchText(text, /\b(?:nonstop|non-stop|direct|\d+\s+stops?|\d+\s+layovers?)\b/i);
     }
 
+    function extractRefundability(text) {
+      return matchText(text, /\b(?:non[-\s]?refundable|nonrefundable|refundable)\b/i);
+    }
+
     function extractAirline(text) {
       var firstChunk = normalizeCardText(text)
         .split(/(?:\b[A-Z]{3}\b|\b(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR)\b|৳|\$|€|£|\d{1,2}:\d{2})/)[0]
@@ -955,6 +1049,7 @@
         price: extractPrice(rawText),
         baggage: extractBaggage(rawText),
         airline: extractAirline(rawText),
+        refundability: extractRefundability(rawText),
         duration: extractDuration(rawText),
         departure: extractTime(rawText, 0),
         arrival: extractTime(rawText, 1),
@@ -962,11 +1057,73 @@
       };
     }
 
+    function parsePriceAmount(value) {
+      if (!value) {
+        return null;
+      }
+
+      var normalized = String(value).replace(/,/g, "");
+      var patterns = [
+        /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*([0-9]+(?:\.[0-9]+)?)/i,
+        /([0-9]+(?:\.[0-9]+)?)\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i
+      ];
+
+      for (var i = 0; i < patterns.length; i++) {
+        var match = normalized.match(patterns[i]);
+        if (match) {
+          return Number(match[1]);
+        }
+      }
+
+      return null;
+    }
+
+    function parseDurationMinutes(value) {
+      if (!value) {
+        return null;
+      }
+
+      var normalized = String(value).toLowerCase();
+      var hourMinute = normalized.match(
+        /(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes))?/
+      );
+
+      if (hourMinute) {
+        return Math.round(Number(hourMinute[1]) * 60 + Number(hourMinute[2] || 0));
+      }
+
+      var minutes = normalized.match(/(\d+)\s*(?:m|min|mins|minute|minutes)\b/);
+      return minutes ? Number(minutes[1]) : null;
+    }
+
+    function parseStopsCount(value) {
+      if (!value) {
+        return null;
+      }
+
+      var normalized = String(value).toLowerCase();
+      if (/\b(?:non[-\s]?stop|direct|no\s+stops?)\b/.test(normalized)) {
+        return 0;
+      }
+      if (/\bzero\s+stops?\b/.test(normalized)) {
+        return 0;
+      }
+
+      var stopMatch = normalized.match(/\b(\d+)\s+stops?\b/);
+      if (stopMatch) {
+        return Number(stopMatch[1]);
+      }
+
+      var layoverMatch = normalized.match(/\b(\d+)\s+layovers?\b/);
+      return layoverMatch ? Number(layoverMatch[1]) : null;
+    }
+
     function refreshFlightListContext() {
       var cards = safeQueryFlightCards();
 
       if (!cards.length) {
         flightListContext = null;
+        toggleBtn.classList.remove("compbot-flight-page-active");
         renderSuggestions();
         return;
       }
@@ -979,7 +1136,7 @@
         flights: cards.map(extractFlightFromCard)
       };
 
-      addOrUpdateFlightCountMessage(cards.length);
+      toggleBtn.classList.add("compbot-flight-page-active");
       renderSuggestions();
     }
 
@@ -992,40 +1149,128 @@
       flightObserverTimer = setTimeout(refreshFlightListContext, 180);
     }
 
-    function clearFlightHighlight() {
-      if (highlightedFlightCard) {
-        highlightedFlightCard.style.outline = "";
-        highlightedFlightCard.style.boxShadow = "";
-        highlightedFlightCard.style.position = highlightedFlightCard.dataset.compbotOriginalPosition || "";
-        delete highlightedFlightCard.dataset.compbotOriginalPosition;
-        highlightedFlightCard = null;
-      }
-
-      if (highlightedFlightLabel) {
-        highlightedFlightLabel.remove();
-        highlightedFlightLabel = null;
-      }
+    function showLocalFlightActionMiss() {
+      addMessage("I couldn't find a matching flight in the visible results.", "bot");
     }
 
-    function handleDomManipulation(dommanipulate) {
-      if (
-        !dommanipulate ||
-        dommanipulate.type !== "highlight_flight_card" ||
-        !flightCardSelector
-      ) {
-        return;
+    function runFlightSuggestionAction(suggestion) {
+      if (flightSuggestions.indexOf(suggestion) === -1) {
+        return false;
       }
 
-      var cards = safeQueryFlightCards();
-      var index = Number(dommanipulate.flightIndex || 0) - 1;
-      var card = cards[index];
+      refreshFlightListContext();
 
-      if (!card) {
-        return;
+      if (!flightListContext || !flightListContext.flights.length) {
+        showLocalFlightActionMiss();
+        return true;
       }
 
-      clearFlightHighlight();
+      if (suggestion === "Find cheapest flight") {
+        var priceRanked = flightListContext.flights
+          .map(function (flight) {
+            return {
+              flight: flight,
+              price: parsePriceAmount(flight.price || flight.rawText)
+            };
+          })
+          .filter(function (item) {
+            return item.price !== null;
+          })
+          .sort(function (a, b) {
+            return a.price - b.price;
+          });
 
+        if (!priceRanked.length) {
+          showLocalFlightActionMiss();
+          return true;
+        }
+
+        handleDomManipulation({
+          type: "highlight_flight_card",
+          flightIndex: priceRanked[0].flight.index,
+          label: "Cheapest flight"
+        });
+        return true;
+      }
+
+      if (suggestion === "Find fastest flight") {
+        var durationRanked = flightListContext.flights
+          .map(function (flight) {
+            return {
+              flight: flight,
+              minutes: parseDurationMinutes(flight.duration || flight.rawText)
+            };
+          })
+          .filter(function (item) {
+            return item.minutes !== null;
+          })
+          .sort(function (a, b) {
+            return a.minutes - b.minutes;
+          });
+
+        if (!durationRanked.length) {
+          showLocalFlightActionMiss();
+          return true;
+        }
+
+        handleDomManipulation({
+          type: "highlight_flight_card",
+          flightIndex: durationRanked[0].flight.index,
+          label: "Fastest flight"
+        });
+        return true;
+      }
+
+      if (suggestion === "Non stop flight") {
+        var nonstopIndexes = flightListContext.flights
+          .filter(function (flight) {
+            return parseStopsCount(flight.stops || flight.rawText) === 0;
+          })
+          .map(function (flight) {
+            return flight.index;
+          });
+
+        if (!nonstopIndexes.length) {
+          showLocalFlightActionMiss();
+          return true;
+        }
+
+        handleDomManipulation({
+          type: "highlight_flight_cards",
+          flightIndexes: nonstopIndexes,
+          label: "Non stop flight"
+        });
+        return true;
+      }
+
+      return false;
+    }
+
+    function clearFlightHighlight() {
+      highlightedFlightCards.forEach(function (card) {
+        card.classList.remove("compbot-flight-card-highlight");
+        card.style.outline = "";
+        card.style.boxShadow = "";
+        card.style.position = card.dataset.compbotOriginalPosition || "";
+        delete card.dataset.compbotOriginalPosition;
+      });
+      highlightedFlightCards = [];
+
+      highlightedFlightLabels.forEach(function (label) {
+        label.remove();
+      });
+      highlightedFlightLabels = [];
+    }
+
+    function startDomActivityGlow() {
+      toggleBtn.classList.add("compbot-dom-active");
+      clearTimeout(domActivityGlowTimer);
+      domActivityGlowTimer = setTimeout(function () {
+        toggleBtn.classList.remove("compbot-dom-active");
+      }, 3200);
+    }
+
+    function prepareFlightCardForHighlight(card) {
       if (!card.style.position) {
         card.dataset.compbotOriginalPosition = "";
         card.style.position = "relative";
@@ -1033,26 +1278,79 @@
         card.dataset.compbotOriginalPosition = card.style.position;
       }
 
-      card.style.outline = "3px solid #2563eb";
-      card.style.boxShadow = "0 0 0 5px rgba(37,99,235,.18),0 18px 44px rgba(37,99,235,.18)";
+      card.classList.add("compbot-flight-card-highlight");
+      highlightedFlightCards.push(card);
+    }
 
-      highlightedFlightLabel = document.createElement("div");
-      highlightedFlightLabel.textContent = dommanipulate.label || "Selected flight";
-      highlightedFlightLabel.style.position = "absolute";
-      highlightedFlightLabel.style.top = "10px";
-      highlightedFlightLabel.style.right = "10px";
-      highlightedFlightLabel.style.zIndex = "2147483645";
-      highlightedFlightLabel.style.padding = "6px 10px";
-      highlightedFlightLabel.style.borderRadius = "999px";
-      highlightedFlightLabel.style.background = "#2563eb";
-      highlightedFlightLabel.style.color = "#ffffff";
-      highlightedFlightLabel.style.font = "700 12px Inter, system-ui, sans-serif";
-      highlightedFlightLabel.style.boxShadow = "0 8px 18px rgba(37,99,235,.26)";
-      highlightedFlightLabel.dataset.compbotFlightHighlightLabel = "true";
-      card.appendChild(highlightedFlightLabel);
+    function addFlightHighlightLabel(card, labelText) {
+      var label = document.createElement("div");
+      label.textContent = labelText || "Selected flight";
+      label.style.position = "absolute";
+      label.style.top = "10px";
+      label.style.right = "10px";
+      label.style.zIndex = "2147483645";
+      label.style.padding = "6px 10px";
+      label.style.borderRadius = "999px";
+      label.style.background = "linear-gradient(90deg,#2563eb,#06b6d4,#a855f7,#2563eb)";
+      label.style.backgroundSize = "240% 100%";
+      label.style.color = "#ffffff";
+      label.style.font = "700 12px Inter, system-ui, sans-serif";
+      label.style.boxShadow = "0 10px 24px rgba(37,99,235,.32)";
+      label.style.animation = "compbot-flight-border-flow 2.4s linear infinite";
+      label.dataset.compbotFlightHighlightLabel = "true";
+      card.appendChild(label);
+      highlightedFlightLabels.push(label);
+    }
 
-      highlightedFlightCard = card;
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
+    function handleDomManipulation(dommanipulate) {
+      if (
+        !dommanipulate ||
+        (
+          dommanipulate.type !== "highlight_flight_card" &&
+          dommanipulate.type !== "highlight_flight_cards"
+        ) ||
+        !flightCardSelector
+      ) {
+        return;
+      }
+
+      var cards = safeQueryFlightCards();
+      var flightIndexes =
+        dommanipulate.type === "highlight_flight_cards"
+          ? dommanipulate.flightIndexes
+          : [dommanipulate.flightIndex];
+      var targetCards = Array.isArray(flightIndexes)
+        ? flightIndexes
+            .map(function (flightIndex) {
+              return cards[Number(flightIndex || 0) - 1];
+            })
+            .filter(Boolean)
+        : [];
+
+      if (!targetCards.length) {
+        return;
+      }
+
+      clearFlightHighlight();
+
+      if (isOpen) {
+        closeChat(true);
+      }
+
+      startDomActivityGlow();
+      targetCards.forEach(function (card, cardIndex) {
+        prepareFlightCardForHighlight(card);
+        addFlightHighlightLabel(
+          card,
+          targetCards.length > 1
+            ? (dommanipulate.label || "Matching flight") + " " + (cardIndex + 1)
+            : dommanipulate.label || "Selected flight"
+        );
+      });
+
+      setTimeout(function () {
+        targetCards[0].scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 80);
     }
 
     function openChat() {
@@ -1078,8 +1376,8 @@
       }, 80);
     }
 
-    function closeChat() {
-      if (alwaysOpen) {
+    function closeChat(force) {
+      if (alwaysOpen && !force) {
         return;
       }
 
@@ -1109,7 +1407,10 @@
 
     // ─── Send Message ──────────────────────────────────────────────────────────
     function sendMessage(forcedText) {
-      var text = String(forcedText || userInput.value).trim();
+      var text =
+        typeof forcedText === "string"
+          ? forcedText.trim()
+          : userInput.value.trim();
 
       if (!text || isLoading) {
         return;
