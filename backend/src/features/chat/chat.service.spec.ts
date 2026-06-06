@@ -48,6 +48,9 @@ function createService() {
       })
     ),
     embedText: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]),
+    analyzeVisibleFlightContext: jest.fn().mockReturnValue({
+      answer: "Visible flight answer"
+    }),
     runAgenticLoop: jest.fn().mockResolvedValue({ answer: "Agent answer" })
   };
   const cacheService = {
@@ -506,7 +509,7 @@ describe("ChatService", () => {
     expect(cacheService.save).not.toHaveBeenCalled();
   });
 
-  it("passes flight list context through the existing agent flow and returns DOM instructions", async () => {
+  it("directly analyzes visible flights when classification is flight list query", async () => {
     const {
       service,
       chatRepo,
@@ -563,9 +566,8 @@ describe("ChatService", () => {
       intent: "flight_list_query",
       resolvedQuery: "find cheapest visible flight"
     });
-    aiService.runAgenticLoop.mockResolvedValue({
+    aiService.analyzeVisibleFlightContext.mockReturnValueOnce({
       answer: "This is the cheapest flight: Budget Air for USD 390.",
-      usedToolKeys: ["analyze_visible_flights"],
       dommanipulate: {
         type: "highlight_flight_card",
         flightIndex: 2,
@@ -591,30 +593,29 @@ describe("ChatService", () => {
       }
     });
     expect(retrievalService.hasRelevantKnowledge).not.toHaveBeenCalled();
+    expect(aiService.embedText).not.toHaveBeenCalled();
     expect(cacheService.findHit).not.toHaveBeenCalled();
     expect(cacheService.save).not.toHaveBeenCalled();
+    expect(aiService.runAgenticLoop).not.toHaveBeenCalled();
     expect(aiService.classifyQueryIntent).toHaveBeenCalledWith(
       expect.any(Array),
       "Find me cheapest flight",
       undefined,
       flightListContext
     );
-    expect(aiService.runAgenticLoop).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(Array),
-      "Find me cheapest flight",
-      "user-1",
+    expect(aiService.analyzeVisibleFlightContext).toHaveBeenCalledWith(
       "find cheapest visible flight",
-      [],
       flightListContext
     );
   });
 
-  it("removes flight search but keeps non-flight tools for flight list queries", async () => {
+  it("does not expose tools or retrieval when directly analyzing visible flight queries", async () => {
     const {
       service,
       chatRepo,
       aiService,
+      cacheService,
+      retrievalService,
       chatToolsService
     } = createService();
     const flightListContext = {
@@ -650,35 +651,40 @@ describe("ChatService", () => {
       intent: "flight_list_query",
       resolvedQuery: "fly emirat flights"
     });
-    aiService.runAgenticLoop.mockResolvedValue({
+    aiService.analyzeVisibleFlightContext.mockReturnValueOnce({
       answer: "These are the Emirates flights.",
-      usedToolKeys: ["analyze_visible_flights"]
+      dommanipulate: {
+        type: "highlight_flight_cards",
+        flightIndexes: [1],
+        label: "Emirates flights"
+      }
     });
 
-    await service.chat(
+    const result = await service.chat(
       "fly emirat flights",
       "session-1",
       "user-1",
       flightListContext
     );
 
-    expect(aiService.runAgenticLoop).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.any(Array),
+    expect(result).toEqual({
+      answer: "These are the Emirates flights.",
+      cached: false,
+      usage: USAGE_SNAPSHOT,
+      dommanipulate: {
+        type: "highlight_flight_cards",
+        flightIndexes: [1],
+        label: "Emirates flights"
+      }
+    });
+    expect(aiService.analyzeVisibleFlightContext).toHaveBeenCalledWith(
       "fly emirat flights",
-      "user-1",
-      "fly emirat flights",
-      [
-        {
-          toolKey: "live_agent_contact",
-          enabled: true,
-          config: {
-            redirectUrl: "https://wa.me/8801000000000"
-          }
-        }
-      ],
       flightListContext
     );
+    expect(aiService.runAgenticLoop).not.toHaveBeenCalled();
+    expect(aiService.embedText).not.toHaveBeenCalled();
+    expect(cacheService.findHit).not.toHaveBeenCalled();
+    expect(retrievalService.hasRelevantKnowledge).not.toHaveBeenCalled();
   });
 
   it("does not save or answer when the monthly message quota is exceeded", async () => {

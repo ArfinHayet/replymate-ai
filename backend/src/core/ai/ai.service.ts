@@ -159,6 +159,7 @@ export class AiService {
       flightListContext
         ? `Flight list context: present with ${flightListContext.totalFlights} visible flights`
         : 'Flight list context: none',
+      flightListContext ? buildFlightListClassifierSummary(flightListContext) : '',
       recentHistory ? `Recent history:\n${recentHistory}` : 'Recent history: none',
       `Current user message: ${userMessage}`,
     ].join('\n');
@@ -514,6 +515,18 @@ export class AiService {
     ].join('\n');
   }
 
+  analyzeVisibleFlightContext(
+    query: string,
+    flightListContext: FlightListContext,
+  ): {
+    answer: string;
+    selectedFlight?: FlightListContext['flights'][number];
+    rankedFlights?: FlightListContext['flights'];
+    dommanipulate?: WidgetDomManipulation;
+  } {
+    return this.analyzeVisibleFlights(query, flightListContext);
+  }
+
   private analyzeVisibleFlights(
     query: string,
     flightListContext: FlightListContext,
@@ -831,6 +844,34 @@ type VisibleFlightFilter = {
   matches: (flight: VisibleFlight) => boolean;
 };
 
+function buildFlightListClassifierSummary(flightListContext: FlightListContext): string {
+  const flights = flightListContext.flights
+    .filter((flight) => flight.rawText?.trim())
+    .slice(0, 25)
+    .map((flight) => {
+      const fields = [
+        `#${flight.index}`,
+        flight.airline ? `airline=${truncateForPrompt(flight.airline, 42)}` : null,
+        flight.price ? `price=${flight.price}` : null,
+        flight.refundability ? `refundability=${flight.refundability}` : null,
+        flight.stops ? `stops=${flight.stops}` : null,
+        `text=${truncateForPrompt(flight.rawText, 120)}`,
+      ].filter(Boolean);
+      return fields.join(' | ');
+    });
+
+  return flights.length > 0
+    ? `Visible flight summary:\n${flights.join('\n')}`
+    : 'Visible flight summary: none';
+}
+
+function truncateForPrompt(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+  return normalized.length <= maxLength
+    ? normalized
+    : `${normalized.slice(0, maxLength - 1)}…`;
+}
+
 const AIRLINE_ALIASES: RequestedAirline[] = [
   {
     label: 'Qatar Airways',
@@ -1008,13 +1049,32 @@ function flightMatchesAirline(
 ): boolean {
   const searchableText = normalizeForMatching(`${flight.airline ?? ''} ${flight.rawText ?? ''}`);
   return requestedAirline.aliases.some((alias) =>
-    hasNormalizedPhrase(searchableText, normalizeForMatching(alias)),
+    hasNormalizedPhrase(searchableText, normalizeForMatching(alias)) ||
+    hasMatchingWordSet(searchableText, normalizeForMatching(alias)),
   );
 }
 
 function hasNormalizedPhrase(text: string, phrase: string): boolean {
   if (!text || !phrase) return false;
   return new RegExp(`(?:^| )${escapeRegExp(phrase)}(?: |$)`).test(text);
+}
+
+function hasMatchingWordSet(text: string, phrase: string): boolean {
+  const textWords = text.split(' ').filter((word) => word.length >= 2);
+  const phraseWords = phrase.split(' ').filter((word) => word.length >= 2);
+
+  if (phraseWords.length === 0) return false;
+
+  return phraseWords.every((phraseWord) =>
+    textWords.some((textWord) => wordsMatchLoosely(textWord, phraseWord)),
+  );
+}
+
+function wordsMatchLoosely(textWord: string, phraseWord: string): boolean {
+  if (textWord === phraseWord) return true;
+  if (textWord.length >= 3 && phraseWord.startsWith(textWord)) return true;
+  if (phraseWord.length >= 3 && textWord.startsWith(phraseWord)) return true;
+  return false;
 }
 
 function escapeRegExp(value: string): string {

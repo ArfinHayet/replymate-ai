@@ -443,6 +443,49 @@ describe('AiService agent tools', () => {
     expect(result.rankedFlights).toEqual([]);
   });
 
+  it('matches reversed and truncated visible airline text without hardcoded aliases', () => {
+    const service = createService();
+
+    const result = (service as never as {
+      analyzeVisibleFlights: (query: string, context: unknown) => {
+        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
+        selectedFlight?: { index: number };
+        rankedFlights?: { index: number }[];
+      };
+    }).analyzeVisibleFlights('bangladesh biman flight', {
+      type: 'flight_list',
+      totalFlights: 3,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Onward US-Bangla ... BS DAC KUL BDT 4856 Refundable',
+          airline: 'Onward US-Bangla ... BS',
+          price: 'BDT 4856',
+        },
+        {
+          index: 13,
+          rawText: 'Onward Biman Bang... BG DAC KUL BDT 23169 Refundable',
+          airline: 'Onward Biman Bang... BG',
+          price: 'BDT 23169',
+        },
+        {
+          index: 14,
+          rawText: 'Onward Biman Bang... BG DAC KUL BDT 23654 Refundable',
+          airline: 'Onward Biman Bang... BG',
+          price: 'BDT 23654',
+        },
+      ],
+    });
+
+    expect(result.dommanipulate).toEqual({
+      type: 'highlight_flight_cards',
+      flightIndexes: [13, 14],
+      label: 'Biman Bangladesh flights',
+    });
+    expect(result.selectedFlight?.index).toBe(13);
+    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([13, 14]);
+  });
+
   it('intersects airline and fare filters for visible flight groups', () => {
     const service = createService();
 
@@ -733,6 +776,9 @@ describe('AiService query intent classifier', () => {
     expect(invoke.mock.calls[0][0][0].content).toContain(
       'Flight list context: present with 3 visible flights',
     );
+    expect(invoke.mock.calls[0][0][0].content).toContain('Visible flight summary:');
+    expect(invoke.mock.calls[0][0][0].content).toContain('#1');
+    expect(invoke.mock.calls[0][0][0].content).toContain('text=Example Air DAC DXB USD 420');
   });
 
   it('uses AI classification for visible airline filter phrasing', async () => {

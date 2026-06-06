@@ -162,6 +162,22 @@ export class ChatService implements OnModuleInit {
       return { answer: CLARIFICATION_MESSAGE, cached: false, usage };
     }
 
+    if (classification.intent === 'flight_list_query' && flightListContext) {
+      const visibleFlightResult = this.aiService.analyzeVisibleFlightContext(
+        retrievalIntent ?? message,
+        flightListContext,
+      );
+      await this.saveTurn(sessionId, userId, message, visibleFlightResult.answer);
+      return {
+        answer: visibleFlightResult.answer,
+        cached: false,
+        usage,
+        ...(visibleFlightResult.dommanipulate
+          ? { dommanipulate: visibleFlightResult.dommanipulate }
+          : {}),
+      };
+    }
+
     // Use the same context-aware query for cache lookup, relevance preflight,
     // and cache save so short follow-ups such as "their office location?"
     // are searched as part of the current conversation instead of in isolation.
