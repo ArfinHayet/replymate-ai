@@ -824,6 +824,9 @@
     var widgetSuggestions = [];
     var flightListContext = null;
     var flightObserverTimer = null;
+    var flightRouteRefreshTimer = null;
+    var flightRoutePollingTimer = null;
+    var flightRoutePollingStartedAt = 0;
     var highlightedFlightCards = [];
     var highlightedFlightLabels = [];
     var domActivityGlowTimer = null;
@@ -1147,6 +1150,80 @@
 
       clearTimeout(flightObserverTimer);
       flightObserverTimer = setTimeout(refreshFlightListContext, 180);
+    }
+
+    function scheduleFlightRouteRefresh() {
+      if (!flightCardSelector) {
+        return;
+      }
+
+      clearTimeout(flightRouteRefreshTimer);
+      flightRouteRefreshTimer = setTimeout(function () {
+        scheduleFlightContextRefresh();
+        startFlightRoutePolling();
+      }, 80);
+    }
+
+    function startFlightRoutePolling() {
+      if (!flightCardSelector) {
+        return;
+      }
+
+      clearTimeout(flightRoutePollingTimer);
+      flightRoutePollingStartedAt = Date.now();
+
+      function poll() {
+        refreshFlightListContext();
+
+        if (flightListContext || Date.now() - flightRoutePollingStartedAt >= 2800) {
+          clearTimeout(flightRoutePollingTimer);
+          flightRoutePollingTimer = null;
+          return;
+        }
+
+        flightRoutePollingTimer = setTimeout(poll, 240);
+      }
+
+      flightRoutePollingTimer = setTimeout(poll, 120);
+    }
+
+    function installFlightRouteWatcher() {
+      if (!flightCardSelector) {
+        return;
+      }
+
+      window.addEventListener("compbot:locationchange", scheduleFlightRouteRefresh);
+      window.addEventListener("popstate", scheduleFlightRouteRefresh);
+
+      if (window.__compbotFlightRouteWatcherInstalled) {
+        return;
+      }
+
+      window.__compbotFlightRouteWatcherInstalled = true;
+
+      function dispatchLocationChange() {
+        try {
+          window.dispatchEvent(new Event("compbot:locationchange"));
+        } catch (_) {
+          var event = document.createEvent("Event");
+          event.initEvent("compbot:locationchange", true, true);
+          window.dispatchEvent(event);
+        }
+      }
+
+      ["pushState", "replaceState"].forEach(function (methodName) {
+        var original = history[methodName];
+
+        if (typeof original !== "function") {
+          return;
+        }
+
+        history[methodName] = function () {
+          var result = original.apply(this, arguments);
+          dispatchLocationChange();
+          return result;
+        };
+      });
     }
 
     function showLocalFlightActionMiss() {
@@ -1514,6 +1591,7 @@
         subtree: true,
         characterData: true
       });
+      installFlightRouteWatcher();
     }
 
     /*

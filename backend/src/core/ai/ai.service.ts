@@ -148,6 +148,8 @@ export class AiService {
       '',
       'Rules:',
       '- Use flight_list_query only when flightListContext is present. The resolvedQuery should describe the user goal over the visible flight list.',
+      '- When flightListContext is present, visible airline filters such as "show [airline] flights", "fly [airline] flights", or "[airline] flights" are flight_list_query, not flight search.',
+      '- Do not use flight_list_query for a new route/date search such as "Dhaka to Dubai tomorrow"; classify that normally so the flight search workflow can ask for or use route/date details.',
       '- For follow_up, resolve the missing subject from recent history first, then the active company profile.',
       '- For standalone_knowledge_page, do not mark it as a follow-up. Build a rich retrieval query that includes the page title and likely section words.',
       '- For direct, resolvedQuery should be the best concise standalone retrieval query for the message.',
@@ -372,34 +374,35 @@ export class AiService {
       );
 
       tools.push(cityToAirportTool, flightSearchTool);
+    }
 
-      if (flightListContext?.type === 'flight_list' && flightListContext.flights.length > 0) {
-        const analyzeVisibleFlightsTool = tool(
-          async ({ query }: { query: string }): Promise<string> => {
-            this.logger.log(`Tool: analyze_visible_flights("${query.slice(0, 80)}")`);
-            usedToolKeys.add('analyze_visible_flights');
-            const result = this.analyzeVisibleFlights(query, flightListContext);
-            if (result.dommanipulate) {
-              domActions.push(result.dommanipulate);
-            }
-            return JSON.stringify(result);
-          },
-          {
-            name: 'analyze_visible_flights',
-            description:
-              'Analyze the visible OTA flight result cards supplied by the widget. ' +
-              'Use this for questions such as cheapest flight, fastest flight, best baggage option, airline filters, refundable or non-refundable flights, best flight, or comparing flights in the current list. ' +
-              'Answers must use only the supplied visible flight JSON and must include the selected flight index when a single card is best.',
-            schema: z.object({
-              query: z.string().describe(
-                'The user goal for the visible flight list, such as find cheapest flight, fastest flight, or best baggage option.',
-              ),
-            }),
-          },
-        );
+    if (flightListContext?.type === 'flight_list' && flightListContext.flights.length > 0) {
+      const analyzeVisibleFlightsTool = tool(
+        async ({ query }: { query: string }): Promise<string> => {
+          this.logger.log(`Tool: analyze_visible_flights("${query.slice(0, 80)}")`);
+          usedToolKeys.add('analyze_visible_flights');
+          const result = this.analyzeVisibleFlights(query, flightListContext);
+          if (result.dommanipulate) {
+            domActions.push(result.dommanipulate);
+          }
+          return JSON.stringify(result);
+        },
+        {
+          name: 'analyze_visible_flights',
+          description:
+            'Analyze the visible OTA flight result cards supplied by the widget. ' +
+            'Use this for questions such as cheapest flight, fastest flight, best baggage option, airline filters, refundable or non-refundable flights, best flight, or comparing flights in the current list. ' +
+            'Prefer this over flight_search whenever visible flight cards are supplied and the user request can be answered from those cards. ' +
+            'Answers must use only the supplied visible flight JSON and must include the selected flight index when a single card is best.',
+          schema: z.object({
+            query: z.string().describe(
+              'The user goal for the visible flight list, such as find cheapest flight, fastest flight, airline flights, refundable flights, or best baggage option.',
+            ),
+          }),
+        },
+      );
 
-        tools.push(analyzeVisibleFlightsTool);
-      }
+      tools.push(analyzeVisibleFlightsTool);
     }
 
     if (liveAgentConfig) {
@@ -502,8 +505,9 @@ export class AiService {
       systemPrompt,
       '',
       'VISIBLE FLIGHT LIST RULES:',
-      '- If the user asks about the currently visible flight results, such as cheapest, fastest, best baggage, best option, compare, rank, or select a flight, call analyze_visible_flights.',
+      '- If the user asks about the currently visible flight results, such as cheapest, fastest, best baggage, airline filters, best option, compare, rank, or select a flight, call analyze_visible_flights.',
       '- If the user asks to show visible flights for a specific airline or refundability, call analyze_visible_flights.',
+      '- Prefer analyze_visible_flights over flight_search whenever the request can be answered from the visible flight cards.',
       '- For visible flight list answers, use only the flight JSON supplied by the widget.',
       '- If analyze_visible_flights returns a selectedFlight, describe that flight naturally and mention any missing details as unavailable.',
       '- Do not invent prices, baggage, routes, times, durations, or airlines that are not present in the visible flight data.',
@@ -859,6 +863,7 @@ const AIRLINE_QUERY_STOP_WORDS = new Set([
   'from',
   'show',
   'find',
+  'fly',
   'me',
   'all',
   'visible',
@@ -980,7 +985,7 @@ function getRequestedAirline(query: string): RequestedAirline | null {
 
 function getGenericAirlineCandidate(normalizedQuery: string): string | null {
   const fromMatch = normalizedQuery.match(/\bflights?\s+from\s+([a-z0-9 ]+)\b/);
-  const trailingMatch = normalizedQuery.match(/\b(?:show|find)\s+([a-z0-9 ]+?)(?:\s+flights?)?\b/);
+  const trailingMatch = normalizedQuery.match(/\b(?:show|find|fly)\s+([a-z0-9 ]+?)(?:\s+flights?)?\b/);
   const suffixMatch = normalizedQuery.match(/\b([a-z0-9 ]+?)\s+flights?\b/);
   const candidate = fromMatch?.[1] ?? trailingMatch?.[1] ?? suffixMatch?.[1] ?? null;
   if (!candidate) return null;

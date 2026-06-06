@@ -131,7 +131,7 @@ describe('AiService agent tools', () => {
     ]);
   });
 
-  it('does not register visible flight analysis when flight search is disabled', async () => {
+  it('registers visible flight analysis when context exists even without flight search', async () => {
     const service = createService();
 
     await service.runAgenticLoop('system', [], 'Find cheapest flight', 'user-1', undefined, [], {
@@ -149,6 +149,7 @@ describe('AiService agent tools', () => {
       'search_documents',
       'search_images',
       'search_web_pages',
+      'analyze_visible_flights',
     ]);
   });
 
@@ -710,7 +711,7 @@ describe('AiService query intent classifier', () => {
 
     const result = await service.classifyQueryIntent(
       [],
-      'Find cheapest flight',
+      'compare these visible options',
       undefined,
       {
         type: 'flight_list',
@@ -732,6 +733,80 @@ describe('AiService query intent classifier', () => {
     expect(invoke.mock.calls[0][0][0].content).toContain(
       'Flight list context: present with 3 visible flights',
     );
+  });
+
+  it('uses AI classification for visible airline filter phrasing', async () => {
+    const { service, withStructuredOutput, invoke } = createClassifierService(
+      jest.fn().mockResolvedValue({
+        isFollowUp: false,
+        intent: 'flight_list_query',
+        resolvedQuery: 'show Emirates flights from the visible list',
+      }),
+    );
+
+    const result = await service.classifyQueryIntent(
+      [],
+      'fly emirat flights',
+      undefined,
+      {
+        type: 'flight_list',
+        totalFlights: 2,
+        flights: [
+          {
+            index: 1,
+            rawText: 'Emirates DAC DXB BDT 8200',
+            airline: 'Emirates',
+          },
+          {
+            index: 2,
+            rawText: 'Qatar Airways DAC DOH BDT 7600',
+            airline: 'Qatar Airways',
+          },
+        ],
+      },
+    );
+
+    expect(result).toEqual({
+      isFollowUp: false,
+      intent: 'flight_list_query',
+      resolvedQuery: 'show Emirates flights from the visible list',
+    });
+    expect(withStructuredOutput).toHaveBeenCalled();
+    expect(invoke.mock.calls[0][0][0].content).toContain('Current user message: fly emirat flights');
+    expect(invoke.mock.calls[0][0][0].content).toContain('visible airline filters');
+  });
+
+  it('does not force route and date searches into flight list query', async () => {
+    const { service, invoke } = createClassifierService(
+      jest.fn().mockResolvedValue({
+        isFollowUp: false,
+        intent: 'direct',
+        resolvedQuery: 'Dhaka to Dubai tomorrow',
+      }),
+    );
+
+    const result = await service.classifyQueryIntent(
+      [],
+      'Dhaka to Dubai tomorrow',
+      undefined,
+      {
+        type: 'flight_list',
+        totalFlights: 1,
+        flights: [
+          {
+            index: 1,
+            rawText: 'Emirates DAC DXB BDT 8200',
+          },
+        ],
+      },
+    );
+
+    expect(result).toEqual({
+      isFollowUp: false,
+      intent: 'direct',
+      resolvedQuery: 'Dhaka to Dubai tomorrow',
+    });
+    expect(invoke).toHaveBeenCalled();
   });
 
   it('falls back to a direct query if classification fails', async () => {

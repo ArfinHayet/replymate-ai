@@ -140,8 +140,7 @@ export class ChatService implements OnModuleInit {
     action?: ChatRedirectAction;
     dommanipulate?: WidgetDomManipulation;
   }> {
-    //const usage = await this.usageService.incrementOrThrow(userId);
-    const usage : any = '';
+    const usage = await this.usageService.incrementOrThrow(userId);
 
     const [history, systemPrompt, chatToolConfigs] = await Promise.all([
       this.loadHistory(sessionId, userId),
@@ -194,6 +193,10 @@ export class ChatService implements OnModuleInit {
     let action: ChatRedirectAction | undefined;
     let dommanipulate: WidgetDomManipulation | undefined;
     let usedToolKeys: string[] = [];
+    const agentChatToolConfigs =
+      classification.intent === 'flight_list_query' && flightListContext
+        ? enabledChatToolConfigs.filter((config) => config.toolKey !== 'flight_search')
+        : enabledChatToolConfigs;
     try {
       const agentResult = await this.aiService.runAgenticLoop(
         systemPrompt.prompt,
@@ -201,7 +204,7 @@ export class ChatService implements OnModuleInit {
         message,
         userId,
         classification.intent === 'direct' ? undefined : retrievalIntent ?? undefined,
-        enabledChatToolConfigs,
+        agentChatToolConfigs,
         flightListContext,
       );
       answer = agentResult.answer;

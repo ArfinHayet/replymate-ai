@@ -605,12 +605,75 @@ describe("ChatService", () => {
       "Find me cheapest flight",
       "user-1",
       "find cheapest visible flight",
+      [],
+      flightListContext
+    );
+  });
+
+  it("removes flight search but keeps non-flight tools for flight list queries", async () => {
+    const {
+      service,
+      chatRepo,
+      aiService,
+      chatToolsService
+    } = createService();
+    const flightListContext = {
+      type: "flight_list" as const,
+      totalFlights: 1,
+      flights: [
+        {
+          index: 1,
+          rawText: "Emirates DAC DXB BDT 8200",
+          airline: "Emirates"
+        }
+      ]
+    };
+    chatRepo.find.mockResolvedValue([]);
+    chatToolsService.list.mockResolvedValue([
+      {
+        toolKey: "flight_search",
+        enabled: true,
+        config: {
+          oneWayTemplateUrl: "https://example.com/flights"
+        }
+      },
+      {
+        toolKey: "live_agent_contact",
+        enabled: true,
+        config: {
+          redirectUrl: "https://wa.me/8801000000000"
+        }
+      }
+    ]);
+    aiService.classifyQueryIntent.mockResolvedValueOnce({
+      isFollowUp: false,
+      intent: "flight_list_query",
+      resolvedQuery: "fly emirat flights"
+    });
+    aiService.runAgenticLoop.mockResolvedValue({
+      answer: "These are the Emirates flights.",
+      usedToolKeys: ["analyze_visible_flights"]
+    });
+
+    await service.chat(
+      "fly emirat flights",
+      "session-1",
+      "user-1",
+      flightListContext
+    );
+
+    expect(aiService.runAgenticLoop).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Array),
+      "fly emirat flights",
+      "user-1",
+      "fly emirat flights",
       [
         {
-          toolKey: "flight_search",
+          toolKey: "live_agent_contact",
           enabled: true,
           config: {
-            oneWayTemplateUrl: "https://example.com/flights?trips=DAC,DXB,2026-12-12"
+            redirectUrl: "https://wa.me/8801000000000"
           }
         }
       ],
