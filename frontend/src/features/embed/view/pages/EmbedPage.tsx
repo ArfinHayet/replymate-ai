@@ -145,6 +145,14 @@ export function EmbedPage() {
 
               {vm.keys.length > 0 && (
                 <div className="space-y-3">
+                  {vm.toolConfigsError ? (
+                    <InlineError
+                      title="Could not load tool settings"
+                      message="The embed script may not include optional flight card settings."
+                      onRetry={() => void run(vm.loadChatToolConfigs())}
+                      retrying={vm.loadingToolConfigs}
+                    />
+                  ) : null}
                   <div className="rounded-rm-trip-smooth border border-gray-100 bg-gray-50 p-4">
                     <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex min-w-0 items-center gap-1.5">

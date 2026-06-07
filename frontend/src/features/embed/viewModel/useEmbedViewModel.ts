@@ -11,10 +11,13 @@ export function useEmbedViewModel(): EmbedViewModel {
   const [domains, setDomains] = useState<AllowedDomain[]>([]);
   const [newLabel, setNewLabel] = useState("");
   const [newDomain, setNewDomain] = useState("");
+  const [flightCardSelector, setFlightCardSelector] = useState("");
   const [loadingKeys, setLoadingKeys] = useState(true);
   const [loadingDomains, setLoadingDomains] = useState(true);
+  const [loadingToolConfigs, setLoadingToolConfigs] = useState(true);
   const [keysError, setKeysError] = useState<string | null>(null);
   const [domainsError, setDomainsError] = useState<string | null>(null);
+  const [toolConfigsError, setToolConfigsError] = useState<string | null>(null);
 
   const loadWidgetKeys = useCallback(async () => {
     try {
@@ -46,10 +49,28 @@ export function useEmbedViewModel(): EmbedViewModel {
     }
   }, [embedService]);
 
+  const loadChatToolConfigs = useCallback(async () => {
+    try {
+      setLoadingToolConfigs(true);
+      setToolConfigsError(null);
+      const configs = await embedService.listChatToolConfigs();
+      const flightSearch = configs.find((config) => config.toolKey === "flight_search");
+      setFlightCardSelector(stringValue(flightSearch?.config.flightCardSelector));
+      return { success: true };
+    } catch {
+      const errorMessage = "Failed to load tool settings";
+      setToolConfigsError(errorMessage);
+      return { success: false, errorMessage };
+    } finally {
+      setLoadingToolConfigs(false);
+    }
+  }, [embedService]);
+
   useEffect(() => {
     void Promise.resolve().then(loadWidgetKeys);
     void Promise.resolve().then(loadAllowedDomains);
-  }, [loadAllowedDomains, loadWidgetKeys]);
+    void Promise.resolve().then(loadChatToolConfigs);
+  }, [loadAllowedDomains, loadChatToolConfigs, loadWidgetKeys]);
 
   const createKey = async () => {
     if (!newLabel.trim()) return { success: false, errorMessage: "Add a label before creating a widget key" };
@@ -92,7 +113,7 @@ export function useEmbedViewModel(): EmbedViewModel {
   const copyLatestSnippet = async () => {
     if (!latestKey) return { success: false, errorMessage: "Create a widget key first" };
     try {
-      await navigator.clipboard.writeText(embedService.createSnippet(latestKey.key, API_URL));
+      await navigator.clipboard.writeText(embedService.createSnippet(latestKey.key, API_URL, flightCardSelector));
       return { success: true, message: "Embed script copied" };
     } catch {
       return { success: false, errorMessage: "Failed to copy script" };
@@ -138,17 +159,21 @@ export function useEmbedViewModel(): EmbedViewModel {
     newDomain,
     loadingKeys,
     loadingDomains,
+    loadingToolConfigs,
     keysError,
     domainsError,
+    toolConfigsError,
     apiUrl: API_URL,
-    snippetTemplate: embedService.createSnippetTemplate(API_URL),
-    latestSnippet: latestKey ? embedService.createSnippet(latestKey.key, API_URL) : embedService.createSnippetTemplate(API_URL),
+    flightCardSelector,
+    snippetTemplate: embedService.createSnippetTemplate(API_URL, flightCardSelector),
+    latestSnippet: latestKey ? embedService.createSnippet(latestKey.key, API_URL, flightCardSelector) : embedService.createSnippetTemplate(API_URL, flightCardSelector),
     publicChatUrlTemplate: embedService.createPublicChatUrlTemplate(API_URL),
     latestPublicChatUrl: latestKey
       ? embedService.createPublicChatUrl(latestKey.key, API_URL)
       : embedService.createPublicChatUrlTemplate(API_URL),
     loadWidgetKeys,
     loadAllowedDomains,
+    loadChatToolConfigs,
     setNewLabel,
     setNewDomain,
     createKey,
@@ -159,4 +184,8 @@ export function useEmbedViewModel(): EmbedViewModel {
     createDomain,
     deleteDomain,
   };
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" ? value : "";
 }

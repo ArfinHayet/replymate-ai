@@ -22,6 +22,7 @@ type ToolFormState = {
   oneWayTemplateUrl: string;
   roundTripTemplateUrl: string;
   multiCityTemplateUrl: string;
+  flightCardSelector: string;
   liveAgentEnabled: boolean;
   liveAgentRedirectUrl: string;
 };
@@ -31,6 +32,7 @@ const emptyForm: ToolFormState = {
   oneWayTemplateUrl: "",
   roundTripTemplateUrl: "",
   multiCityTemplateUrl: "",
+  flightCardSelector: "",
   liveAgentEnabled: false,
   liveAgentRedirectUrl: "",
 };
@@ -69,6 +71,7 @@ export function ToolsPage() {
           oneWayTemplateUrl: form.oneWayTemplateUrl,
           roundTripTemplateUrl: form.roundTripTemplateUrl,
           multiCityTemplateUrl: form.multiCityTemplateUrl,
+          flightCardSelector: normalizeFlightCardSelector(form.flightCardSelector),
         },
       });
       toast.success("Flight search tool saved");
@@ -143,6 +146,13 @@ export function ToolsPage() {
               value={form.multiCityTemplateUrl}
               onChange={(multiCityTemplateUrl) => updateForm({ multiCityTemplateUrl })}
               placeholder="https://template1.myota.xyz/flightlist?adult=1&trips=DAC,KUL,2026-05-29"
+            />
+            <TextField
+              label="Flight card selector"
+              value={form.flightCardSelector}
+              onChange={(flightCardSelector) => updateForm({ flightCardSelector })}
+              placeholder=".flight-card"
+              helpText="Optional. Accepts a CSS selector or simple class name for each visible flight result card."
             />
           </ToolCard>
 
@@ -255,6 +265,37 @@ function UrlField({
   );
 }
 
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  helpText,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder: string;
+  helpText?: string;
+}) {
+  return (
+    <label className="block">
+      <span className="mb-2 flex items-center gap-2 text-sm font-bold text-rm-trip-text">
+        <ExternalLink className="h-3.5 w-3.5 text-rm-trip-text-muted" />
+        {label}
+      </span>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        className="w-full rounded-rm-trip-smooth border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-rm-trip-text outline-none transition-all placeholder:text-gray-400 focus-rm-trip-highlight focus:bg-white"
+      />
+      {helpText ? <p className="mt-2 text-xs leading-relaxed text-rm-trip-text-muted">{helpText}</p> : null}
+    </label>
+  );
+}
+
 function toFormState(configs: ChatToolConfig[]): ToolFormState {
   const byKey = new Map(configs.map((config) => [config.toolKey, config]));
   const flight = byKey.get("flight_search");
@@ -265,9 +306,18 @@ function toFormState(configs: ChatToolConfig[]): ToolFormState {
     oneWayTemplateUrl: stringValue(flight?.config.oneWayTemplateUrl),
     roundTripTemplateUrl: stringValue(flight?.config.roundTripTemplateUrl),
     multiCityTemplateUrl: stringValue(flight?.config.multiCityTemplateUrl),
+    flightCardSelector: stringValue(flight?.config.flightCardSelector),
     liveAgentEnabled: Boolean(liveAgent?.enabled),
     liveAgentRedirectUrl: stringValue(liveAgent?.config.redirectUrl),
   };
+}
+
+function normalizeFlightCardSelector(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const looksLikeSelector = /^[.#[:*>+~]/.test(trimmed) || /[\s.[#:=)>+~]/.test(trimmed);
+  return looksLikeSelector ? trimmed : `.${trimmed}`;
 }
 
 function stringValue(value: unknown) {

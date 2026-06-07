@@ -1,4 +1,4 @@
-import type { AllowedDomain, WidgetKey } from "../entities/WidgetSettings";
+import type { AllowedDomain, ChatToolConfig, WidgetKey } from "../entities/WidgetSettings";
 
 export interface EmbedRepository {
   listWidgetKeys(): Promise<WidgetKey[]>;
@@ -7,4 +7,5 @@ export interface EmbedRepository {
   listAllowedDomains(): Promise<AllowedDomain[]>;
   createAllowedDomain(domain: string): Promise<AllowedDomain>;
   deleteAllowedDomain(id: string): Promise<void>;
+  listChatToolConfigs(): Promise<ChatToolConfig[]>;
 }

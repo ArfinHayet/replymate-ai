@@ -10,6 +10,7 @@ const DEFAULT_CONFIGS: Record<ChatToolKey, Record<string, unknown>> = {
     oneWayTemplateUrl: '',
     roundTripTemplateUrl: '',
     multiCityTemplateUrl: '',
+    flightCardSelector: '',
   },
   live_agent_contact: {
     redirectUrl: '',
