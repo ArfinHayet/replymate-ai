@@ -1,5 +1,9 @@
 import { createAgent } from 'langchain';
+import { AgenticLoopService } from './agentic-loop.service';
 import { AiService } from './ai.service';
+import { MediaAiService } from './media-ai.service';
+import { QueryIntentClassifier } from './query-intent.classifier';
+import { VisibleFlightAnalyzerService } from './visible-flights/visible-flight-analyzer.service';
 
 jest.mock('langchain', () => ({
   createAgent: jest.fn(() => ({
@@ -31,11 +35,23 @@ function createService() {
     buildLiveAgentRedirect: jest.fn(),
   };
 
-  return new AiService(
+  const queryIntentClassifier = new QueryIntentClassifier(llmFactory as never);
+  const visibleFlightAnalyzer = new VisibleFlightAnalyzerService(queryIntentClassifier);
+  const agenticLoopService = new AgenticLoopService(
     config as never,
     llmFactory as never,
     retrievalService as never,
     toolRetrievalService as never,
+    visibleFlightAnalyzer,
+  );
+  const mediaAiService = new MediaAiService(llmFactory as never);
+
+  return new AiService(
+    queryIntentClassifier,
+    agenticLoopService,
+    visibleFlightAnalyzer,
+    mediaAiService,
+    llmFactory as never,
   );
 }
 
@@ -174,377 +190,54 @@ describe('AiService agent tools', () => {
     ]);
   });
 
-  it('labels stop-count visible flight results instead of defaulting to cheapest flight', () => {
+  it('filters Biman Bangladesh flights by a compact BDT fare range', async () => {
     const service = createService();
 
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('show flights with 0 stops', {
+    const result = await service.analyzeVisibleFlightContext('Biman fare 10k to 15k', {
       type: 'flight_list',
       totalFlights: 3,
       flights: [
         {
           index: 1,
-          rawText: 'Onward Biman DAC KUL BDT 4705 3h 55m 0 stops',
-          price: 'BDT 4705',
-          duration: '3h 55m',
-          stops: '0 stops',
+          rawText: 'Biman Bangladesh DAC KUL BDT 12000 3h 55m',
+          airline: 'Biman Bangladesh',
+          price: 'BDT 12000',
         },
         {
           index: 2,
-          rawText: 'One Stop Air DAC KUL BDT 3900 8h 10m 1 stops',
-          price: 'BDT 3900',
-          duration: '8h 10m',
-          stops: '1 stops',
+          rawText: 'Biman Bangladesh DAC KUL BDT 17000 3h 45m',
+          airline: 'Biman Bangladesh',
+          price: 'BDT 17000',
         },
         {
           index: 3,
-          rawText: 'US-Bangla DAC KUL BDT 4985 3h 55m 0 stops',
-          price: 'BDT 4985',
-          duration: '3h 55m',
-          stops: '0 stops',
+          rawText: 'Onward Biman Bang... BG DAC KUL BDT 15000 4h',
+          airline: 'Onward Biman Bang... BG',
+          price: 'BDT 15000',
         },
       ],
+    }, {
+      filters: [
+        { field: 'airline', operator: 'contains', value: 'Biman Bangladesh' },
+        { field: 'price', operator: 'between', min: '10k', max: '15k' },
+      ],
+      selection: 'all_matches',
+      label: 'Biman Bangladesh fare 10k to 15k BDT',
     });
 
     expect(result.dommanipulate).toEqual({
       type: 'highlight_flight_cards',
       flightIndexes: [1, 3],
-      label: '0 stops flights',
+      label: 'Biman Bangladesh fare 10k to 15k BDT',
     });
     expect(result.selectedFlight?.index).toBe(1);
     expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([1, 3]);
   });
 
-  it('does not return DOM manipulation when fare-threshold filters have no matches', () => {
+  it('intersects airline refundability and fare-range criteria', async () => {
     const service = createService();
 
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        answer: string;
-        dommanipulate?: unknown;
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('find flights with fare above 17000', {
-      type: 'flight_list',
-      totalFlights: 2,
-      flights: [
-        {
-          index: 1,
-          rawText: 'Biman DAC KUL BDT 4705 3h 55m 0 stops',
-          price: 'BDT 4705',
-        },
-        {
-          index: 2,
-          rawText: 'US-Bangla DAC KUL BDT 4985 3h 55m 0 stops',
-          price: 'BDT 4985',
-        },
-      ],
-    });
-
-    expect(result.answer).toContain('fare above 17000');
-    expect(result.dommanipulate).toBeUndefined();
-    expect(result.rankedFlights).toEqual([]);
-  });
-
-  it('highlights all visible Qatar Airways flights', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('Qatar Airways flights', {
-      type: 'flight_list',
-      totalFlights: 3,
-      flights: [
-        {
-          index: 1,
-          rawText: 'Qatar Airways DAC DOH USD 520 5h 20kg Refundable',
-          airline: 'Qatar Airways',
-          price: 'USD 520',
-        },
-        {
-          index: 2,
-          rawText: 'Qatar Airw DAC DOH USD 490 5h 10m 20kg Non-Refundable',
-          airline: 'Qatar Airw',
-          price: 'USD 490',
-        },
-        {
-          index: 3,
-          rawText: 'Biman Bangladesh DAC KUL USD 410 4h 20kg Refundable',
-          airline: 'Biman Bangladesh',
-          price: 'USD 410',
-        },
-      ],
-    });
-
-    expect(result.dommanipulate).toEqual({
-      type: 'highlight_flight_cards',
-      flightIndexes: [1, 2],
-      label: 'Qatar Airways flights',
-    });
-    expect(result.selectedFlight?.index).toBe(1);
-    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([1, 2]);
-  });
-
-  it('highlights all visible US-Bangla flights without defaulting to cheapest flight', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('US-Bangla flights', {
-      type: 'flight_list',
-      totalFlights: 3,
-      flights: [
-        {
-          index: 1,
-          rawText: 'Budget Air DAC KUL USD 250 8h 15kg',
-          airline: 'Budget Air',
-          price: 'USD 250',
-        },
-        {
-          index: 2,
-          rawText: 'US-Bangla DAC KUL USD 390 4h 20kg',
-          airline: 'US-Bangla',
-          price: 'USD 390',
-        },
-        {
-          index: 3,
-          rawText: 'BS DAC KUL USD 410 4h 10m 20kg',
-          airline: 'BS',
-          price: 'USD 410',
-        },
-      ],
-    });
-
-    expect(result.dommanipulate).toEqual({
-      type: 'highlight_flight_cards',
-      flightIndexes: [2, 3],
-      label: 'US-Bangla flights',
-    });
-    expect(result.selectedFlight?.index).toBe(2);
-    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([2, 3]);
-  });
-
-  it('highlights all visible non-refundable flights', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('non-refundable flights', {
-      type: 'flight_list',
-      totalFlights: 3,
-      flights: [
-        {
-          index: 1,
-          rawText: 'Qatar Airways DAC DOH USD 520 5h Non Refundable',
-        },
-        {
-          index: 2,
-          rawText: 'Biman Bangladesh DAC KUL USD 410 4h Refundable',
-          refundability: 'Refundable',
-        },
-        {
-          index: 3,
-          rawText: 'US-Bangla DAC KUL USD 390 4h Nonrefundable',
-        },
-      ],
-    });
-
-    expect(result.dommanipulate).toEqual({
-      type: 'highlight_flight_cards',
-      flightIndexes: [1, 3],
-      label: 'Non-refundable flights',
-    });
-    expect(result.selectedFlight?.index).toBe(1);
-    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([1, 3]);
-  });
-
-  it('highlights refundable flights while excluding non-refundable cards', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('refundable flights', {
-      type: 'flight_list',
-      totalFlights: 3,
-      flights: [
-        {
-          index: 1,
-          rawText: 'Qatar Airways DAC DOH USD 520 5h Non-Refundable',
-        },
-        {
-          index: 2,
-          rawText: 'Biman Bangladesh DAC KUL USD 410 4h Refundable',
-        },
-        {
-          index: 3,
-          rawText: 'US-Bangla DAC KUL USD 390 4h Non Refundable',
-        },
-      ],
-    });
-
-    expect(result.dommanipulate).toEqual({
-      type: 'highlight_flight_cards',
-      flightIndexes: [2],
-      label: 'Refundable flights',
-    });
-    expect(result.selectedFlight?.index).toBe(2);
-    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([2]);
-  });
-
-  it('does not return DOM manipulation for unknown airline filters with no matches', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        answer: string;
-        dommanipulate?: unknown;
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('Emirates flights', {
-      type: 'flight_list',
-      totalFlights: 2,
-      flights: [
-        {
-          index: 1,
-          rawText: 'Budget Air DAC KUL USD 250 8h 15kg',
-          price: 'USD 250',
-        },
-        {
-          index: 2,
-          rawText: 'US-Bangla DAC KUL USD 390 4h 20kg',
-          price: 'USD 390',
-        },
-      ],
-    });
-
-    expect(result.answer).toContain('Emirates');
-    expect(result.dommanipulate).toBeUndefined();
-    expect(result.rankedFlights).toEqual([]);
-  });
-
-  it('matches reversed and truncated visible airline text without hardcoded aliases', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('bangladesh biman flight', {
-      type: 'flight_list',
-      totalFlights: 3,
-      flights: [
-        {
-          index: 1,
-          rawText: 'Onward US-Bangla ... BS DAC KUL BDT 4856 Refundable',
-          airline: 'Onward US-Bangla ... BS',
-          price: 'BDT 4856',
-        },
-        {
-          index: 13,
-          rawText: 'Onward Biman Bang... BG DAC KUL BDT 23169 Refundable',
-          airline: 'Onward Biman Bang... BG',
-          price: 'BDT 23169',
-        },
-        {
-          index: 14,
-          rawText: 'Onward Biman Bang... BG DAC KUL BDT 23654 Refundable',
-          airline: 'Onward Biman Bang... BG',
-          price: 'BDT 23654',
-        },
-      ],
-    });
-
-    expect(result.dommanipulate).toEqual({
-      type: 'highlight_flight_cards',
-      flightIndexes: [13, 14],
-      label: 'Biman Bangladesh flights',
-    });
-    expect(result.selectedFlight?.index).toBe(13);
-    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([13, 14]);
-  });
-
-  it('intersects airline and fare filters for visible flight groups', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('flights from us bangla and fare less than 7000', {
-      type: 'flight_list',
-      totalFlights: 4,
-      flights: [
-        {
-          index: 1,
-          rawText: 'US-Bangla DAC KUL BDT 6500 4h 20kg',
-          airline: 'US-Bangla',
-          price: 'BDT 6500',
-        },
-        {
-          index: 2,
-          rawText: 'US-Bangla DAC KUL BDT 7200 4h 10m 20kg',
-          airline: 'US-Bangla',
-          price: 'BDT 7200',
-        },
-        {
-          index: 3,
-          rawText: 'Biman Bangladesh DAC KUL BDT 6100 4h 20kg',
-          airline: 'Biman Bangladesh',
-          price: 'BDT 6100',
-        },
-        {
-          index: 4,
-          rawText: 'BS DAC KUL BDT 6900 4h 5m 20kg',
-          airline: 'BS',
-          price: 'BDT 6900',
-        },
-      ],
-    });
-
-    expect(result.dommanipulate).toEqual({
-      type: 'highlight_flight_cards',
-      flightIndexes: [1, 4],
-      label: 'US-Bangla flights, fare below 7000',
-    });
-    expect(result.selectedFlight?.index).toBe(1);
-    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([1, 4]);
-  });
-
-  it('intersects airline refundability and fare filters', () => {
-    const service = createService();
-
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndexes?: number[]; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('Qatar refundable flights under 9000', {
+    const result = await service.analyzeVisibleFlightContext('Qatar refundable 8k to 9k', {
       type: 'flight_list',
       totalFlights: 4,
       flights: [
@@ -577,27 +270,29 @@ describe('AiService agent tools', () => {
           refundability: 'Refundable',
         },
       ],
+    }, {
+      filters: [
+        { field: 'airline', operator: 'contains', value: 'Qatar Airways' },
+        { field: 'refundability', operator: 'equals', value: 'refundable' },
+        { field: 'price', operator: 'between', min: 8000, max: 9000 },
+      ],
+      selection: 'all_matches',
+      label: 'Qatar refundable fare 8k to 9k',
     });
 
     expect(result.dommanipulate).toEqual({
       type: 'highlight_flight_cards',
       flightIndexes: [1],
-      label: 'Refundable flights, Qatar Airways flights, fare below 9000',
+      label: 'Qatar refundable fare 8k to 9k',
     });
     expect(result.selectedFlight?.index).toBe(1);
     expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([1]);
   });
 
-  it('selects the cheapest visible flight within combined filters', () => {
+  it('selects the cheapest visible flight within combined filters', async () => {
     const service = createService();
 
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        dommanipulate?: { flightIndex?: number; label?: string; type: string };
-        selectedFlight?: { index: number };
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('cheapest US-Bangla flights under 7000', {
+    const result = await service.analyzeVisibleFlightContext('cheapest US-Bangla under 7000', {
       type: 'flight_list',
       totalFlights: 4,
       flights: [
@@ -626,27 +321,195 @@ describe('AiService agent tools', () => {
           price: 'BDT 5900',
         },
       ],
+    }, {
+      filters: [
+        { field: 'airline', operator: 'contains', value: 'US-Bangla' },
+        { field: 'price', operator: 'less_than', value: 7000 },
+      ],
+      sort: 'price_asc',
+      selection: 'single_best',
+      label: 'Cheapest US-Bangla under 7000',
     });
 
     expect(result.dommanipulate).toEqual({
       type: 'highlight_flight_card',
       flightIndex: 2,
-      label: 'Cheapest US-Bangla flights, fare below 7000',
+      label: 'Cheapest US-Bangla under 7000',
     });
     expect(result.selectedFlight?.index).toBe(2);
     expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([2, 1]);
   });
 
-  it('does not return DOM manipulation when combined filters have no matches', () => {
+  it('selects the fastest visible refundable flight', async () => {
     const service = createService();
 
-    const result = (service as never as {
-      analyzeVisibleFlights: (query: string, context: unknown) => {
-        answer: string;
-        dommanipulate?: unknown;
-        rankedFlights?: { index: number }[];
-      };
-    }).analyzeVisibleFlights('US-Bangla refundable flights under 6000', {
+    const result = await service.analyzeVisibleFlightContext('fastest refundable', {
+      type: 'flight_list',
+      totalFlights: 3,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Qatar Airways DAC DOH BDT 9500 6h Refundable',
+          duration: '6h',
+          refundability: 'Refundable',
+        },
+        {
+          index: 2,
+          rawText: 'Biman Bangladesh DAC KUL BDT 9100 4h 10m Refundable',
+          duration: '4h 10m',
+          refundability: 'Refundable',
+        },
+        {
+          index: 3,
+          rawText: 'US-Bangla DAC KUL BDT 8900 3h 55m Non-Refundable',
+          duration: '3h 55m',
+          refundability: 'Non-Refundable',
+        },
+      ],
+    }, {
+      filters: [{ field: 'refundability', operator: 'equals', value: 'refundable' }],
+      sort: 'duration_asc',
+      selection: 'single_best',
+      label: 'Fastest refundable flight',
+    });
+
+    expect(result.dommanipulate).toEqual({
+      type: 'highlight_flight_card',
+      flightIndex: 2,
+      label: 'Fastest refundable flight',
+    });
+    expect(result.selectedFlight?.index).toBe(2);
+    expect(result.rankedFlights?.map((flight) => flight.index)).toEqual([2, 1]);
+  });
+
+  it('filters morning and evening departure windows', async () => {
+    const service = createService();
+
+    const morningResult = await service.analyzeVisibleFlightContext('morning flights', {
+      type: 'flight_list',
+      totalFlights: 3,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Qatar Airways DAC DOH 06:15 10:00 BDT 9500',
+          departure: '06:15',
+        },
+        {
+          index: 2,
+          rawText: 'Biman Bangladesh DAC KUL 14:30 18:30 BDT 9100',
+          departure: '14:30',
+        },
+        {
+          index: 3,
+          rawText: 'US-Bangla DAC KUL 19:45 23:30 BDT 8900',
+          departure: '19:45',
+        },
+      ],
+    }, {
+      filters: [{ field: 'departure', operator: 'between', min: 300, max: 719 }],
+      selection: 'all_matches',
+      label: 'Morning departures',
+    });
+
+    const eveningResult = await service.analyzeVisibleFlightContext('evening flights', {
+      type: 'flight_list',
+      totalFlights: 3,
+      flights: [
+        { index: 1, rawText: 'Qatar Airways DAC DOH 06:15 10:00 BDT 9500', departure: '06:15' },
+        { index: 2, rawText: 'Biman Bangladesh DAC KUL 14:30 18:30 BDT 9100', departure: '14:30' },
+        { index: 3, rawText: 'US-Bangla DAC KUL 19:45 23:30 BDT 8900', departure: '19:45' },
+      ],
+    }, {
+      filters: [{ field: 'departure', operator: 'between', min: 1020, max: 1259 }],
+      selection: 'all_matches',
+      label: 'Evening departures',
+    });
+
+    expect(morningResult.dommanipulate).toEqual({
+      type: 'highlight_flight_cards',
+      flightIndexes: [1],
+      label: 'Morning departures',
+    });
+    expect(eveningResult.dommanipulate).toEqual({
+      type: 'highlight_flight_cards',
+      flightIndexes: [3],
+      label: 'Evening departures',
+    });
+  });
+
+  it('filters flights with 20kg baggage or more', async () => {
+    const service = createService();
+
+    const result = await service.analyzeVisibleFlightContext('20kg baggage or more', {
+      type: 'flight_list',
+      totalFlights: 3,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Budget Air DAC KUL BDT 7500 15kg',
+          baggage: '15kg',
+        },
+        {
+          index: 2,
+          rawText: 'US-Bangla DAC KUL BDT 8500 20kg',
+          baggage: '20kg',
+        },
+        {
+          index: 3,
+          rawText: 'Biman Bangladesh DAC KUL BDT 9500 30kg',
+          baggage: '30kg',
+        },
+      ],
+    }, {
+      filters: [{ field: 'baggage', operator: 'greater_than_or_equal', value: 20 }],
+      selection: 'all_matches',
+      label: '20kg baggage or more',
+    });
+
+    expect(result.dommanipulate).toEqual({
+      type: 'highlight_flight_cards',
+      flightIndexes: [2, 3],
+      label: '20kg baggage or more',
+    });
+  });
+
+  it('uses raw card text for arbitrary visible filters', async () => {
+    const service = createService();
+
+    const result = await service.analyzeVisibleFlightContext('meal included flights', {
+      type: 'flight_list',
+      totalFlights: 3,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Qatar Airways DAC DOH BDT 9500 Meal included',
+        },
+        {
+          index: 2,
+          rawText: 'Biman Bangladesh DAC KUL BDT 9100 No meal',
+        },
+        {
+          index: 3,
+          rawText: 'US-Bangla DAC KUL BDT 8900 Student fare Meal Included',
+        },
+      ],
+    }, {
+      filters: [{ field: 'rawText', operator: 'contains', value: 'meal included' }],
+      selection: 'all_matches',
+      label: 'Meal included flights',
+    });
+
+    expect(result.dommanipulate).toEqual({
+      type: 'highlight_flight_cards',
+      flightIndexes: [1, 3],
+      label: 'Meal included flights',
+    });
+  });
+
+  it('does not return DOM manipulation when criteria have no matches', async () => {
+    const service = createService();
+
+    const result = await service.analyzeVisibleFlightContext('US-Bangla refundable under 6000', {
       type: 'flight_list',
       totalFlights: 3,
       flights: [
@@ -672,11 +535,43 @@ describe('AiService agent tools', () => {
           refundability: 'Refundable',
         },
       ],
+    }, {
+      filters: [
+        { field: 'airline', operator: 'contains', value: 'US-Bangla' },
+        { field: 'refundability', operator: 'equals', value: 'refundable' },
+        { field: 'price', operator: 'less_than', value: 6000 },
+      ],
+      selection: 'all_matches',
+      label: 'US-Bangla refundable flights under 6000',
     });
 
-    expect(result.answer).toContain('US-Bangla flights');
+    expect(result.answer).toContain('US-Bangla refundable flights under 6000');
     expect(result.dommanipulate).toBeUndefined();
     expect(result.rankedFlights).toEqual([]);
+  });
+
+  it('does not fall back to regex/default cheapest when classifier criteria are unavailable', async () => {
+    const service = createService();
+
+    const result = await service.analyzeVisibleFlightContext('cheapest flight', {
+      type: 'flight_list',
+      totalFlights: 2,
+      flights: [
+        {
+          index: 1,
+          rawText: 'Expensive Air DAC KUL BDT 9000',
+          price: 'BDT 9000',
+        },
+        {
+          index: 2,
+          rawText: 'Budget Air DAC KUL BDT 5400',
+          price: 'BDT 5400',
+        },
+      ],
+    });
+
+    expect(result.answer).toContain('could not infer');
+    expect(result.dommanipulate).toBeUndefined();
   });
 });
 
@@ -702,12 +597,24 @@ describe('AiService query intent classifier', () => {
       buildLiveAgentRedirect: jest.fn(),
     };
 
-    return {
-      service: new AiService(
+    const queryIntentClassifier = new QueryIntentClassifier(llmFactory as never);
+    const visibleFlightAnalyzer = new VisibleFlightAnalyzerService(queryIntentClassifier);
+    const agenticLoopService = new AgenticLoopService(
         config as never,
         llmFactory as never,
         retrievalService as never,
         toolRetrievalService as never,
+        visibleFlightAnalyzer,
+    );
+    const mediaAiService = new MediaAiService(llmFactory as never);
+
+    return {
+      service: new AiService(
+        queryIntentClassifier,
+        agenticLoopService,
+        visibleFlightAnalyzer,
+        mediaAiService,
+        llmFactory as never,
       ),
       withStructuredOutput,
       invoke,
@@ -889,12 +796,24 @@ describe('AiService PDF extraction', () => {
       buildLiveAgentRedirect: jest.fn(),
     };
 
-    return {
-      service: new AiService(
+    const queryIntentClassifier = new QueryIntentClassifier(llmFactory as never);
+    const visibleFlightAnalyzer = new VisibleFlightAnalyzerService(queryIntentClassifier);
+    const agenticLoopService = new AgenticLoopService(
         config as never,
         llmFactory as never,
         retrievalService as never,
         toolRetrievalService as never,
+        visibleFlightAnalyzer,
+    );
+    const mediaAiService = new MediaAiService(llmFactory as never);
+
+    return {
+      service: new AiService(
+        queryIntentClassifier,
+        agenticLoopService,
+        visibleFlightAnalyzer,
+        mediaAiService,
+        llmFactory as never,
       ),
       llmFactory,
     };

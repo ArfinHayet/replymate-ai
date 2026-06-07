@@ -605,7 +605,8 @@ describe("ChatService", () => {
     );
     expect(aiService.analyzeVisibleFlightContext).toHaveBeenCalledWith(
       "find cheapest visible flight",
-      flightListContext
+      flightListContext,
+      undefined
     );
   });
 
@@ -679,7 +680,8 @@ describe("ChatService", () => {
     });
     expect(aiService.analyzeVisibleFlightContext).toHaveBeenCalledWith(
       "fly emirat flights",
-      flightListContext
+      flightListContext,
+      undefined
     );
     expect(aiService.runAgenticLoop).not.toHaveBeenCalled();
     expect(aiService.embedText).not.toHaveBeenCalled();

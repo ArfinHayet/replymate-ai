@@ -163,9 +163,10 @@ export class ChatService implements OnModuleInit {
     }
 
     if (classification.intent === 'flight_list_query' && flightListContext) {
-      const visibleFlightResult = this.aiService.analyzeVisibleFlightContext(
+      const visibleFlightResult = await this.aiService.analyzeVisibleFlightContext(
         retrievalIntent ?? message,
         flightListContext,
+        classification.flightListCriteria,
       );
       await this.saveTurn(sessionId, userId, message, visibleFlightResult.answer);
       return {
