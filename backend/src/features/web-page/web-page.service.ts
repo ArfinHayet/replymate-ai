@@ -10,6 +10,8 @@ import { LlmFactoryService } from '../../core/llm/llm-factory.service';
 import { WebPage } from './web-page.entity';
 import { WebPageChunk } from './web-page-chunk.entity';
 import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
+import { KnowledgeGraphExtractionService } from '../../core/retrieval/knowledge-graph-extraction.service';
+import { KnowledgeGraphService } from '../../core/retrieval/knowledge-graph.service';
 
 const JINA_BASE = 'https://r.jina.ai/';
 const SCRAPINGANT_EXTENDED_ENDPOINT = 'https://api.scrapingant.com/v2/extended';
@@ -191,6 +193,8 @@ export class WebPageService {
     private readonly dataSource: DataSource,
     private readonly llmFactory: LlmFactoryService,
     private readonly profileCompletionService: ProfileCompletionService,
+    private readonly knowledgeGraphExtractionService: KnowledgeGraphExtractionService,
+    private readonly knowledgeGraphService: KnowledgeGraphService,
   ) {
     this.embeddings = this.llmFactory.getEmbeddings();
   }
@@ -1417,6 +1421,7 @@ export class WebPageService {
     );
     await this.profileCompletionService.refresh(userId);
     this.logger.log(`Cache invalidated for user ${userId}`);
+    this.scheduleGraphIndexing(userId, saved.id, saved.url);
 
     return {
       webPageId: saved.id,
@@ -1432,6 +1437,8 @@ export class WebPageService {
     const page = await this.findOne(id, userId);
     this.logger.log(`Refetching URL: ${page.url} for user ${userId}`);
 
+    await this.deleteGraphForWebPage(userId, id);
+
     // Delete old chunks for this page
     await this.chunkRepo.delete({ webPageId: id });
 
@@ -1442,6 +1449,7 @@ export class WebPageService {
     );
 
     const saved = await this.ingestIntoRecord(page, userId);
+    this.scheduleGraphIndexing(userId, saved.id, saved.url);
     return {
       webPageId: saved.id,
       url: saved.url,
@@ -1467,11 +1475,37 @@ export class WebPageService {
 
   async deleteWebPage(id: string, userId: string): Promise<void> {
     const page = await this.findOne(id, userId);
+    await this.deleteGraphForWebPage(userId, id);
     await this.webPageRepo.remove(page);
     await this.dataSource.query(
       `DELETE FROM cached_answers WHERE "userId" = $1`,
       [userId],
     );
     await this.profileCompletionService.refresh(userId);
+  }
+
+  private scheduleGraphIndexing(userId: string, webPageId: string, url: string): void {
+    void this.knowledgeGraphExtractionService
+      .indexWebPageSource(userId, webPageId)
+      .then((indexedChunks) => {
+        this.logger.log(
+          `Graph indexed ${indexedChunks} web page chunk(s) for ${url}`,
+        );
+      })
+      .catch((err) => {
+        this.logger.warn(
+          `Graph indexing failed for ${url}; vector RAG remains available: ${(err as Error).message}`,
+        );
+      });
+  }
+
+  private async deleteGraphForWebPage(userId: string, webPageId: string): Promise<void> {
+    try {
+      await this.knowledgeGraphService.deleteSourceGraph(userId, 'web_page', webPageId);
+    } catch (err) {
+      this.logger.warn(
+        `Failed to delete graph records for web page ${webPageId}: ${(err as Error).message}`,
+      );
+    }
   }
 }

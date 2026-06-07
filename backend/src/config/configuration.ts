@@ -21,6 +21,10 @@ export default () => ({
     chunkOverlap: parseInt(process.env.CHUNK_OVERLAP ?? '200', 10) || 200,
     topK: parseInt(process.env.TOP_K_RESULTS ?? '15', 10) || 15,
     maxToolIterations: parseInt(process.env.MAX_TOOL_ITERATIONS ?? '10', 10) || 10,
+    graph: {
+      maxChunksPerSource:
+        parseInt(process.env.GRAPH_RAG_MAX_CHUNKS_PER_SOURCE ?? '30', 10) || 30,
+    },
     // Cosine distance threshold for semantic cache hits.
     // Lower = stricter (only near-identical phrasings hit the cache).
     // Recommended range: 0.05–0.10. Default: 0.07

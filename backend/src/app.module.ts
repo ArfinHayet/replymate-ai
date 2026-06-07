@@ -35,6 +35,9 @@ import { ProfileCompletion } from './features/profile-completion/profile-complet
 import { ProfileCompletionModule } from './features/profile-completion/profile-completion.module';
 import { ChatToolConfig } from './features/chat-tools/chat-tool-config.entity';
 import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
+import { KnowledgeEntity } from './core/retrieval/knowledge-entity.entity';
+import { KnowledgeEntityMention } from './core/retrieval/knowledge-entity-mention.entity';
+import { KnowledgeRelation } from './core/retrieval/knowledge-relation.entity';
 
 @Module({
   imports: [
@@ -49,7 +52,7 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
+        entities: [DocumentChunk, Pdf, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig, KnowledgeEntity, KnowledgeEntityMention, KnowledgeRelation],
         synchronize: true,
         logging: false,
         extra: {

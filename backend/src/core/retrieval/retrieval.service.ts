@@ -3,6 +3,8 @@ import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Embeddings } from '@langchain/core/embeddings';
 import { LlmFactoryService } from '../llm/llm-factory.service';
+import { HybridRetrievalService } from './hybrid-retrieval.service';
+import { KnowledgeGraphService } from './knowledge-graph.service';
 
 export interface RetrievedChunk {
   content: string;
@@ -40,8 +42,19 @@ export class RetrievalService {
     private readonly dataSource: DataSource,
     private readonly config: ConfigService,
     private readonly llmFactory: LlmFactoryService,
+    private readonly hybridRetrievalService: HybridRetrievalService,
+    private readonly knowledgeGraphService: KnowledgeGraphService,
   ) {
     this.embeddings = this.llmFactory.getEmbeddings();
+  }
+
+  /**
+   * Unified knowledge-base retrieval for agentic chat.
+   * This is backward compatible with the old vector RAG path: graph evidence is
+   * included when available, and silently omitted when a user has no graph data.
+   */
+  async searchKnowledgeBase(query: string, userId: string): Promise<string> {
+    return this.hybridRetrievalService.searchKnowledgeBase(query, userId);
   }
 
   /**
@@ -111,7 +124,7 @@ export class RetrievalService {
    * Pre-flight guard across every knowledge source the agent can search.
    * Without this, web-only ingests can be skipped before search_web_pages runs.
    */
-  async hasRelevantKnowledge(vector: number[], userId: string): Promise<boolean> {
+  async hasRelevantKnowledge(vector: number[], userId: string, query?: string): Promise<boolean> {
     const rows: { distance: string }[] = await this.dataSource.query(
       `SELECT distance
        FROM (
@@ -131,8 +144,13 @@ export class RetrievalService {
        LIMIT 1`,
       [JSON.stringify(vector), userId],
     );
-    if (rows.length === 0) return false;
-    return parseFloat(rows[0].distance) < DOC_THRESHOLD;
+    const hasVectorKnowledge =
+      rows.length > 0 && parseFloat(rows[0].distance) < DOC_THRESHOLD;
+    if (hasVectorKnowledge) return true;
+
+    return query
+      ? this.knowledgeGraphService.hasGraphKnowledge(query, userId)
+      : false;
   }
 
   /**

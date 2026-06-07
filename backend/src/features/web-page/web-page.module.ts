@@ -7,9 +7,10 @@ import { WebPageService } from './web-page.service';
 import { WebPageController } from './web-page.controller';
 import { UsageModule } from '../usage/usage.module';
 import { ProfileCompletionModule } from '../profile-completion/profile-completion.module';
+import { RetrievalModule } from '../../core/retrieval/retrieval.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WebPage, WebPageChunk]), LlmFactoryModule, UsageModule, ProfileCompletionModule],
+  imports: [TypeOrmModule.forFeature([WebPage, WebPageChunk]), LlmFactoryModule, UsageModule, ProfileCompletionModule, RetrievalModule],
   controllers: [WebPageController],
   providers: [WebPageService],
 })

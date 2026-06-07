@@ -52,35 +52,10 @@ export class AgenticLoopService {
     const domActions: WidgetDomManipulation[] = [];
     const usedToolKeys = new Set<string>();
 
-    const searchDocumentsTool: any = tool(
+    const searchKnowledgeBaseTool: any = tool(
       async ({ query }: { query: string }): Promise<string> => {
-        this.logger.log(`Tool: search_documents("${query.slice(0, 80)}")`);
-        return this.retrievalService.searchDocuments(
-          buildContextualToolQuery(query, history, userMessage, retrievalIntent),
-          userId,
-        );
-      },
-      {
-        name: 'search_documents',
-        description:
-          'Search the uploaded PDF document knowledge base for content relevant to a query. ' +
-          'Call this tool for EVERY factual question before answering. ' +
-          'You may call it multiple times with different queries for complex questions. ' +
-          'Returns the most relevant document excerpts.',
-        schema: z.object({
-          query: z.string().describe(
-            'A focused natural-language search query. ' +
-            'For multi-part questions, break into separate targeted queries ' +
-            'and call the tool once per query.',
-          ),
-        }),
-      },
-    );
-
-    const searchImagesTool = tool(
-      async ({ query }: { query: string }): Promise<string> => {
-        this.logger.log(`Tool: search_images("${query.slice(0, 80)}")`);
-        const result = await this.retrievalService.searchImages(
+        this.logger.log(`Tool: search_knowledge_base("${query.slice(0, 80)}")`);
+        const result = await this.retrievalService.searchKnowledgeBase(
           buildContextualToolQuery(query, history, userMessage, retrievalIntent),
           userId,
         );
@@ -94,35 +69,11 @@ export class AgenticLoopService {
         return result;
       },
       {
-        name: 'search_images',
+        name: 'search_knowledge_base',
         description:
-          'Search the uploaded image knowledge base for images relevant to a query. ' +
-          'Call this tool when the question may relate to visual content, photos, or images. ' +
-          'Returns the title and description of the most relevant images.',
-        schema: z.object({
-          query: z.string().describe(
-            'A focused natural-language search query describing what visual content to look for.',
-          ),
-        }),
-      },
-    );
-
-    const searchWebPagesTool = tool(
-      async ({ query }: { query: string }): Promise<string> => {
-        this.logger.log(`Tool: search_web_pages("${query.slice(0, 80)}")`);
-        return this.retrievalService.searchWebPages(
-          buildContextualToolQuery(query, history, userMessage, retrievalIntent),
-          userId,
-        );
-      },
-      {
-        name: 'search_web_pages',
-        description:
-          'Search the ingested web page knowledge base for content relevant to a query. ' +
-          'Call this tool for EVERY factual question before answering - web pages may contain ' +
-          'the most up-to-date information about a topic. ' +
-          'You may call it multiple times with different queries for complex questions. ' +
-          'Returns the most relevant excerpts from ingested web pages.',
+          'Search the full knowledge base for factual answers. This includes uploaded PDFs, ingested web pages, image descriptions, and optional entity-relationship graph evidence. ' +
+          'Call this tool before answering any factual question about the knowledge base. ' +
+          'You may call it multiple times with different focused queries for complex or multi-part questions.',
         schema: z.object({
           query: z.string().describe(
             'A focused natural-language search query. ' +
@@ -134,9 +85,7 @@ export class AgenticLoopService {
     );
 
     const tools: ReturnType<typeof tool>[] = [
-      searchDocumentsTool,
-      searchImagesTool,
-      searchWebPagesTool,
+      searchKnowledgeBaseTool,
     ];
     const flightSearchConfig = chatToolConfigs.find(
       (config) => config.toolKey === 'flight_search' && config.enabled,

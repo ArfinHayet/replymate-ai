@@ -84,7 +84,7 @@ export class ChatService implements OnModuleInit {
       `You are a support representative for ${name}.`,
       `Company overview: ${description}`,
       `IMPORTANT: If the user asks "who are you", "what are you", "introduce yourself", "tell me about yourself", or any similar identity question, you MUST respond with exactly this: "I'm a support assistant for ${name}. ${description} How can I help you today?" - do NOT call any tool for this.`,
-      `When users ask about "your company", "what you do", "your services", or anything about ${name}, you MUST call search_documents("${name}") and search_web_pages("${name}") to retrieve detailed information before answering.`,
+      `When users ask about "your company", "what you do", "your services", or anything about ${name}, you MUST call search_knowledge_base("${name}") to retrieve detailed information before answering.`,
       '',
     ].join('\n');
 
@@ -199,7 +199,7 @@ export class ChatService implements OnModuleInit {
       hasCompanyProfile ||
       classification.intent === 'flight_list_query' ||
       classification.intent === 'standalone_knowledge_page' ||
-      (await this.retrievalService.hasRelevantKnowledge(queryVector, userId));
+      (await this.retrievalService.hasRelevantKnowledge(queryVector, userId, retrievalQuery));
     if (!hasKnowledge && enabledChatToolConfigs.length === 0) {
       this.logger.log('No relevant chunks in KB - returning fallback without calling LLM');
       await this.saveTurn(sessionId, userId, message, this.fallbackMessage);

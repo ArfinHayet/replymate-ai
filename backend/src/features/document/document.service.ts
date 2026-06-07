@@ -16,6 +16,8 @@ import { DocumentChunk } from './document-chunk.entity';
 import { Pdf } from './pdf.entity';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
 import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
+import { KnowledgeGraphExtractionService } from '../../core/retrieval/knowledge-graph-extraction.service';
+import { KnowledgeGraphService } from '../../core/retrieval/knowledge-graph.service';
 
 // ─── Vercel limits ────────────────────────────────────────────────────────────
 // Hobby  : 4.5 MB body, 10 s timeout, 1 GB RAM
@@ -45,6 +47,8 @@ export class DocumentService {
     private readonly llmFactory: LlmFactoryService,
     private readonly aiService: AiService,
     private readonly profileCompletionService: ProfileCompletionService,
+    private readonly knowledgeGraphExtractionService: KnowledgeGraphExtractionService,
+    private readonly knowledgeGraphService: KnowledgeGraphService,
   ) {
     this.embeddings = this.llmFactory.getEmbeddings();
   }
@@ -288,6 +292,7 @@ export class DocumentService {
     );
     await this.profileCompletionService.refresh(userId);
     this.logger.log(`Cache invalidated for user ${userId}`);
+    this.scheduleGraphIndexing(userId, pdf.id, file.originalname);
 
     return {
       message: 'PDF ingested successfully',
@@ -317,7 +322,33 @@ export class DocumentService {
 
   async deletePdf(id: string, userId: string): Promise<void> {
     const pdf = await this.findOnePdf(id, userId);
+    await this.deleteGraphForPdf(userId, id);
     await this.pdfRepo.remove(pdf);
     await this.profileCompletionService.refresh(userId);
+  }
+
+  private scheduleGraphIndexing(userId: string, pdfId: string, fileName: string): void {
+    void this.knowledgeGraphExtractionService
+      .indexDocumentSource(userId, pdfId)
+      .then((indexedChunks) => {
+        this.logger.log(
+          `Graph indexed ${indexedChunks} PDF chunk(s) for ${fileName}`,
+        );
+      })
+      .catch((err) => {
+        this.logger.warn(
+          `Graph indexing failed for ${fileName}; vector RAG remains available: ${(err as Error).message}`,
+        );
+      });
+  }
+
+  private async deleteGraphForPdf(userId: string, pdfId: string): Promise<void> {
+    try {
+      await this.knowledgeGraphService.deleteSourceGraph(userId, 'document', pdfId);
+    } catch (err) {
+      this.logger.warn(
+        `Failed to delete graph records for PDF ${pdfId}: ${(err as Error).message}`,
+      );
+    }
   }
 }

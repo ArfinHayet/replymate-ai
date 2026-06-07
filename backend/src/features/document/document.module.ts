@@ -8,12 +8,14 @@ import { DocumentService } from './document.service';
 import { DocumentController } from './document.controller';
 import { UsageModule } from '../usage/usage.module';
 import { ProfileCompletionModule } from '../profile-completion/profile-completion.module';
+import { RetrievalModule } from '../../core/retrieval/retrieval.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([DocumentChunk, Pdf]),
     LlmFactoryModule,
     AiModule,
+    RetrievalModule,
     UsageModule,
     ProfileCompletionModule,
   ],
