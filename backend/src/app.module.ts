@@ -50,7 +50,7 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
         entities: [DocumentChunk, Pdf, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
-        synchronize: true,
+        synchronize: false,
         logging: false,
         extra: {
           options: '-c search_path=public',
