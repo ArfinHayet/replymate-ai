@@ -13,7 +13,7 @@ export type ContactFormProps = {
   success: string | null;
 };
 
-export const CONTACT_EMAIL = "support@replymate.ai";
+export const CONTACT_EMAIL = "info@supportmate.online";
 export const DASHBOARD_PATH = "/chat";
 
 export const workflowSteps = [
