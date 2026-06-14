@@ -285,7 +285,7 @@
 
     ".msg{",
     "max-width:84%;padding:11px 14px;border-radius:18px;",
-    "font-size:13.5px;line-height:1.58;word-break:break-word;",
+    "font-size:13.5px;line-height:1.58;word-break:break-word;overflow-x:auto;",
     'font-family:"Inter",system-ui,sans-serif;',
     "animation:msg-in .28s ease both;",
     "}",
@@ -454,7 +454,7 @@
     ".msg.bot h1{font-size:1.12em;}",
     ".msg.bot h2{font-size:1.06em;}",
     ".msg.bot h3{font-size:1em;}",
-    ".msg.bot table{border-collapse:collapse;font-size:12px;margin:6px 0;width:100%;}",
+    ".msg.bot table{border-collapse:collapse;font-size:12px;margin:6px 0;min-width:100%;display:block;overflow-x:auto;}",
     ".msg.bot th,.msg.bot td{border:1px solid #e5e7eb;padding:6px 10px;text-align:left;}",
     ".msg.bot th{",
     "background:#eff6ff;font-weight:800;color:var(--rm-trip-brand);",
