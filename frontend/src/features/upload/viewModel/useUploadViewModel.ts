@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState, type ChangeEvent, type DragEvent } from "react";
 import type { ActiveUploadTab } from "../model/entities/ActiveUploadTab";
 import type { UploadState } from "../model/entities/UploadState";
-import type { ImageUploadResult, IngestUrlResult, PdfUploadResult, UrlScanItem } from "../model/entities/UploadResults";
+import type { CsvUploadResult, ImageUploadResult, IngestUrlResult, PdfUploadResult, UrlScanItem } from "../model/entities/UploadResults";
 import { createUploadService } from "../model/services/createUploadService";
 import { getUploadErrorMessage } from "../model/services/uploadErrors";
 import type { UploadActionResult, UploadViewModel } from "./UploadViewModel";
@@ -37,6 +37,13 @@ export function useUploadViewModel(): UploadViewModel {
   const [imgDesc, setImgDesc] = useState("");
   const [imgResult, setImgResult] = useState<ImageUploadResult | null>(null);
   const imgInputRef = useRef<HTMLInputElement>(null);
+
+  const [csvState, setCsvState] = useState<UploadState>("idle");
+  const [csvProgress, setCsvProgress] = useState(0);
+  const [csvDragging, setCsvDragging] = useState(false);
+  const [selectedCsv, setSelectedCsv] = useState<File | null>(null);
+  const [csvResult, setCsvResult] = useState<CsvUploadResult | null>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
 
   const validUrls = urls.filter((url) => url.trim().length > 0);
 
@@ -261,6 +268,53 @@ export function useUploadViewModel(): UploadViewModel {
     if (imgInputRef.current) imgInputRef.current.value = "";
   };
 
+  const selectCsvFile = (file: File): UploadActionResult => {
+    const errorMessage = uploadService.validateCsv(file);
+    if (errorMessage) return { success: false, errorMessage };
+    setSelectedCsv(file);
+    setCsvState("idle");
+    setCsvResult(null);
+    return { success: true };
+  };
+
+  const handleCsvDrop = (event: DragEvent<HTMLDivElement>): UploadActionResult => {
+    event.preventDefault();
+    setCsvDragging(false);
+    const file = event.dataTransfer.files[0];
+    return file ? selectCsvFile(file) : { success: false };
+  };
+
+  const handleCsvChange = (event: ChangeEvent<HTMLInputElement>): UploadActionResult => {
+    const file = event.target.files?.[0];
+    return file ? selectCsvFile(file) : { success: false };
+  };
+
+  const uploadSelectedCsv = async (): Promise<UploadActionResult> => {
+    if (!selectedCsv) return { success: false };
+    setCsvState("uploading");
+    setCsvProgress(0);
+
+    try {
+      const result = await uploadService.uploadCsv(selectedCsv, setCsvProgress);
+      setCsvResult(result);
+      setCsvState("success");
+      setSelectedCsv(null);
+      if (csvInputRef.current) csvInputRef.current.value = "";
+      return { success: true, message: `Added ${result.rowsIngested} rows` };
+    } catch (error: unknown) {
+      setCsvState("error");
+      return { success: false, errorMessage: getUploadErrorMessage(error, "Upload failed") };
+    }
+  };
+
+  const resetCsv = () => {
+    setCsvState("idle");
+    setSelectedCsv(null);
+    setCsvResult(null);
+    setCsvProgress(0);
+    if (csvInputRef.current) csvInputRef.current.value = "";
+  };
+
   return {
     activeTab,
     setActiveTab,
@@ -311,5 +365,16 @@ export function useUploadViewModel(): UploadViewModel {
     handleImgChange,
     saveSelectedImage,
     resetImage,
+    csvState,
+    csvProgress,
+    csvDragging,
+    selectedCsv,
+    csvResult,
+    csvInputRef,
+    setCsvDragging,
+    handleCsvDrop,
+    handleCsvChange,
+    uploadSelectedCsv,
+    resetCsv,
   };
 }

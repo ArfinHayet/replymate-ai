@@ -6,6 +6,7 @@ export class CreatePlanDto {
   webCrawlLimit!: number;
   pdfUploadLimit!: number;
   imageUploadLimit!: number;
+  csvUploadLimit!: number;
 }
 
 export class UpdatePlanDto {
@@ -15,4 +16,5 @@ export class UpdatePlanDto {
   webCrawlLimit?: number;
   pdfUploadLimit?: number;
   imageUploadLimit?: number;
+  csvUploadLimit?: number;
 }

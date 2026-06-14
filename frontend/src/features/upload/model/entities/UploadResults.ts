@@ -5,6 +5,13 @@ export interface PdfUploadResult {
   pdfId: string;
 }
 
+export interface CsvUploadResult {
+  message: string;
+  fileName: string;
+  rowsIngested: number;
+  csvId: string;
+}
+
 export interface ImageUploadResult {
   id: string;
   title: string;

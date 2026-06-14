@@ -1,6 +1,6 @@
 import type { UploadRepository } from "../repositories/UploadRepository";
 import { readFileAsDataUrl } from "./fileReaders";
-import { validateImageFile, validateMarkdownFile, validatePdfFile } from "./fileValidation";
+import { validateCsvFile, validateImageFile, validateMarkdownFile, validatePdfFile } from "./fileValidation";
 import { runSimulatedProgress } from "./simulatedProgress";
 
 export class UploadService {
@@ -22,8 +22,16 @@ export class UploadService {
     return validateImageFile(file);
   }
 
+  validateCsv(file: File) {
+    return validateCsvFile(file);
+  }
+
   uploadPdf(file: File, onProgress: (value: number) => void) {
     return this.uploadRepository.uploadPdf(file, onProgress);
+  }
+
+  uploadCsv(file: File, onProgress: (value: number) => void) {
+    return this.uploadRepository.uploadCsv(file, onProgress);
   }
 
   ingestMarkdown(onProgress: (value: number) => void) {

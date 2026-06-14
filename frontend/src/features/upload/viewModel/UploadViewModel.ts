@@ -1,7 +1,7 @@
 import type { ChangeEvent, DragEvent, RefObject } from "react";
 import type { ActiveUploadTab } from "../model/entities/ActiveUploadTab";
 import type { UploadState } from "../model/entities/UploadState";
-import type { ImageUploadResult, IngestUrlResult, PdfUploadResult, UrlScanItem } from "../model/entities/UploadResults";
+import type { CsvUploadResult, ImageUploadResult, IngestUrlResult, PdfUploadResult, UrlScanItem } from "../model/entities/UploadResults";
 
 export interface UploadActionResult {
   success: boolean;
@@ -59,4 +59,15 @@ export interface UploadViewModel {
   handleImgChange(event: ChangeEvent<HTMLInputElement>): Promise<UploadActionResult>;
   saveSelectedImage(): Promise<UploadActionResult>;
   resetImage(): void;
+  csvState: UploadState;
+  csvProgress: number;
+  csvDragging: boolean;
+  selectedCsv: File | null;
+  csvResult: CsvUploadResult | null;
+  csvInputRef: RefObject<HTMLInputElement | null>;
+  setCsvDragging(value: boolean): void;
+  handleCsvDrop(event: DragEvent<HTMLDivElement>): UploadActionResult;
+  handleCsvChange(event: ChangeEvent<HTMLInputElement>): UploadActionResult;
+  uploadSelectedCsv(): Promise<UploadActionResult>;
+  resetCsv(): void;
 }

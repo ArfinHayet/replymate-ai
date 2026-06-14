@@ -16,6 +16,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import type { Request } from 'express';
 import { DocumentService } from './document.service';
+import { CsvService } from './csv.service';
 import { UpdatePdfDto } from './dto/update-pdf.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CheckContentLimit } from '../usage/content-limit.decorator';
@@ -23,7 +24,10 @@ import { ContentLimitGuard } from '../usage/content-limit.guard';
 
 @Controller()
 export class DocumentController {
-  constructor(private readonly documentService: DocumentService) {}
+  constructor(
+    private readonly documentService: DocumentService,
+    private readonly csvService: CsvService,
+  ) {}
 
   @Post('admin/upload')
   @CheckContentLimit('pdfs')
@@ -96,5 +100,53 @@ export class DocumentController {
   remove(@Param('id') id: string, @Req() req: Request) {
     const userId = (req.user as { id: string }).id;
     return this.documentService.deletePdf(id, userId);
+  }
+
+  // ─── CSV routes ─────────────────────────────────────────────────────────────
+
+  @Post('admin/upload/csv')
+  @CheckContentLimit('csvs')
+  @UseGuards(JwtAuthGuard, ContentLimitGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      fileFilter: (_req, file, cb) => {
+        const isCsv =
+          file.mimetype === 'text/csv' ||
+          file.mimetype === 'application/vnd.ms-excel' ||
+          file.originalname.toLowerCase().endsWith('.csv');
+        if (!isCsv) {
+          return cb(new BadRequestException('Only CSV files are allowed'), false);
+        }
+        cb(null, true);
+      },
+      limits: { fileSize: 10 * 1024 * 1024 },
+    }),
+  )
+  async uploadCsv(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) throw new BadRequestException('No file provided');
+    const userId = (req.user as { id: string }).id;
+    return this.csvService.ingestCsv(file, userId);
+  }
+
+  @Get('csvs')
+  @UseGuards(JwtAuthGuard)
+  findAllCsvs(@Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    return this.csvService.findAllCsvs(userId);
+  }
+
+  @Get('csvs/:id')
+  @UseGuards(JwtAuthGuard)
+  findOneCsv(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    return this.csvService.findOneCsv(id, userId);
+  }
+
+  @Delete('csvs/:id')
+  @UseGuards(JwtAuthGuard)
+  removeCsv(@Param('id') id: string, @Req() req: Request) {
+    const userId = (req.user as { id: string }).id;
+    return this.csvService.deleteCsv(id, userId);
   }
 }

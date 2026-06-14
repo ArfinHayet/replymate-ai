@@ -2,6 +2,7 @@ import { API_BASE_URL, api } from "@/lib/api";
 import { apiRoutes } from "@/lib/apiRoutes";
 import { getToken } from "@/lib/auth";
 import type {
+  CsvUploadResult,
   ImageAnalysisResult,
   ImageUploadResult,
   IngestUrlResult,
@@ -17,6 +18,18 @@ export class HttpUploadRepository implements UploadRepository {
     form.append("file", file);
 
     const response = await api.post<PdfUploadResult>(apiRoutes.upload.pdf, form, {
+      onUploadProgress: (event) => {
+        if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
+      },
+    });
+    return response.data;
+  }
+
+  async uploadCsv(file: File, onProgress?: (pct: number) => void): Promise<CsvUploadResult> {
+    const form = new FormData();
+    form.append("file", file);
+
+    const response = await api.post<CsvUploadResult>(apiRoutes.upload.csv, form, {
       onUploadProgress: (event) => {
         if (onProgress && event.total) onProgress(Math.round((event.loaded / event.total) * 100));
       },

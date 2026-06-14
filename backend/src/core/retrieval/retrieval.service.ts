@@ -58,11 +58,16 @@ export class RetrievalService {
     const queryVector = await this.embeddings.embedQuery(query);
     const topK = this.config.get<number>('rag.topK') ?? 15;
 
-    const rows: { content: string; distance: string }[] =
+    const rows: { content: string; source: string; distance: string }[] =
       await this.dataSource.query(
-        `SELECT content,
+        `SELECT content, 'document' AS source,
                 (embedding::vector <=> $1::vector) AS distance
          FROM document_chunks
+         WHERE "userId" = $3
+         UNION ALL
+         SELECT content, 'csv' AS source,
+                (embedding::vector <=> $1::vector) AS distance
+         FROM csv_chunks
          WHERE "userId" = $3
          ORDER BY distance ASC
          LIMIT $2`,
@@ -78,12 +83,13 @@ export class RetrievalService {
       return 'No relevant documents found for this query.';
     }
 
-    // Format results without internal filenames. The assistant should answer from
-    // the content, not expose source document names to end users.
+    // Format results without internal filenames.
     return relevant
       .map(
         (r, i) =>
-          `[Document Excerpt ${i + 1}]\n${r.content}`,
+          r.source === 'csv'
+            ? `[CSV Row ${i + 1}]\n${r.content}`
+            : `[Document Excerpt ${i + 1}]\n${r.content}`,
       )
       .join('\n\n');
   }
@@ -96,9 +102,16 @@ export class RetrievalService {
    */
   async hasRelevantChunks(vector: number[], userId: string): Promise<boolean> {
     const rows: { distance: string }[] = await this.dataSource.query(
-      `SELECT (embedding::vector <=> $1::vector) AS distance
-       FROM document_chunks
-       WHERE "userId" = $2
+      `SELECT distance
+       FROM (
+         SELECT (embedding::vector <=> $1::vector) AS distance
+         FROM document_chunks
+         WHERE "userId" = $2
+         UNION ALL
+         SELECT (embedding::vector <=> $1::vector) AS distance
+         FROM csv_chunks
+         WHERE "userId" = $2
+       ) AS doc_distances
        ORDER BY distance ASC
        LIMIT 1`,
       [JSON.stringify(vector), userId],
@@ -117,6 +130,10 @@ export class RetrievalService {
        FROM (
          SELECT (embedding::vector <=> $1::vector) AS distance
          FROM document_chunks
+         WHERE "userId" = $2
+         UNION ALL
+         SELECT (embedding::vector <=> $1::vector) AS distance
+         FROM csv_chunks
          WHERE "userId" = $2
          UNION ALL
          SELECT (embedding::vector <=> $1::vector) AS distance

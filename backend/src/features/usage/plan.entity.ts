@@ -22,4 +22,7 @@ export class Plan {
 
   @Column({ name: "image_upload_limit", type: "int", default: 0 })
   imageUploadLimit!: number;
+
+  @Column({ name: "csv_upload_limit", type: "int", default: 0 })
+  csvUploadLimit!: number;
 }

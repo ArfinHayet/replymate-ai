@@ -1,1 +1,1 @@
-export type ActiveUploadTab = "pdf" | "markdown" | "url" | "image";
+export type ActiveUploadTab = "pdf" | "markdown" | "url" | "image" | "csv";

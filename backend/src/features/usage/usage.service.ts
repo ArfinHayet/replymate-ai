@@ -23,6 +23,7 @@ export type MessageUsageSnapshot = {
     webCrawlLimit: number;
     pdfUploadLimit: number;
     imageUploadLimit: number;
+    csvUploadLimit: number;
   };
   periodStart: string;
   periodEnd: string;
@@ -33,7 +34,7 @@ export type MessageUsageSnapshot = {
   contentUsage: ContentUsageSnapshot;
 };
 
-export type ContentLimitResource = "webPages" | "pdfs" | "images";
+export type ContentLimitResource = "webPages" | "pdfs" | "images" | "csvs";
 
 export type ContentUsageSnapshot = Record<
   ContentLimitResource,
@@ -52,7 +53,8 @@ const DEFAULT_PLANS = [
     creemProductId: null,
     webCrawlLimit: 1,
     pdfUploadLimit: 10,
-    imageUploadLimit: 10
+    imageUploadLimit: 10,
+    csvUploadLimit: 5
   },
   {
     id: 2,
@@ -61,7 +63,8 @@ const DEFAULT_PLANS = [
     creemProductId: "prod_35bC6WQHnFraq8HmtyE4YI",
     webCrawlLimit: 10,
     pdfUploadLimit: 100,
-    imageUploadLimit: 200
+    imageUploadLimit: 200,
+    csvUploadLimit: 50
   }
 ];
 
@@ -369,6 +372,12 @@ export class UsageService implements OnModuleInit {
         dto.imageUploadLimit
       );
     }
+    if (dto.csvUploadLimit !== undefined) {
+      plan.csvUploadLimit = this.validateLimit(
+        "csvUploadLimit",
+        dto.csvUploadLimit
+      );
+    }
     if (dto.creemProductId !== undefined) {
       plan.creemProductId = this.normalizeNullableString(dto.creemProductId);
     }
@@ -452,7 +461,8 @@ export class UsageService implements OnModuleInit {
         creemProductId: usage.plan.creemProductId ?? null,
         webCrawlLimit: usage.plan.webCrawlLimit,
         pdfUploadLimit: usage.plan.pdfUploadLimit,
-        imageUploadLimit: usage.plan.imageUploadLimit
+        imageUploadLimit: usage.plan.imageUploadLimit,
+        csvUploadLimit: usage.plan.csvUploadLimit
       },
       periodStart: usage.periodStart,
       periodEnd: usage.periodEnd,
@@ -477,16 +487,18 @@ export class UsageService implements OnModuleInit {
     userId: string,
     plan: Plan
   ): Promise<ContentUsageSnapshot> {
-    const [webPages, pdfs, images] = await Promise.all([
+    const [webPages, pdfs, images, csvs] = await Promise.all([
       this.countRows("web_pages", userId),
       this.countRows("pdfs", userId),
-      this.countRows("images", userId)
+      this.countRows("images", userId),
+      this.countRows("csvs", userId)
     ]);
 
     return {
       webPages: this.toContentQuota(webPages, plan.webCrawlLimit),
       pdfs: this.toContentQuota(pdfs, plan.pdfUploadLimit),
-      images: this.toContentQuota(images, plan.imageUploadLimit)
+      images: this.toContentQuota(images, plan.imageUploadLimit),
+      csvs: this.toContentQuota(csvs, plan.csvUploadLimit)
     };
   }
 

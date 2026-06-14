@@ -51,11 +51,16 @@ export const apiRoutes = {
   },
   upload: {
     pdf: "/admin/upload",
+    csv: "/admin/upload/csv",
     urls: "/admin/ingest-urls",
   },
   webPages: {
     list: "/web-pages",
     byId: (id: string) => `/web-pages/${id}`,
     refetch: (id: string) => `/web-pages/${id}/refetch`,
+  },
+  csvs: {
+    list: "/csvs",
+    byId: (id: string) => `/csvs/${id}`,
   },
 } as const;

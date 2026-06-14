@@ -1,10 +1,11 @@
-import { FileUp, ImageUp, Link2 } from "lucide-react";
+import { FileUp, ImageUp, Link2, Sheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ActiveUploadTab } from "../../model/entities/ActiveUploadTab";
 
 const tabs: { id: ActiveUploadTab; label: string; icon: React.ReactNode }[] = [
   { id: "url", label: "URL", icon: <Link2 className="h-3.5 w-3.5" /> },
   { id: "pdf", label: "PDF", icon: <FileUp className="h-3.5 w-3.5" /> },
+  { id: "csv", label: "CSV", icon: <Sheet className="h-3.5 w-3.5" /> },
   { id: "image", label: "Image", icon: <ImageUp className="h-3.5 w-3.5" /> },
 ];
 

@@ -16,3 +16,14 @@ export function validateImageFile(file: File): string | null {
   if (file.size > 10 * 1024 * 1024) return "Image must be under 10 MB";
   return null;
 }
+
+export function validateCsvFile(file: File): string | null {
+  const isCsv =
+    file.type === "text/csv" ||
+    file.type === "application/vnd.ms-excel" ||
+    file.name.toLowerCase().endsWith(".csv");
+  if (!isCsv) return "Only CSV files are allowed";
+  if (file.size > 10 * 1024 * 1024) return "File size must be under 10 MB";
+  return null;
+}
+

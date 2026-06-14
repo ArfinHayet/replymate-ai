@@ -5,6 +5,8 @@ import { DataSource } from 'typeorm';
 import configuration from './config/configuration';
 import { DocumentChunk } from './features/document/document-chunk.entity';
 import { Pdf } from './features/document/pdf.entity';
+import { Csv } from './features/document/csv.entity';
+import { CsvChunk } from './features/document/csv-chunk.entity';
 import { Company } from './features/company/company.entity';
 import { ChatMessage } from './features/chat/chat-message.entity';
 import { ChatSuggestion } from './features/chat/chat-suggestion.entity';
@@ -49,7 +51,7 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
+        entities: [DocumentChunk, Pdf, Csv, CsvChunk, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
         synchronize: false,
         logging: false,
         extra: {

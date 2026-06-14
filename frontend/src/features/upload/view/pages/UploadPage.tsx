@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/apiRoutes";
 import { useUploadViewModel } from "../../viewModel/useUploadViewModel";
 import type { UploadActionResult } from "../../viewModel/UploadViewModel";
+import { CsvUploadPanel } from "../components/CsvUploadPanel";
 import { ImageUploadPanel } from "../components/ImageUploadPanel";
 import { MarkdownUploadPanel } from "../components/MarkdownUploadPanel";
 import { PdfUploadPanel } from "../components/PdfUploadPanel";
@@ -32,11 +33,13 @@ type UsageResponse = {
       webCrawlLimit?: number;
       pdfUploadLimit?: number;
       imageUploadLimit?: number;
+      csvUploadLimit?: number;
     };
     contentUsage?: {
       webPages: ContentQuota;
       pdfs: ContentQuota;
       images: ContentQuota;
+      csvs: ContentQuota;
     };
   };
 };
@@ -50,7 +53,11 @@ function pluralize(count: number, singular: string, plural = `${singular}s`) {
 }
 
 function formatQuotaStatus(label: string, quota: ContentQuota) {
-  const singular = label === "images" ? "image" : label.slice(0, -1);
+  const lcLabel = label.toLowerCase();
+  let singular: string;
+  if (lcLabel === "images") singular = "image";
+  else if (lcLabel === "csvs") singular = "CSV";
+  else singular = label.slice(0, -1);
   const usage = `${quota.used.toLocaleString()} / ${quota.limit.toLocaleString()}`;
 
   if (quota.remaining > 0) {
@@ -113,6 +120,12 @@ export function UploadPage() {
     if (result.success) void loadUsage();
   };
 
+  const uploadCsv = async () => {
+    const result = await viewModel.uploadSelectedCsv();
+    showActionResult(result);
+    if (result.success) void loadUsage();
+  };
+
   return (
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader
@@ -143,6 +156,13 @@ export function UploadPage() {
               onFileResult={(result) => void handleAsyncFileResult(result)}
             />
           )}
+          {viewModel.activeTab === "csv" && (
+            <CsvUploadPanel
+              viewModel={viewModel}
+              onUpload={() => void uploadCsv()}
+              onFileResult={showActionResult}
+            />
+          )}
         </div>
 
         <UploadSteps />
@@ -171,6 +191,11 @@ function SubscriptionLimitAlert({ usage }: { usage: UsageResponse["usage"] | nul
             limit: usage.plan.imageUploadLimit ?? 0,
             remaining: usage.plan.imageUploadLimit ?? 0,
           },
+          csvs: {
+            used: 0,
+            limit: usage.plan.csvUploadLimit ?? 0,
+            remaining: usage.plan.csvUploadLimit ?? 0,
+          },
         }
       : null);
 
@@ -186,6 +211,7 @@ function SubscriptionLimitAlert({ usage }: { usage: UsageResponse["usage"] | nul
     { label: "URLs", quota: contentUsage.webPages },
     { label: "PDFs", quota: contentUsage.pdfs },
     { label: "images", quota: contentUsage.images },
+    { label: "CSVs", quota: contentUsage.csvs },
   ];
   const hasBlockedContentType = items.some(({ quota }) => quota.remaining === 0);
 
