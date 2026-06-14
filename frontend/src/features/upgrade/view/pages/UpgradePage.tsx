@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarDays, Check, Loader2, Sparkles } from "lucide-react";
+import { Link } from "react-router-dom";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { CONTACT_EMAIL } from "@/features/landing/view/components/landingContent";
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/apiRoutes";
 
@@ -235,7 +237,7 @@ export function UpgradePage() {
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader
         title="Upgrade"
-        subtitle="Review your active plan and choose the right limits for your workspace."
+        subtitle={`Review your active plan and choose the right limits for your workspace. Support: ${CONTACT_EMAIL}`}
       />
       <PageContent>
         {checkoutSuccess && (
@@ -403,6 +405,29 @@ export function UpgradePage() {
                 Plan changes are temporarily unavailable.
               </p>
             )}
+
+            <div className="mt-5 border-t border-gray-100 pt-4 text-xs leading-5 text-rm-trip-text-muted">
+              <p>
+                Need help?{" "}
+                <a
+                  href={`mailto:${CONTACT_EMAIL}`}
+                  className="font-semibold text-rm-trip-brand no-underline hover:underline"
+                >
+                  {CONTACT_EMAIL}
+                </a>
+              </p>
+              <p className="mt-2">
+                By starting a checkout, you agree to our{" "}
+                <Link to="/terms" className="font-semibold text-rm-trip-brand no-underline hover:underline">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link to="/privacy" className="font-semibold text-rm-trip-brand no-underline hover:underline">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
+            </div>
           </aside>
         </section>
       </PageContent>

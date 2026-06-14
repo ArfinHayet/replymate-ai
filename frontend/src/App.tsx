@@ -5,6 +5,12 @@ import { Toaster } from "@/components/ui/sonner";
 import { PrivateRoute } from "@/features/auth/view/components/PrivateRoute";
 
 const LandingPage = lazy(() => import("@/features/landing").then((module) => ({ default: module.LandingPage })));
+const TermsOfServicePage = lazy(() =>
+  import("@/features/legal").then((module) => ({ default: module.TermsOfServicePage })),
+);
+const PrivacyPolicyPage = lazy(() =>
+  import("@/features/legal").then((module) => ({ default: module.PrivacyPolicyPage })),
+);
 const LoginPage = lazy(() => import("@/features/auth").then((module) => ({ default: module.LoginPage })));
 const SignupPage = lazy(() => import("@/features/auth").then((module) => ({ default: module.SignupPage })));
 const ForgotPasswordPage = lazy(() =>
@@ -53,6 +59,8 @@ export default function App() {
         <Routes>
           {/* Public routes - no sidebar */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/terms" element={<TermsOfServicePage />} />
+          <Route path="/privacy" element={<PrivacyPolicyPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/users/forgot-password" element={<ForgotPasswordPage />} />

@@ -593,7 +593,15 @@ export function ContactSection({
             </PreviewBlock>
             <div className="flex items-center gap-2 rounded-[var(--rm-trip-smooth)] border border-[rgba(15,23,42,0.10)] bg-white px-3.5 py-[11px] text-[12.5px] font-medium text-[var(--rm-trip-text-muted)]">
               <ShieldCheck size={15} className="text-[var(--rm-trip-brand)]" />
-              Messages are prepared for {CONTACT_EMAIL}
+              <span>
+                Messages are prepared for{" "}
+                <a
+                  href={`mailto:${CONTACT_EMAIL}`}
+                  className="font-semibold text-[var(--rm-trip-brand)] no-underline hover:underline"
+                >
+                  {CONTACT_EMAIL}
+                </a>
+              </span>
             </div>
           </div>
         </div>
@@ -665,19 +673,35 @@ export function LandingFooter() {
           </li>
         </FooterColumn>
         <FooterColumn title="Resources">
+          <li>
+            <Link to="/privacy">Privacy Policy</Link>
+          </li>
+          <li>
+            <Link to="/terms">Terms of Service</Link>
+          </li>
           <FooterIconItem icon={<Clock3 size={13} />}>24/7 assistant availability</FooterIconItem>
           <FooterIconItem icon={<Bot size={13} />}>Grounded answer engine</FooterIconItem>
-          <FooterIconItem icon={<Users size={13} />}>Conversation history review</FooterIconItem>
         </FooterColumn>
         <FooterColumn title="Trust">
+          <li className="flex items-center gap-[7px] text-[13px] text-[var(--rm-trip-text-muted)]">
+            <ShieldCheck size={13} className="shrink-0" />
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          </li>
           <FooterIconItem icon={<Lock size={13} />}>Chat history review tools</FooterIconItem>
           <FooterIconItem icon={<FileText size={13} />}>Approved source control</FooterIconItem>
-          <FooterIconItem icon={<ShieldCheck size={13} />}>Widget domain allowlist</FooterIconItem>
         </FooterColumn>
       </div>
-      <div className={cn(shell, "flex items-center justify-between border-t border-[rgba(15,23,42,0.10)] px-7 py-4 text-xs text-[#94a3b8]")}>
-        <span>© {new Date().getFullYear()} SupportMate, Inc. All rights reserved.</span>
-        <span>Privacy · Terms</span>
+      <div className={cn(shell, "flex flex-wrap items-center justify-between gap-3 border-t border-[rgba(15,23,42,0.10)] px-7 py-4 text-xs text-[#94a3b8]")}>
+        <span>&copy; {new Date().getFullYear()} SupportMate, Inc. All rights reserved.</span>
+        <span className="flex items-center gap-2">
+          <Link to="/privacy" className="text-[#64748b] no-underline hover:text-[var(--rm-trip-text)] hover:underline">
+            Privacy
+          </Link>
+          <span aria-hidden="true">&middot;</span>
+          <Link to="/terms" className="text-[#64748b] no-underline hover:text-[var(--rm-trip-text)] hover:underline">
+            Terms
+          </Link>
+        </span>
       </div>
     </footer>
   );
