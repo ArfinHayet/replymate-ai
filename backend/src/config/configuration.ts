@@ -32,16 +32,9 @@ export default () => ({
   },
   web: {
     crawlMaxPages: parseInt(process.env.WEB_CRAWL_MAX_PAGES ?? '30', 10) || 30,
-    scrapingAnt: {
-      apiKey: process.env.SCRAPINGANT_API_KEY,
-      enabled:
-        process.env.SCRAPINGANT_ENABLED == null
-          ? Boolean(process.env.SCRAPINGANT_API_KEY)
-          : process.env.SCRAPINGANT_ENABLED !== 'false',
-      timeoutSeconds: parseInt(process.env.SCRAPINGANT_TIMEOUT_SECONDS ?? '30', 10) || 30,
-      maxPagesPerIngest:
-        parseInt(process.env.SCRAPINGANT_MAX_PAGES_PER_INGEST ?? '10', 10) || 10,
-    },
+  },
+  firecrawl: {
+    apiKey: process.env.FIRECRAWL_API_KEY,
   },
   supabase: {
     url: process.env.SUPABASE_URL,

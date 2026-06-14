@@ -38,6 +38,8 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
 import { KnowledgeEntity } from './core/retrieval/knowledge-entity.entity';
 import { KnowledgeEntityMention } from './core/retrieval/knowledge-entity-mention.entity';
 import { KnowledgeRelation } from './core/retrieval/knowledge-relation.entity';
+import { CrawlJobEntity } from './features/crawler/crawl-job.entity';
+import { CrawlerModule } from './features/crawler/crawler.module';
 
 @Module({
   imports: [
@@ -52,7 +54,7 @@ import { KnowledgeRelation } from './core/retrieval/knowledge-relation.entity';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig, KnowledgeEntity, KnowledgeEntityMention, KnowledgeRelation],
+        entities: [DocumentChunk, Pdf, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig, KnowledgeEntity, KnowledgeEntityMention, KnowledgeRelation, CrawlJobEntity],
         synchronize: true,
         logging: false,
         extra: {
@@ -72,6 +74,7 @@ import { KnowledgeRelation } from './core/retrieval/knowledge-relation.entity';
     WidgetModule,
     ImageModule,
     WebPageModule,
+    CrawlerModule,
     WhatsappModule,
     UsageModule,
     PaymentsModule,

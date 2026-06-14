@@ -25,7 +25,7 @@ export class WebPageController {
 
   /**
    * POST /admin/ingest-urls
-   * Ingests one or more URLs via Jina Reader, chunks + embeds each one.
+   * Ingests one or more URLs via Firecrawl, chunks + embeds each one.
    * Processes URLs sequentially; per-URL errors are collected without aborting the batch.
    */
   @Post('admin/ingest-urls')
