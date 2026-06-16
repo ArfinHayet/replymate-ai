@@ -13,7 +13,7 @@ export type ContactFormProps = {
   success: string | null;
 };
 
-export const CONTACT_EMAIL = "info@supportmate.online";
+export const CONTACT_EMAIL = "arfinhayet786@gmail.com";
 export const DASHBOARD_PATH = "/chat";
 
 export const workflowSteps = [
@@ -78,6 +78,10 @@ export const faqs = [
   {
     q: "How do we improve response quality over time?",
     a: "Use chat history and analytics to review conversations, add missing sources, and refresh indexed web pages.",
+  },
+  {
+    q: "Which AI models power the chatbot responses?",
+    a: "SupportMate is powered by leading industry models, including Google Gemini 2.5, OpenAI GPT-4, and Anthropic Claude, to deliver accurate, context-aware support responses based on your grounded business knowledge.",
   },
 ];
 

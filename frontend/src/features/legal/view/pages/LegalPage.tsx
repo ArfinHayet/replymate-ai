@@ -56,6 +56,13 @@ const termsContent: LegalPageContent = {
       ],
     },
     {
+      title: "AI Service Disclosure",
+      body: [
+        "SupportMate chatbot responses are powered by third-party artificial intelligence models and service providers, including OpenAI GPT models (such as GPT-4), Google Gemini (such as Gemini 2.5 Flash), and Anthropic Claude.",
+        "While we strive to ensure accuracy, AI-generated content is provided as-is, and you are responsible for reviewing automated replies and ensuring your company's grounded information is correct and up to date.",
+      ],
+    },
+    {
       title: "Contact",
       body: [`Questions about these terms can be sent to ${CONTACT_EMAIL}.`],
     },

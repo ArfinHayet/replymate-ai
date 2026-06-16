@@ -10,7 +10,6 @@ export {
   MetricsStrip,
   PricingSection,
   ScreenshotsSection,
-  TestimonialsSection,
   TrustSection,
   WorkflowSection,
 } from "./LandingSections";

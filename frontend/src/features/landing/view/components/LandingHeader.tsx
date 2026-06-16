@@ -15,7 +15,6 @@ export function LandingHeader({ isAuthenticated }: { isAuthenticated: boolean })
             ["Workflow", "#how"],
             ["Screenshots", "#screenshots"],
             ["Features", "#features"],
-            ["Customers", "#testimonials"],
             ["Pricing", "#pricing"],
           ].map(([label, href]) => (
             <a

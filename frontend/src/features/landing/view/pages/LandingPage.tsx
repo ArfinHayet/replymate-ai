@@ -14,7 +14,6 @@ import {
   MetricsStrip,
   PricingSection,
   ScreenshotsSection,
-  TestimonialsSection,
   TrustSection,
   WorkflowSection,
 } from "../components";
@@ -69,7 +68,6 @@ export function LandingPage() {
         <WorkflowSection />
         <FeaturesSection />
         <CommandCenterSection />
-        <TestimonialsSection />
         <TrustSection />
         <PricingSection />
         <FaqSection />

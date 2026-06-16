@@ -295,67 +295,6 @@ export function CommandCenterSection() {
   );
 }
 
-export function TestimonialsSection() {
-  return (
-    <section id="testimonials">
-      <div className={section}>
-        <div className="grid grid-cols-[1.2fr_1fr] items-start gap-8 max-[900px]:grid-cols-1">
-          <div>
-            <p className={eyebrow}>Customers</p>
-            <h2 className={sectionTitle}>Support teams move faster with better content control</h2>
-            <div className="mt-6 flex flex-col gap-3">
-              <QuoteCard cite="Maya Chen - Support Lead">
-                "We uploaded our docs and help center first, then SupportMate started answering with cleaner,
-                source-backed responses in the same day."
-              </QuoteCard>
-              <QuoteCard cite="Eli Novak - Operations Manager">
-                "Widget key and domain controls made rollout easy across our properties, and analytics shows exactly
-                where we still need better content."
-              </QuoteCard>
-            </div>
-          </div>
-          <div className={cn(card, "flex flex-col gap-2.5 p-5")}>
-            <StatBlock label="Indexed sections" value="5,406" />
-            <StatBlock label="Crawled pages" value="1,284" />
-            <StatBlock label="Conversations" value="42,891" highlighted />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function QuoteCard({ children, cite }: { children: ReactNode; cite: string }) {
-  return (
-    <figure className={cn(card, "p-6")}>
-      <blockquote className="mb-3.5 text-[15px] font-light italic leading-[1.72] text-[var(--rm-trip-text-muted)]">
-        {children}
-      </blockquote>
-      <cite className="text-[13px] font-bold not-italic text-[var(--rm-trip-text)]">{cite}</cite>
-    </figure>
-  );
-}
-
-function StatBlock({ highlighted = false, label, value }: { highlighted?: boolean; label: string; value: string }) {
-  return (
-    <div
-      className={cn(
-        "rounded-[var(--rm-trip-smooth)] border p-4",
-        highlighted
-          ? "border-[rgba(37,99,235,0.20)] bg-[var(--rm-trip-brand-light)]"
-          : "border-[rgba(15,23,42,0.10)] bg-[var(--rm-trip-surface)]",
-      )}
-    >
-      <div className={cn("text-[11px] font-semibold uppercase tracking-[0.07em]", highlighted ? "text-[rgba(37,99,235,0.60)]" : "text-[#94a3b8]")}>
-        {label}
-      </div>
-      <div className={cn("mt-1 font-[var(--rm-trip-font-heading)] text-[26px] font-extrabold text-[var(--rm-trip-text)]", highlighted && "text-[var(--rm-trip-brand)]")}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
 export function TrustSection() {
   return (
     <div className={sectionWhite}>
@@ -588,9 +527,6 @@ export function ContactSection({
           <div className="min-w-0 border-l border-[rgba(15,23,42,0.10)] bg-[var(--rm-trip-surface)] p-8 max-[900px]:border-l-0 max-[900px]:border-t max-[700px]:px-5 max-[700px]:py-6">
             <p className="mb-3.5 text-[10px] font-bold uppercase tracking-[0.12em] text-[#94a3b8]">Contact preview</p>
             <PreviewBlock label="Your message">{messagePreview}</PreviewBlock>
-            <PreviewBlock label="Reply destination" highlighted>
-              {form.email.trim() || "your-email@example.com"}
-            </PreviewBlock>
             <div className="flex items-center gap-2 rounded-[var(--rm-trip-smooth)] border border-[rgba(15,23,42,0.10)] bg-white px-3.5 py-[11px] text-[12.5px] font-medium text-[var(--rm-trip-text-muted)]">
               <ShieldCheck size={15} className="text-[var(--rm-trip-brand)]" />
               <span>
