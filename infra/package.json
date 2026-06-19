@@ -1,0 +1,24 @@
+{
+  "name": "comp-bot-infra",
+  "version": "0.1.0",
+  "description": "AWS CDK infrastructure for Comp-bot backend (Lambda + API Gateway)",
+  "private": true,
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "cdk": "cdk",
+    "deploy": "cdk deploy --require-approval never",
+    "destroy": "cdk destroy",
+    "diff": "cdk diff",
+    "synth": "cdk synth"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.150.0",
+    "constructs": "^10.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "aws-cdk": "^2.150.0",
+    "typescript": "^5.5.0"
+  }
+}

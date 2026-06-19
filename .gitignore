@@ -2,6 +2,15 @@
 .env
 .env.local
 .env.*.local
+.env.lambda
+
+# AWS CDK
+cdk-outputs.json
+infra/cdk.out/
+infra/node_modules/
+
+# Lambda build staging (created by deploy.sh)
+backend/.lambda-build/
 
 # Dependencies
 node_modules/
