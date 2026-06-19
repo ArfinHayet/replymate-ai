@@ -43,6 +43,44 @@ describe('visible flight criteria', () => {
     expect(result.matches.map((flight) => flight.index)).toEqual([1]);
   });
 
+  it('matches truncated airline names and codes', () => {
+    const testFlights = [
+      {
+        index: 1,
+        rawText: 'Onward Malaysia A... MH DAC 6/20/2026 02:05 AM',
+        airline: 'Onward Malaysia A... MH',
+      },
+      {
+        index: 2,
+        rawText: 'Onward Singapore ... SQ DAC 6/20/2026 11:55 PM',
+        airline: 'Onward Singapore ... SQ',
+      },
+      {
+        index: 3,
+        rawText: 'Onward Turkish Ai... TK DAC 6/20/2026 08:30 PM',
+        airline: 'Onward Turkish Ai... TK',
+      },
+    ];
+
+    // Match by name including "Airlines"
+    const res1 = applyVisibleFlightCriteria(testFlights, [
+      { field: 'airline', operator: 'contains', value: 'Malaysia Airlines' },
+    ]);
+    expect(res1.matches.map((f) => f.index)).toEqual([1]);
+
+    // Match by code
+    const res2 = applyVisibleFlightCriteria(testFlights, [
+      { field: 'airline', operator: 'contains', value: 'SQ' },
+    ]);
+    expect(res2.matches.map((f) => f.index)).toEqual([2]);
+
+    // Match by unmapped name with "Airlines"
+    const res3 = applyVisibleFlightCriteria(testFlights, [
+      { field: 'airline', operator: 'contains', value: 'Turkish Airlines' },
+    ]);
+    expect(res3.matches.map((f) => f.index)).toEqual([3]);
+  });
+
   it('ranks matching flights by criteria sort', () => {
     const ranked = rankFlightsByCriteria(flights, 'baggage_desc');
 

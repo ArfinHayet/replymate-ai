@@ -11,6 +11,7 @@ import {
   parseRefundability,
   parseStopsCount,
   parseTimeMinutes,
+  wordsMatchLoosely,
 } from './visible-flight-parsers';
 
 export const flightListFilterCriteriaSchema = z.object({
@@ -218,7 +219,7 @@ function matchFlightCriterion(
   const target = normalizeCriteriaText(filter);
   if (!target) return 'unavailable';
 
-  return compareText(flightValue, target, filter.operator) ? 'match' : 'no_match';
+  return compareText(flightValue, target, filter.operator, filter.field) ? 'match' : 'no_match';
 }
 
 function matchBetweenCriterion(
@@ -277,7 +278,12 @@ function compareText(
   flightValue: string,
   target: string,
   operator: FlightListFilterCriteria['operator'],
+  field?: FlightListFilterCriteria['field'],
 ): boolean {
+  if (field === 'airline') {
+    return matchAirlineText(flightValue, target, operator);
+  }
+
   const normalizedFlightValue = normalizeForMatching(flightValue);
   const contains =
     hasNormalizedPhrase(normalizedFlightValue, target) ||
@@ -286,6 +292,77 @@ function compareText(
 
   if (operator === 'not_equals') return !contains;
   if (operator === 'equals') return normalizedFlightValue === target;
+  return contains;
+}
+
+function matchAirlineText(
+  flightValue: string,
+  target: string,
+  operator: FlightListFilterCriteria['operator'],
+): boolean {
+  const normalizedFlightValue = normalizeForMatching(flightValue);
+  const normalizedTarget = normalizeForMatching(target);
+
+  let contains = normalizedFlightValue.includes(normalizedTarget);
+
+  if (!contains) {
+    // Map known airline name keywords to their 2-letter codes
+    const airlineCodes = [
+      { name: 'malaysia', code: 'mh' },
+      { name: 'biman', code: 'bg' },
+      { name: 'china southern', code: 'cz' },
+      { name: 'singapore', code: 'sq' },
+      { name: 'emirates', code: 'ek' },
+      { name: 'qatar', code: 'qr' },
+      { name: 'us bangla', code: 'bs' },
+      { name: 'novoair', code: 'vq' },
+      { name: 'air india', code: 'ai' },
+      { name: 'indigo', code: '6e' },
+      { name: 'gulf', code: 'gf' },
+      { name: 'saudia', code: 'sv' },
+      { name: 'flydubai', code: 'fz' },
+      { name: 'air arabia', code: 'g9' },
+      { name: 'jazeera', code: 'j9' },
+      { name: 'kuwait', code: 'ku' },
+      { name: 'oman', code: 'wy' },
+      { name: 'batik', code: 'od' },
+      { name: 'malindo', code: 'od' },
+      { name: 'thai', code: 'tg' },
+      { name: 'srilankan', code: 'ul' },
+    ];
+
+    for (const mapping of airlineCodes) {
+      if (normalizedTarget.includes(mapping.name)) {
+        const flightWords = normalizedFlightValue.split(' ');
+        if (
+          flightWords.includes(mapping.code) ||
+          flightWords.some(w => w.startsWith(mapping.name) || mapping.name.startsWith(w))
+        ) {
+          contains = true;
+          break;
+        }
+      }
+    }
+  }
+
+  if (!contains) {
+    // Loose word matching excluding generic terms
+    const genericTerms = new Set(['airlines', 'airline', 'airways', 'air', 'flights', 'flight']);
+    const targetWords = normalizedTarget.split(' ').filter(w => w.length >= 2 && !genericTerms.has(w));
+    const flightWords = normalizedFlightValue.split(' ').filter(w => w.length >= 2);
+
+    if (targetWords.length > 0) {
+      const matchesAll = targetWords.every(tWord =>
+        flightWords.some(fWord => wordsMatchLoosely(fWord, tWord))
+      );
+      if (matchesAll) {
+        contains = true;
+      }
+    }
+  }
+
+  if (operator === 'not_equals') return !contains;
+  if (operator === 'equals') return normalizedFlightValue === normalizedTarget;
   return contains;
 }
 

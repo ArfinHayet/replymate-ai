@@ -135,7 +135,7 @@ export function parseStopsCount(value: string | null | undefined): number | null
   return null;
 }
 
-function wordsMatchLoosely(textWord: string, phraseWord: string): boolean {
+export function wordsMatchLoosely(textWord: string, phraseWord: string): boolean {
   if (textWord === phraseWord) return true;
   if (textWord.length >= 3 && phraseWord.startsWith(textWord)) return true;
   if (phraseWord.length >= 3 && textWord.startsWith(phraseWord)) return true;
