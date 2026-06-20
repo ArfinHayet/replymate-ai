@@ -12,6 +12,7 @@ export function useEmbedViewModel(): EmbedViewModel {
   const [newLabel, setNewLabel] = useState("");
   const [newDomain, setNewDomain] = useState("");
   const [flightCardSelector, setFlightCardSelector] = useState("");
+  const [productCardSelector, setProductCardSelector] = useState("");
   const [loadingKeys, setLoadingKeys] = useState(true);
   const [loadingDomains, setLoadingDomains] = useState(true);
   const [loadingToolConfigs, setLoadingToolConfigs] = useState(true);
@@ -56,6 +57,8 @@ export function useEmbedViewModel(): EmbedViewModel {
       const configs = await embedService.listChatToolConfigs();
       const flightSearch = configs.find((config) => config.toolKey === "flight_search");
       setFlightCardSelector(stringValue(flightSearch?.config.flightCardSelector));
+      const ecommerceProduct = configs.find((config) => config.toolKey === "ecommerce_product");
+      setProductCardSelector(stringValue(ecommerceProduct?.config.productCardSelector));
       return { success: true };
     } catch {
       const errorMessage = "Failed to load tool settings";
@@ -113,7 +116,7 @@ export function useEmbedViewModel(): EmbedViewModel {
   const copyLatestSnippet = async () => {
     if (!latestKey) return { success: false, errorMessage: "Create a widget key first" };
     try {
-      await navigator.clipboard.writeText(embedService.createSnippet(latestKey.key, API_URL, flightCardSelector));
+      await navigator.clipboard.writeText(embedService.createSnippet(latestKey.key, API_URL, flightCardSelector, productCardSelector));
       return { success: true, message: "Embed script copied" };
     } catch {
       return { success: false, errorMessage: "Failed to copy script" };
@@ -165,8 +168,9 @@ export function useEmbedViewModel(): EmbedViewModel {
     toolConfigsError,
     apiUrl: API_URL,
     flightCardSelector,
-    snippetTemplate: embedService.createSnippetTemplate(API_URL, flightCardSelector),
-    latestSnippet: latestKey ? embedService.createSnippet(latestKey.key, API_URL, flightCardSelector) : embedService.createSnippetTemplate(API_URL, flightCardSelector),
+    productCardSelector,
+    snippetTemplate: embedService.createSnippetTemplate(API_URL, flightCardSelector, productCardSelector),
+    latestSnippet: latestKey ? embedService.createSnippet(latestKey.key, API_URL, flightCardSelector, productCardSelector) : embedService.createSnippetTemplate(API_URL, flightCardSelector, productCardSelector),
     publicChatUrlTemplate: embedService.createPublicChatUrlTemplate(API_URL),
     latestPublicChatUrl: latestKey
       ? embedService.createPublicChatUrl(latestKey.key, API_URL)

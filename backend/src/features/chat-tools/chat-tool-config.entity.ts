@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { randomUUID } from 'crypto';
 
-export type ChatToolKey = 'flight_search' | 'live_agent_contact';
+export type ChatToolKey = 'flight_search' | 'live_agent_contact' | 'ecommerce_product';
 
 @Entity('chat_tool_configs')
 @Index(['userId', 'toolKey'], { unique: true })

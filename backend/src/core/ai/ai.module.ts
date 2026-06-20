@@ -6,6 +6,7 @@ import { AiService } from './ai.service';
 import { MediaAiService } from './media-ai.service';
 import { QueryIntentClassifier } from './query-intent.classifier';
 import { VisibleFlightAnalyzerService } from './visible-flights/visible-flight-analyzer.service';
+import { VisibleProductAnalyzerService } from './visible-products/visible-product-analyzer.service';
 
 @Module({
   imports: [RetrievalModule, LlmFactoryModule],
@@ -14,8 +15,10 @@ import { VisibleFlightAnalyzerService } from './visible-flights/visible-flight-a
     QueryIntentClassifier,
     AgenticLoopService,
     VisibleFlightAnalyzerService,
+    VisibleProductAnalyzerService,
     MediaAiService,
   ],
   exports: [AiService],
 })
 export class AiModule {}
+

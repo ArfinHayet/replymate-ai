@@ -19,6 +19,7 @@ export interface EmbedViewModel {
   toolConfigsError: string | null;
   apiUrl: string;
   flightCardSelector: string;
+  productCardSelector: string;
   snippetTemplate: string;
   latestSnippet: string;
   publicChatUrlTemplate: string;

@@ -35,12 +35,12 @@ export class EmbedService {
     return this.repository.listChatToolConfigs();
   }
 
-  createSnippet(key: string, apiUrl: string, flightCardSelector = "") {
-    return this.createSnippetFromKey(key, apiUrl, flightCardSelector);
+  createSnippet(key: string, apiUrl: string, flightCardSelector = "", productCardSelector = "") {
+    return this.createSnippetFromKey(key, apiUrl, flightCardSelector, productCardSelector);
   }
 
-  createSnippetTemplate(apiUrl: string, flightCardSelector = "") {
-    return this.createSnippetFromKey("YOUR_KEY", apiUrl, flightCardSelector);
+  createSnippetTemplate(apiUrl: string, flightCardSelector = "", productCardSelector = "") {
+    return this.createSnippetFromKey("YOUR_KEY", apiUrl, flightCardSelector, productCardSelector);
   }
 
   createPublicChatUrl(key: string, apiUrl: string) {
@@ -51,12 +51,16 @@ export class EmbedService {
     return `${apiUrl}/widget/YOUR_KEY`;
   }
 
-  private createSnippetFromKey(key: string, apiUrl: string, flightCardSelector: string) {
-    const selectorAttribute = flightCardSelector.trim()
+  private createSnippetFromKey(key: string, apiUrl: string, flightCardSelector: string, productCardSelector: string) {
+    const flightSelectorAttribute = flightCardSelector.trim()
       ? `\n  data-flight-card-selector="${escapeHtmlAttribute(flightCardSelector.trim())}"`
       : "";
 
-    return `<script src="${apiUrl}/widget.js"\n  data-key="${key}"\n  data-api="${apiUrl}"${selectorAttribute}>\n</script>`;
+    const productSelectorAttribute = productCardSelector.trim()
+      ? `\n  data-product-card-selector="${escapeHtmlAttribute(productCardSelector.trim())}"`
+      : "";
+
+    return `<script src="${apiUrl}/widget.js"\n  data-key="${key}"\n  data-api="${apiUrl}"${flightSelectorAttribute}${productSelectorAttribute}>\n</script>`;
   }
 }
 

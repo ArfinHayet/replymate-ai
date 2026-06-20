@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { FlightListContext } from '../../features/chat/flight-list-context';
+import type { ProductListContext } from '../../features/chat/product-list-context';
 import type { ChatToolConfigResponse } from '../../features/chat-tools/chat-tools.types';
 import { LlmFactoryService } from '../llm/llm-factory.service';
 import { AgenticLoopService } from './agentic-loop.service';
@@ -9,6 +10,7 @@ import {
   type Message,
   type QueryIntentClassification,
   type VisibleFlightAnalysisResult,
+  type VisibleProductAnalysisResult,
 } from './ai.types';
 import { MediaAiService } from './media-ai.service';
 import { QueryIntentClassifier } from './query-intent.classifier';
@@ -16,6 +18,10 @@ import {
   type FlightListCriteria,
 } from './visible-flights/visible-flight-criteria';
 import { VisibleFlightAnalyzerService } from './visible-flights/visible-flight-analyzer.service';
+import {
+  type ProductListCriteria,
+} from './visible-products/visible-product-criteria';
+import { VisibleProductAnalyzerService } from './visible-products/visible-product-analyzer.service';
 
 export {
   buildContextualToolQuery,
@@ -23,8 +29,9 @@ export {
   type Message,
   type QueryIntentClassification,
   type VisibleFlightAnalysisResult,
+  type VisibleProductAnalysisResult,
 };
-export type { FlightListCriteria };
+export type { FlightListCriteria, ProductListCriteria };
 
 @Injectable()
 export class AiService {
@@ -32,6 +39,7 @@ export class AiService {
     private readonly queryIntentClassifier: QueryIntentClassifier,
     private readonly agenticLoopService: AgenticLoopService,
     private readonly visibleFlightAnalyzer: VisibleFlightAnalyzerService,
+    private readonly visibleProductAnalyzer: VisibleProductAnalyzerService,
     private readonly mediaAiService: MediaAiService,
     private readonly llmFactory: LlmFactoryService,
   ) {}
@@ -41,12 +49,14 @@ export class AiService {
     userMessage: string,
     activeCompanyName?: string,
     flightListContext?: FlightListContext,
+    productListContext?: ProductListContext,
   ): Promise<QueryIntentClassification> {
     return this.queryIntentClassifier.classifyQueryIntent(
       history,
       userMessage,
       activeCompanyName,
       flightListContext,
+      productListContext,
     );
   }
 
@@ -58,6 +68,7 @@ export class AiService {
     retrievalIntent?: string,
     chatToolConfigs: ChatToolConfigResponse[] = [],
     flightListContext?: FlightListContext,
+    productListContext?: ProductListContext,
   ): Promise<AgenticLoopResult> {
     return this.agenticLoopService.runAgenticLoop(
       systemPrompt,
@@ -67,6 +78,7 @@ export class AiService {
       retrievalIntent,
       chatToolConfigs,
       flightListContext,
+      productListContext,
     );
   }
 
@@ -79,6 +91,18 @@ export class AiService {
       query,
       flightListContext,
       flightListCriteria,
+    );
+  }
+
+  async analyzeVisibleProductContext(
+    query: string,
+    productListContext: ProductListContext,
+    productListCriteria?: ProductListCriteria,
+  ): Promise<VisibleProductAnalysisResult> {
+    return this.visibleProductAnalyzer.analyzeVisibleProductContext(
+      query,
+      productListContext,
+      productListCriteria,
     );
   }
 

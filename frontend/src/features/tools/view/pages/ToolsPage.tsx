@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { Bot, ExternalLink, Plane, RefreshCw, Save } from "lucide-react";
+import { Bot, ExternalLink, Plane, RefreshCw, Save, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/apiRoutes";
 
-type ChatToolKey = "flight_search" | "live_agent_contact";
+type ChatToolKey = "flight_search" | "live_agent_contact" | "ecommerce_product";
 
 type ChatToolConfig = {
   toolKey: ChatToolKey;
@@ -25,6 +25,8 @@ type ToolFormState = {
   flightCardSelector: string;
   liveAgentEnabled: boolean;
   liveAgentRedirectUrl: string;
+  ecommerceProductEnabled: boolean;
+  productCardSelector: string;
 };
 
 const emptyForm: ToolFormState = {
@@ -35,6 +37,8 @@ const emptyForm: ToolFormState = {
   flightCardSelector: "",
   liveAgentEnabled: false,
   liveAgentRedirectUrl: "",
+  ecommerceProductEnabled: false,
+  productCardSelector: "",
 };
 
 export function ToolsPage() {
@@ -96,6 +100,24 @@ export function ToolsPage() {
       await loadTools();
     } catch (error: unknown) {
       toast.error(readApiError(error, "Failed to save live agent tool"));
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  const saveEcommerceProduct = async () => {
+    try {
+      setSaving("ecommerce_product");
+      await api.put(apiRoutes.chatTools.byKey("ecommerce_product"), {
+        enabled: form.ecommerceProductEnabled,
+        config: {
+          productCardSelector: normalizeProductCardSelector(form.productCardSelector),
+        },
+      });
+      toast.success("E-commerce product tool saved");
+      await loadTools();
+    } catch (error: unknown) {
+      toast.error(readApiError(error, "Failed to save e-commerce product tool"));
     } finally {
       setSaving(null);
     }
@@ -170,6 +192,24 @@ export function ToolsPage() {
               value={form.liveAgentRedirectUrl}
               onChange={(liveAgentRedirectUrl) => updateForm({ liveAgentRedirectUrl })}
               placeholder="https://wa.me/8801XXXXXXXXX"
+            />
+          </ToolCard>
+
+          <ToolCard
+            icon={<ShoppingBag className="h-5 w-5" />}
+            title="E-commerce Product"
+            description="Enable product list extraction to analyze visible items on your page."
+            enabled={form.ecommerceProductEnabled}
+            onEnabledChange={(ecommerceProductEnabled) => updateForm({ ecommerceProductEnabled })}
+            saving={saving === "ecommerce_product"}
+            onSave={() => void saveEcommerceProduct()}
+          >
+            <TextField
+              label="Product card selector"
+              value={form.productCardSelector}
+              onChange={(productCardSelector) => updateForm({ productCardSelector })}
+              placeholder=".product-card"
+              helpText="Optional. Accepts a CSS selector or simple class name for each visible product result card."
             />
           </ToolCard>
         </div>
@@ -300,6 +340,7 @@ function toFormState(configs: ChatToolConfig[]): ToolFormState {
   const byKey = new Map(configs.map((config) => [config.toolKey, config]));
   const flight = byKey.get("flight_search");
   const liveAgent = byKey.get("live_agent_contact");
+  const ecommerceProduct = byKey.get("ecommerce_product");
 
   return {
     flightEnabled: Boolean(flight?.enabled),
@@ -309,10 +350,20 @@ function toFormState(configs: ChatToolConfig[]): ToolFormState {
     flightCardSelector: stringValue(flight?.config.flightCardSelector),
     liveAgentEnabled: Boolean(liveAgent?.enabled),
     liveAgentRedirectUrl: stringValue(liveAgent?.config.redirectUrl),
+    ecommerceProductEnabled: Boolean(ecommerceProduct?.enabled),
+    productCardSelector: stringValue(ecommerceProduct?.config.productCardSelector),
   };
 }
 
 function normalizeFlightCardSelector(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const looksLikeSelector = /^[.#[:*>+~]/.test(trimmed) || /[\s.[#:=)>+~]/.test(trimmed);
+  return looksLikeSelector ? trimmed : `.${trimmed}`;
+}
+
+function normalizeProductCardSelector(value: string) {
   const trimmed = value.trim();
   if (!trimmed) return "";
 

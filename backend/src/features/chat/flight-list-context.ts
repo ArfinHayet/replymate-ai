@@ -1,3 +1,8 @@
+import type {
+  ProductCardDomManipulation,
+  ProductCardsDomManipulation,
+} from './product-list-context';
+
 export type FlightListItem = {
   index: number;
   rawText: string;
@@ -35,4 +40,7 @@ export type FlightCardsDomManipulation = {
 
 export type WidgetDomManipulation =
   | FlightCardDomManipulation
-  | FlightCardsDomManipulation;
+  | FlightCardsDomManipulation
+  | ProductCardDomManipulation
+  | ProductCardsDomManipulation;
+

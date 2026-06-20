@@ -2,8 +2,10 @@ import type {
   FlightListContext,
   WidgetDomManipulation,
 } from '../../features/chat/flight-list-context';
+import type { ProductListContext } from '../../features/chat/product-list-context';
 import type { ChatRedirectAction } from '../../features/chat-tools/chat-tools.types';
 import type { FlightListCriteria } from './visible-flights/visible-flight-criteria';
+import type { ProductListCriteria } from './visible-products/visible-product-criteria';
 
 /** History shape shared with ChatService */
 export interface Message {
@@ -18,15 +20,24 @@ export type QueryIntentClassification = {
     | 'follow_up'
     | 'standalone_knowledge_page'
     | 'flight_list_query'
+    | 'product_list_query'
     | 'clarification_needed';
   resolvedQuery: string;
   flightListCriteria?: FlightListCriteria;
+  productListCriteria?: ProductListCriteria;
 };
 
 export type VisibleFlightAnalysisResult = {
   answer: string;
   selectedFlight?: FlightListContext['flights'][number];
   rankedFlights?: FlightListContext['flights'];
+  dommanipulate?: WidgetDomManipulation;
+};
+
+export type VisibleProductAnalysisResult = {
+  answer: string;
+  selectedProduct?: ProductListContext['products'][number];
+  rankedProducts?: ProductListContext['products'];
   dommanipulate?: WidgetDomManipulation;
 };
 

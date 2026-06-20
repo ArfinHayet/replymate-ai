@@ -243,7 +243,7 @@ function getFlightComparableValue(
 ): string | number | null {
   switch (field) {
     case 'airline':
-      return `${flight.airline ?? ''} ${flight.rawText ?? ''}`.trim() || null;
+      return flight.airline?.trim() || null;
     case 'price':
       return parsePriceAmount(flight.price ?? flight.rawText);
     case 'stops':
@@ -336,7 +336,7 @@ function matchAirlineText(
         const flightWords = normalizedFlightValue.split(' ');
         if (
           flightWords.includes(mapping.code) ||
-          flightWords.some(w => w.startsWith(mapping.name) || mapping.name.startsWith(w))
+          flightWords.some(w => w.length >= 2 && (w.startsWith(mapping.name) || mapping.name.startsWith(w)))
         ) {
           contains = true;
           break;

@@ -172,6 +172,7 @@ describe("ChatService", () => {
       "user-1",
       expect.stringContaining("Flights Nepal contact number phone"),
       [],
+      undefined,
       undefined
     );
   });
@@ -332,6 +333,7 @@ describe("ChatService", () => {
       "user-1",
       "terms and condition terms condition terms conditions using platform termination liability contact",
       [],
+      undefined,
       undefined
     );
   });
@@ -463,6 +465,7 @@ describe("ChatService", () => {
           config: { redirectUrl: "https://wa.me/8801000000000" }
         }
       ],
+      undefined,
       undefined
     );
   });
@@ -601,7 +604,8 @@ describe("ChatService", () => {
       expect.any(Array),
       "Find me cheapest flight",
       undefined,
-      flightListContext
+      flightListContext,
+      undefined
     );
     expect(aiService.analyzeVisibleFlightContext).toHaveBeenCalledWith(
       "find cheapest visible flight",

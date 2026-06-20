@@ -15,6 +15,9 @@ const DEFAULT_CONFIGS: Record<ChatToolKey, Record<string, unknown>> = {
   live_agent_contact: {
     redirectUrl: '',
   },
+  ecommerce_product: {
+    productCardSelector: '',
+  },
 };
 
 @Injectable()
@@ -93,6 +96,10 @@ export class ChatToolsService {
 
     if (toolKey === 'live_agent_contact') {
       this.requireHttpUrl(config.redirectUrl, 'Live agent redirect URL');
+      return;
+    }
+
+    if (toolKey === 'ecommerce_product') {
       return;
     }
 

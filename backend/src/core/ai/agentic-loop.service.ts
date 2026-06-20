@@ -8,6 +8,7 @@ import type {
   FlightListContext,
   WidgetDomManipulation,
 } from '../../features/chat/flight-list-context';
+import type { ProductListContext } from '../../features/chat/product-list-context';
 import type {
   ChatRedirectAction,
   ChatToolConfigResponse,
@@ -24,6 +25,7 @@ import {
   type Message,
 } from './ai.types';
 import { VisibleFlightAnalyzerService } from './visible-flights/visible-flight-analyzer.service';
+import { VisibleProductAnalyzerService } from './visible-products/visible-product-analyzer.service';
 
 @Injectable()
 export class AgenticLoopService {
@@ -35,6 +37,7 @@ export class AgenticLoopService {
     private readonly retrievalService: RetrievalService,
     private readonly toolRetrievalService: ToolRetrievalService,
     private readonly visibleFlightAnalyzer: VisibleFlightAnalyzerService,
+    private readonly visibleProductAnalyzer: VisibleProductAnalyzerService,
   ) {}
 
   async runAgenticLoop(
@@ -45,6 +48,7 @@ export class AgenticLoopService {
     retrievalIntent?: string,
     chatToolConfigs: ChatToolConfigResponse[] = [],
     flightListContext?: FlightListContext,
+    productListContext?: ProductListContext,
   ): Promise<AgenticLoopResult> {
     const maxIterations = this.config.get<number>('rag.maxToolIterations') ?? 10;
     const imageUrls: { title: string; url: string }[] = [];
@@ -250,6 +254,37 @@ export class AgenticLoopService {
       tools.push(analyzeVisibleFlightsTool);
     }
 
+    if (productListContext?.type === 'product_list' && productListContext.products.length > 0) {
+      const analyzeVisibleProductsTool: any = tool(
+        async ({ query }: { query: string }): Promise<string> => {
+          this.logger.log(`Tool: analyze_visible_products("${query.slice(0, 80)}")`);
+          usedToolKeys.add('analyze_visible_products');
+          const result = await this.visibleProductAnalyzer.analyzeVisibleProductContext(
+            query,
+            productListContext,
+          );
+          if (result.dommanipulate) {
+            domActions.push(result.dommanipulate);
+          }
+          return JSON.stringify(result);
+        },
+        {
+          name: 'analyze_visible_products',
+          description:
+            'Analyze the visible e-commerce product result cards supplied by the widget. ' +
+            'Use this for questions such as cheapest product, highest rated product, discounted products, compare, rank, or select a product in the current list. ' +
+            'Answers must use only the supplied visible product JSON and must include the selected product index when a single card is best.',
+          schema: z.object({
+            query: z.string().describe(
+              'The user goal for the visible product list, such as find cheapest product, highest rated product, or discounted products.',
+            ),
+          }),
+        },
+      );
+
+      tools.push(analyzeVisibleProductsTool);
+    }
+
     if (liveAgentConfig) {
       const liveAgentContactTool: any = tool(
         async (): Promise<string> => {
@@ -287,7 +322,7 @@ export class AgenticLoopService {
     const agent = createAgent({
       model: llm,
       tools,
-      systemPrompt: this.buildAgentSystemPrompt(systemPrompt, flightListContext),
+      systemPrompt: this.buildAgentSystemPrompt(systemPrompt, flightListContext, productListContext),
     });
 
     const result = await agent.invoke(
@@ -332,20 +367,37 @@ export class AgenticLoopService {
   private buildAgentSystemPrompt(
     systemPrompt: string,
     flightListContext?: FlightListContext,
+    productListContext?: ProductListContext,
   ): string {
-    if (!flightListContext?.flights.length) return systemPrompt;
+    let prompt = systemPrompt;
 
-    return [
-      systemPrompt,
-      '',
-      'VISIBLE FLIGHT LIST RULES:',
-      '- If the user asks about the currently visible flight results, such as cheapest, fastest, best baggage, airline filters, best option, compare, rank, or select a flight, call analyze_visible_flights.',
-      '- If the user asks to show visible flights for a specific airline or refundability, call analyze_visible_flights.',
-      '- Prefer analyze_visible_flights over flight_search whenever the request can be answered from the visible flight cards.',
-      '- For visible flight list answers, use only the flight JSON supplied by the widget.',
-      '- If analyze_visible_flights returns a selectedFlight, describe that flight naturally and mention any missing details as unavailable.',
-      '- Do not invent prices, baggage, routes, times, durations, or airlines that are not present in the visible flight data.',
-    ].join('\n');
+    if (flightListContext?.flights.length) {
+      prompt = [
+        prompt,
+        '',
+        'VISIBLE FLIGHT LIST RULES:',
+        '- If the user asks about the currently visible flight results, such as cheapest, fastest, best baggage, airline filters, best option, compare, rank, or select a flight, call analyze_visible_flights.',
+        '- If the user asks to show visible flights for a specific airline or refundability, call analyze_visible_flights.',
+        '- Prefer analyze_visible_flights over flight_search whenever the request can be answered from the visible flight cards.',
+        '- For visible flight list answers, use only the flight JSON supplied by the widget.',
+        '- If analyze_visible_flights returns a selectedFlight, describe that flight naturally and mention any missing details as unavailable.',
+        '- Do not invent prices, baggage, routes, times, durations, or airlines that are not present in the visible flight data.',
+      ].join('\n');
+    }
+
+    if (productListContext?.products.length) {
+      prompt = [
+        prompt,
+        '',
+        'VISIBLE PRODUCT LIST RULES:',
+        '- If the user asks about the currently visible product results, such as cheapest, highest rated, best matches, compare, rank, or select a product, call analyze_visible_products.',
+        '- For visible product list answers, use only the product JSON supplied by the widget.',
+        '- If analyze_visible_products returns a selectedProduct, describe that product naturally and mention any missing details as unavailable.',
+        '- Do not invent prices, ratings, discount, or product titles that are not present in the visible product data.',
+      ].join('\n');
+    }
+
+    return prompt;
   }
 
   private restoreImageUrls(

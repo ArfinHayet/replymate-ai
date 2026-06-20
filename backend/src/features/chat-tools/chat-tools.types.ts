@@ -23,4 +23,5 @@ export type ChatToolConfigResponse = {
 export const CHAT_TOOL_KEYS: ChatToolKey[] = [
   'flight_search',
   'live_agent_contact',
+  'ecommerce_product',
 ];

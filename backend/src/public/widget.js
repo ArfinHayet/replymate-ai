@@ -19,6 +19,8 @@
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
   var flightCardSelector =
     (currentScript.getAttribute("data-flight-card-selector") || "").trim();
+  var productCardSelector =
+    (currentScript.getAttribute("data-product-card-selector") || "").trim();
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
   var isPageMode = displayMode === "page";
   var supportMateIconUrl = "https://www.supportmate.online/favicon.svg";
@@ -166,7 +168,7 @@
     "transition:transform .28s ease,box-shadow .28s ease,background .28s ease,border-color .28s ease;",
     "}",
     "#toggle-btn::before,#toggle-btn::after{content:none;}",
-    "#toggle-btn.compbot-dom-active::before,#toggle-btn.compbot-flight-page-active::before{",
+    "#toggle-btn.compbot-dom-active::before,#toggle-btn.compbot-flight-page-active::before,#toggle-btn.compbot-product-page-active::before{",
     'content:"";position:absolute;inset:0;border-radius:inherit;padding:4px;pointer-events:none;z-index:3;',
     "background:linear-gradient(90deg,#ff2d55,#ffcc00,#22c55e,#06b6d4,#2563eb,#a855f7,#ff2d55);",
     "background-size:300% 300%;",
@@ -175,7 +177,7 @@
     "-webkit-mask-composite:xor;",
     "mask-composite:exclude;",
     "}",
-    "#toggle-btn.compbot-dom-active::after,#toggle-btn.compbot-flight-page-active::after{",
+    "#toggle-btn.compbot-dom-active::after,#toggle-btn.compbot-flight-page-active::after,#toggle-btn.compbot-product-page-active::after{",
     'content:"";position:absolute;inset:2px;border-radius:inherit;pointer-events:none;z-index:2;',
     "background:linear-gradient(90deg,rgba(255,45,85,.35),rgba(255,204,0,.25),rgba(34,197,94,.3),rgba(37,99,235,.35),rgba(168,85,247,.32));",
     "filter:blur(9px);opacity:.8;",
@@ -285,7 +287,7 @@
 
     ".msg{",
     "max-width:84%;padding:11px 14px;border-radius:18px;",
-    "font-size:13.5px;line-height:1.58;word-break:break-word;overflow-x:auto;",
+    "font-size:13.5px;line-height:1.58;word-break:break-word;",
     'font-family:"Inter",system-ui,sans-serif;',
     "animation:msg-in .28s ease both;",
     "}",
@@ -836,6 +838,18 @@
       "Non stop flight"
     ];
 
+    // ─── Product State ─────────────────────────────────────────────────────────
+    var productListContext = null;
+    var productObserverTimer = null;
+    var productRouteRefreshTimer = null;
+    var productRoutePollingTimer = null;
+    var productRoutePollingStartedAt = 0;
+    var productSuggestions = [
+      "Find cheapest product",
+      "Find highest rated",
+      "Show discounted items"
+    ];
+
     // ─── Helpers ───────────────────────────────────────────────────────────────
     function scrollToBottom() {
       messages.scrollTop = messages.scrollHeight;
@@ -915,7 +929,9 @@
 
       var suggestions = flightListContext
         ? flightSuggestions
-        : widgetSuggestions.slice(0, 3);
+        : productListContext
+          ? productSuggestions
+          : widgetSuggestions.slice(0, 3);
 
       if (!suggestions.length) {
         flightCountPill.classList.remove("visible");
@@ -925,6 +941,9 @@
 
       if (flightListContext) {
         flightCountPill.textContent = flightListContext.totalFlights + " flights found";
+        flightCountPill.classList.add("visible");
+      } else if (productListContext) {
+        flightCountPill.textContent = productListContext.totalProducts + " products found";
         flightCountPill.classList.add("visible");
       } else {
         flightCountPill.classList.remove("visible");
@@ -940,7 +959,9 @@
           if (flightListContext && runFlightSuggestionAction(suggestion)) {
             return;
           }
-
+          if (productListContext && runProductSuggestionAction(suggestion)) {
+            return;
+          }
           sendMessage(suggestion);
         });
         suggestionsEl.appendChild(btn);
@@ -1031,6 +1052,325 @@
 
     function extractRefundability(text) {
       return matchText(text, /\b(?:non[-\s]?refundable|nonrefundable|refundable)\b/i);
+    }
+
+    /**
+     * Returns true when rawText contains at least 2 of the 3 core flight signals:
+     *   1. A price  (currency symbol + digits)
+     *   2. A time   (HH:MM pattern)
+     *   3. An IATA airport code (3 uppercase letters)
+     *
+     * This prevents the bubble from glowing on pages that happen to share the
+     * same CSS selector (e.g. generic ".box-item" on a contact-us page).
+     */
+    function isLikelyFlightCard(rawText) {
+      var hasPrice = /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9]|[0-9]\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i.test(rawText);
+      var hasTime  = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(rawText);
+      var hasCode  = /\b[A-Z]{3}\b/.test(rawText);
+      return (hasPrice ? 1 : 0) + (hasTime ? 1 : 0) + (hasCode ? 1 : 0) >= 2;
+    }
+
+    // ─── Product Card Helpers ────────────────────────────────────────────────────
+    function safeQueryProductCards() {
+      if (!productCardSelector) {
+        return [];
+      }
+
+      try {
+        return Array.prototype.slice.call(
+          document.querySelectorAll(productCardSelector)
+        );
+      } catch (_) {
+        return [];
+      }
+    }
+
+    /**
+     * Returns true when rawText contains at least 2 of the 4 core product signals:
+     *   1. A price          (currency symbol + digits)
+     *   2. A rating/stars   (decimal near a star or "out of" or "/5")
+     *   3. A discount       ("% off", "save", "sale")
+     *   4. A CTA / stock    ("add to cart", "buy now", "in stock", "out of stock")
+     */
+    function isLikelyProductCard(rawText) {
+      var hasPrice    = /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9]|[0-9]\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i.test(rawText);
+      var hasRating   = /(?:[0-9](?:\.[0-9])?\s*(?:out of|\/)\s*[0-9]|[0-9](?:\.[0-9])?\s*★|rating|review)/i.test(rawText);
+      var hasDiscount = /\b(?:\d+\s*%\s*off|save|sale|discount|offer)\b/i.test(rawText);
+      var hasCta      = /\b(?:add to cart|buy now|in stock|out of stock|shop now|order now)\b/i.test(rawText);
+      return (hasPrice ? 1 : 0) + (hasRating ? 1 : 0) + (hasDiscount ? 1 : 0) + (hasCta ? 1 : 0) >= 2;
+    }
+
+    function extractProductName(rawText) {
+      // Take the first non-empty line as the product title
+      var lines = rawText.split(/\s{2,}|\n/);
+      for (var i = 0; i < lines.length; i++) {
+        var ln = lines[i].trim();
+        if (ln && ln.length > 2 && !/^[\$\u20ac\u00a3\u09f3\d]/.test(ln)) {
+          return ln.slice(0, 120);
+        }
+      }
+      return null;
+    }
+
+    function extractProductPrice(rawText) {
+      // Reuse the existing price extractor
+      return extractPrice(rawText);
+    }
+
+    function extractOriginalPrice(rawText) {
+      // Look for a second (usually higher) price — naive but pragmatic
+      var matches = rawText.match(
+        /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9][0-9,]*(?:\.[0-9]+)?|[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/gi
+      );
+      return (matches && matches[1]) ? normalizeCardText(matches[1]) : null;
+    }
+
+    function extractDiscount(rawText) {
+      return matchText(rawText, /\d+\s*%\s*off|\bsave\s+[\$\u20ac\u00a3\u09f3]?\d+/i);
+    }
+
+    function extractRating(rawText) {
+      var m = rawText.match(/([0-9](?:\.[0-9])?)\s*(?:out of|\/)\s*[0-9]|([0-9](?:\.[0-9])?)\s*★/);
+      return m ? normalizeCardText(m[0]) : null;
+    }
+
+    function extractReviewCount(rawText) {
+      var m = rawText.match(/(\d[\d,]*)\s*(?:reviews?|ratings?|\(\d[\d,]*\))/i);
+      return m ? normalizeCardText(m[0]) : null;
+    }
+
+    function extractAvailability(rawText) {
+      return matchText(rawText, /\b(?:in stock|out of stock|limited stock|available|sold out)\b/i);
+    }
+
+    function extractProductBrand(rawText) {
+      // Heuristic: first short word-run before price/digits
+      var chunk = normalizeCardText(rawText)
+        .split(/(?:[\$\u20ac\u00a3\u09f3]|\d{2,})/)[0]
+        .trim();
+      return chunk.length > 0 && chunk.length <= 60 ? chunk : null;
+    }
+
+    function extractProductFromCard(card, index) {
+      var rawText = normalizeCardText(card.innerText || card.textContent || "");
+
+      return {
+        index: index + 1,
+        rawText: rawText,
+        name: extractProductName(rawText),
+        price: extractProductPrice(rawText),
+        originalPrice: extractOriginalPrice(rawText),
+        discount: extractDiscount(rawText),
+        rating: extractRating(rawText),
+        reviewCount: extractReviewCount(rawText),
+        availability: extractAvailability(rawText),
+        brand: extractProductBrand(rawText)
+      };
+    }
+
+    /** Parse a product price string to a float (reuses parsePriceAmount). */
+    function parseProductPrice(value) {
+      return parsePriceAmount(value);
+    }
+
+    /** Parse a rating string like "4.5 / 5" or "4.5 ★" to a float. */
+    function parseRatingValue(value) {
+      if (!value) {
+        return null;
+      }
+
+      var m = String(value).match(/([0-9](?:\.[0-9])?)/);
+      return m ? Number(m[1]) : null;
+    }
+
+    /** Parse a discount string like "20% off" to the numeric percentage. */
+    function parseDiscountPercent(value) {
+      if (!value) {
+        return null;
+      }
+
+      var m = String(value).match(/(\d+)\s*%/);
+      return m ? Number(m[1]) : null;
+    }
+
+    // ─── Product Context & Watchers ──────────────────────────────────────────────
+    function refreshProductListContext() {
+      var cards = safeQueryProductCards();
+
+      if (!cards.length) {
+        productListContext = null;
+        toggleBtn.classList.remove("compbot-product-page-active");
+        renderSuggestions();
+        return;
+      }
+
+      // Content-validation guard: only activate when cards look like real products.
+      var qualifiedCards = cards.filter(function (card) {
+        var rawText = normalizeCardText(card.innerText || card.textContent || "");
+        return isLikelyProductCard(rawText);
+      });
+
+      if (!qualifiedCards.length) {
+        productListContext = null;
+        toggleBtn.classList.remove("compbot-product-page-active");
+        renderSuggestions();
+        return;
+      }
+
+      productListContext = {
+        type: "product_list",
+        url: window.location.href,
+        detectedAt: new Date().toISOString(),
+        totalProducts: qualifiedCards.length,
+        products: qualifiedCards.map(extractProductFromCard)
+      };
+
+      toggleBtn.classList.add("compbot-product-page-active");
+      renderSuggestions();
+    }
+
+    function scheduleProductContextRefresh() {
+      if (!productCardSelector) {
+        return;
+      }
+
+      clearTimeout(productObserverTimer);
+      productObserverTimer = setTimeout(refreshProductListContext, 180);
+    }
+
+    function scheduleProductRouteRefresh() {
+      if (!productCardSelector) {
+        return;
+      }
+
+      clearTimeout(productRouteRefreshTimer);
+      productRouteRefreshTimer = setTimeout(function () {
+        scheduleProductContextRefresh();
+        startProductRoutePolling();
+      }, 80);
+    }
+
+    function startProductRoutePolling() {
+      if (!productCardSelector) {
+        return;
+      }
+
+      clearTimeout(productRoutePollingTimer);
+      productRoutePollingStartedAt = Date.now();
+
+      function poll() {
+        refreshProductListContext();
+
+        if (productListContext || Date.now() - productRoutePollingStartedAt >= 2800) {
+          clearTimeout(productRoutePollingTimer);
+          productRoutePollingTimer = null;
+          return;
+        }
+
+        productRoutePollingTimer = setTimeout(poll, 240);
+      }
+
+      productRoutePollingTimer = setTimeout(poll, 120);
+    }
+
+    function installProductRouteWatcher() {
+      if (!productCardSelector) {
+        return;
+      }
+
+      window.addEventListener("compbot:locationchange", scheduleProductRouteRefresh);
+      window.addEventListener("popstate", scheduleProductRouteRefresh);
+
+      // The history.pushState/replaceState patch is shared — installFlightRouteWatcher
+      // already sets it up (both features dispatch "compbot:locationchange").
+      // We only need to register our listener above; no need to patch history again.
+    }
+
+    function showLocalProductActionMiss() {
+      addMessage("I couldn't find a matching product in the visible results.", "bot");
+    }
+
+    function runProductSuggestionAction(suggestion) {
+      if (productSuggestions.indexOf(suggestion) === -1) {
+        return false;
+      }
+
+      refreshProductListContext();
+
+      if (!productListContext || !productListContext.products.length) {
+        showLocalProductActionMiss();
+        return true;
+      }
+
+      if (suggestion === "Find cheapest product") {
+        var priceRanked = productListContext.products
+          .map(function (product) {
+            return {
+              product: product,
+              price: parseProductPrice(product.price || product.rawText)
+            };
+          })
+          .filter(function (item) { return item.price !== null; })
+          .sort(function (a, b) { return a.price - b.price; });
+
+        if (!priceRanked.length) {
+          showLocalProductActionMiss();
+          return true;
+        }
+
+        handleDomManipulation({
+          type: "highlight_product_card",
+          productIndex: priceRanked[0].product.index,
+          label: "Cheapest product"
+        });
+        return true;
+      }
+
+      if (suggestion === "Find highest rated") {
+        var ratingRanked = productListContext.products
+          .map(function (product) {
+            return {
+              product: product,
+              rating: parseRatingValue(product.rating || product.rawText)
+            };
+          })
+          .filter(function (item) { return item.rating !== null; })
+          .sort(function (a, b) { return b.rating - a.rating; });
+
+        if (!ratingRanked.length) {
+          showLocalProductActionMiss();
+          return true;
+        }
+
+        handleDomManipulation({
+          type: "highlight_product_card",
+          productIndex: ratingRanked[0].product.index,
+          label: "Highest rated"
+        });
+        return true;
+      }
+
+      if (suggestion === "Show discounted items") {
+        var discountIndexes = productListContext.products
+          .filter(function (product) {
+            return parseDiscountPercent(product.discount || product.rawText) !== null;
+          })
+          .map(function (product) { return product.index; });
+
+        if (!discountIndexes.length) {
+          showLocalProductActionMiss();
+          return true;
+        }
+
+        handleDomManipulation({
+          type: "highlight_product_cards",
+          productIndexes: discountIndexes,
+          label: "On sale"
+        });
+        return true;
+      }
+
+      return false;
     }
 
     function extractAirline(text) {
@@ -1131,12 +1471,28 @@
         return;
       }
 
+      // Content-validation guard: filter out elements that don't look like
+      // actual flight cards (e.g. generic .box-item on a contact-us page).
+      // A card must carry ≥2 of the 3 core flight signals:
+      // price, departure/arrival time, or IATA airport code.
+      var qualifiedCards = cards.filter(function (card) {
+        var rawText = normalizeCardText(card.innerText || card.textContent || "");
+        return isLikelyFlightCard(rawText);
+      });
+
+      if (!qualifiedCards.length) {
+        flightListContext = null;
+        toggleBtn.classList.remove("compbot-flight-page-active");
+        renderSuggestions();
+        return;
+      }
+
       flightListContext = {
         type: "flight_list",
         url: window.location.href,
         detectedAt: new Date().toISOString(),
-        totalFlights: cards.length,
-        flights: cards.map(extractFlightFromCard)
+        totalFlights: qualifiedCards.length,
+        flights: qualifiedCards.map(extractFlightFromCard)
       };
 
       toggleBtn.classList.add("compbot-flight-page-active");
@@ -1380,54 +1736,91 @@
     }
 
     function handleDomManipulation(dommanipulate) {
+      if (!dommanipulate) {
+        return;
+      }
+
+      var type = dommanipulate.type;
+
+      // ─── Flight highlight ───────────────────────────────────────────
       if (
-        !dommanipulate ||
-        (
-          dommanipulate.type !== "highlight_flight_card" &&
-          dommanipulate.type !== "highlight_flight_cards"
-        ) ||
-        !flightCardSelector
+        (type === "highlight_flight_card" || type === "highlight_flight_cards") &&
+        flightCardSelector
       ) {
+        var flightCards = safeQueryFlightCards();
+        var flightIndexes =
+          type === "highlight_flight_cards"
+            ? dommanipulate.flightIndexes
+            : [dommanipulate.flightIndex];
+        var flightTargets = Array.isArray(flightIndexes)
+          ? flightIndexes
+              .map(function (idx) { return flightCards[Number(idx || 0) - 1]; })
+              .filter(Boolean)
+          : [];
+
+        if (!flightTargets.length) {
+          return;
+        }
+
+        clearFlightHighlight();
+        if (isOpen) { closeChat(true); }
+        startDomActivityGlow();
+
+        flightTargets.forEach(function (card, i) {
+          prepareFlightCardForHighlight(card);
+          addFlightHighlightLabel(
+            card,
+            flightTargets.length > 1
+              ? (dommanipulate.label || "Matching flight") + " " + (i + 1)
+              : dommanipulate.label || "Selected flight"
+          );
+        });
+
+        setTimeout(function () {
+          flightTargets[0].scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 80);
         return;
       }
 
-      var cards = safeQueryFlightCards();
-      var flightIndexes =
-        dommanipulate.type === "highlight_flight_cards"
-          ? dommanipulate.flightIndexes
-          : [dommanipulate.flightIndex];
-      var targetCards = Array.isArray(flightIndexes)
-        ? flightIndexes
-            .map(function (flightIndex) {
-              return cards[Number(flightIndex || 0) - 1];
-            })
-            .filter(Boolean)
-        : [];
+      // ─── Product highlight ─────────────────────────────────────────
+      if (
+        (type === "highlight_product_card" || type === "highlight_product_cards") &&
+        productCardSelector
+      ) {
+        var productCards = safeQueryProductCards();
+        var productIndexes =
+          type === "highlight_product_cards"
+            ? dommanipulate.productIndexes
+            : [dommanipulate.productIndex];
+        var productTargets = Array.isArray(productIndexes)
+          ? productIndexes
+              .map(function (idx) { return productCards[Number(idx || 0) - 1]; })
+              .filter(Boolean)
+          : [];
 
-      if (!targetCards.length) {
+        if (!productTargets.length) {
+          return;
+        }
+
+        clearFlightHighlight();
+        if (isOpen) { closeChat(true); }
+        startDomActivityGlow();
+
+        productTargets.forEach(function (card, i) {
+          prepareFlightCardForHighlight(card);
+          addFlightHighlightLabel(
+            card,
+            productTargets.length > 1
+              ? (dommanipulate.label || "Matching product") + " " + (i + 1)
+              : dommanipulate.label || "Selected product"
+          );
+        });
+
+        setTimeout(function () {
+          productTargets[0].scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 80);
         return;
       }
-
-      clearFlightHighlight();
-
-      if (isOpen) {
-        closeChat(true);
-      }
-
-      startDomActivityGlow();
-      targetCards.forEach(function (card, cardIndex) {
-        prepareFlightCardForHighlight(card);
-        addFlightHighlightLabel(
-          card,
-          targetCards.length > 1
-            ? (dommanipulate.label || "Matching flight") + " " + (cardIndex + 1)
-            : dommanipulate.label || "Selected flight"
-        );
-      });
-
-      setTimeout(function () {
-        targetCards[0].scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 80);
     }
 
     function openChat() {
@@ -1508,9 +1901,14 @@
       };
 
       refreshFlightListContext();
+      refreshProductListContext();
 
       if (flightListContext) {
         payload.flightListContext = flightListContext;
+      }
+
+      if (productListContext) {
+        payload.productListContext = productListContext;
       }
 
       fetch(apiBase + "/widget/" + widgetKey + "/chat", {
@@ -1583,6 +1981,7 @@
 
     loadSuggestions();
     refreshFlightListContext();
+    refreshProductListContext();
 
     if (flightCardSelector) {
       var flightObserver = new MutationObserver(scheduleFlightContextRefresh);
@@ -1592,6 +1991,16 @@
         characterData: true
       });
       installFlightRouteWatcher();
+    }
+
+    if (productCardSelector) {
+      var productObserver = new MutationObserver(scheduleProductContextRefresh);
+      productObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      });
+      installProductRouteWatcher();
     }
 
     /*

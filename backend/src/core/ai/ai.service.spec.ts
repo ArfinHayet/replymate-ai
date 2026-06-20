@@ -43,6 +43,7 @@ function createService() {
     retrievalService as never,
     toolRetrievalService as never,
     visibleFlightAnalyzer,
+    {} as never,
   );
   const mediaAiService = new MediaAiService(llmFactory as never);
 
@@ -50,6 +51,7 @@ function createService() {
     queryIntentClassifier,
     agenticLoopService,
     visibleFlightAnalyzer,
+    {} as never,
     mediaAiService,
     llmFactory as never,
   );
@@ -605,6 +607,7 @@ describe('AiService query intent classifier', () => {
         retrievalService as never,
         toolRetrievalService as never,
         visibleFlightAnalyzer,
+        {} as never,
     );
     const mediaAiService = new MediaAiService(llmFactory as never);
 
@@ -613,6 +616,7 @@ describe('AiService query intent classifier', () => {
         queryIntentClassifier,
         agenticLoopService,
         visibleFlightAnalyzer,
+        {} as never,
         mediaAiService,
         llmFactory as never,
       ),
@@ -804,6 +808,7 @@ describe('AiService PDF extraction', () => {
         retrievalService as never,
         toolRetrievalService as never,
         visibleFlightAnalyzer,
+        {} as never,
     );
     const mediaAiService = new MediaAiService(llmFactory as never);
 
@@ -812,6 +817,7 @@ describe('AiService PDF extraction', () => {
         queryIntentClassifier,
         agenticLoopService,
         visibleFlightAnalyzer,
+        {} as never,
         mediaAiService,
         llmFactory as never,
       ),

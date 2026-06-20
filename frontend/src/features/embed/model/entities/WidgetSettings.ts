@@ -11,7 +11,7 @@ export interface AllowedDomain {
   createdAt: string;
 }
 
-export type ChatToolKey = "flight_search" | "live_agent_contact";
+export type ChatToolKey = "flight_search" | "live_agent_contact" | "ecommerce_product";
 
 export interface ChatToolConfig {
   toolKey: ChatToolKey;

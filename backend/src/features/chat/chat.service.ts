@@ -16,6 +16,7 @@ import type {
   FlightListContext,
   WidgetDomManipulation,
 } from './flight-list-context';
+import type { ProductListContext } from './product-list-context';
 
 /** Max stored messages loaded per session (10 full turns) */
 const MAX_HISTORY = 20;
@@ -52,7 +53,7 @@ export class ChatService implements OnModuleInit {
     private readonly retrievalService: RetrievalService,
     private readonly usageService: UsageService,
     private readonly chatToolsService: ChatToolsService,
-  ) {}
+  ) { }
 
   onModuleInit() {
     const promptPath = path.join(__dirname, 'prompts', 'system.prompt.txt');
@@ -132,6 +133,7 @@ export class ChatService implements OnModuleInit {
     sessionId: string,
     userId: string,
     flightListContext?: FlightListContext,
+    productListContext?: ProductListContext,
   ): Promise<{
     answer: string;
     message?: string;
@@ -147,111 +149,256 @@ export class ChatService implements OnModuleInit {
       this.buildSystemPrompt(userId),
       this.chatToolsService.list(userId),
     ]);
-    const enabledChatToolConfigs = chatToolConfigs.filter((config) => config.enabled);
+
+    const enabledTools = chatToolConfigs.filter((tool) => tool.enabled);
     const hasCompanyProfile = Boolean(systemPrompt.activeCompanyName);
+
     const classification = await this.aiService.classifyQueryIntent(
       history,
       message,
       systemPrompt.activeCompanyName,
       flightListContext,
+      productListContext,
     );
-    const retrievalIntent = classification.resolvedQuery.trim() || null;
+
+    const retrievalIntent = classification.resolvedQuery?.trim() || null;
+
+    // ---------------------------------------------------------------------------
+    // Clarification
+    // ---------------------------------------------------------------------------
 
     if (this.shouldAskClarification(classification)) {
-      await this.saveTurn(sessionId, userId, message, CLARIFICATION_MESSAGE);
-      return { answer: CLARIFICATION_MESSAGE, cached: false, usage };
-    }
-
-    if (classification.intent === 'flight_list_query' && flightListContext) {
-      const visibleFlightResult = await this.aiService.analyzeVisibleFlightContext(
-        retrievalIntent ?? message,
-        flightListContext,
-        classification.flightListCriteria,
+      await this.saveTurn(
+        sessionId,
+        userId,
+        message,
+        CLARIFICATION_MESSAGE,
       );
-      await this.saveTurn(sessionId, userId, message, visibleFlightResult.answer);
+
       return {
-        answer: visibleFlightResult.answer,
+        answer: CLARIFICATION_MESSAGE,
         cached: false,
         usage,
-        ...(visibleFlightResult.dommanipulate
-          ? { dommanipulate: visibleFlightResult.dommanipulate }
-          : {}),
       };
     }
 
-    // Use the same context-aware query for cache lookup, relevance preflight,
-    // and cache save so short follow-ups such as "their office location?"
-    // are searched as part of the current conversation instead of in isolation.
+    // ---------------------------------------------------------------------------
+    // Visible flight analysis
+    // ---------------------------------------------------------------------------
+
+    if (
+      classification.intent === 'flight_list_query' &&
+      flightListContext
+    ) {
+      const flightResult =
+        await this.aiService.analyzeVisibleFlightContext(
+          retrievalIntent ?? message,
+          flightListContext,
+          classification.flightListCriteria,
+        );
+
+      await this.saveTurn(
+        sessionId,
+        userId,
+        message,
+        flightResult.answer,
+      );
+
+      return {
+        answer: flightResult.answer,
+        cached: false,
+        usage,
+        ...(flightResult.dommanipulate && {
+          dommanipulate: flightResult.dommanipulate,
+        }),
+      };
+    }
+
+    // ---------------------------------------------------------------------------
+    // Visible product analysis
+    // ---------------------------------------------------------------------------
+
+    if (
+      classification.intent === 'product_list_query' &&
+      productListContext
+    ) {
+      const productResult =
+        await this.aiService.analyzeVisibleProductContext(
+          retrievalIntent ?? message,
+          productListContext,
+          classification.productListCriteria,
+        );
+
+      await this.saveTurn(
+        sessionId,
+        userId,
+        message,
+        productResult.answer,
+      );
+
+      return {
+        answer: productResult.answer,
+        cached: false,
+        usage,
+        ...(productResult.dommanipulate && {
+          dommanipulate: productResult.dommanipulate,
+        }),
+      };
+    }
+
+    // ---------------------------------------------------------------------------
+    // Retrieval setup
+    // ---------------------------------------------------------------------------
+
     const retrievalQuery =
       retrievalIntent ??
       this.buildContextualRetrievalQuery(history, message);
-    const queryVector = await this.aiService.embedText(retrievalQuery);
 
-    if (enabledChatToolConfigs.length === 0) {
-      const cachedAnswer = await this.cacheService.findHit(queryVector, userId);
+    const queryVector =
+      await this.aiService.embedText(retrievalQuery);
+
+    // ---------------------------------------------------------------------------
+    // Cache lookup
+    // ---------------------------------------------------------------------------
+
+    const toolsEnabled = enabledTools.length > 0;
+
+    if (!toolsEnabled) {
+      const cachedAnswer = await this.cacheService.findHit(
+        queryVector,
+        userId,
+      );
+
       if (cachedAnswer) {
-        await this.saveTurn(sessionId, userId, message, cachedAnswer);
-        return { answer: cachedAnswer, cached: true, usage };
+        await this.saveTurn(
+          sessionId,
+          userId,
+          message,
+          cachedAnswer,
+        );
+
+        return {
+          answer: cachedAnswer,
+          cached: true,
+          usage,
+        };
       }
     }
 
-    const hasKnowledge =
+    // ---------------------------------------------------------------------------
+    // Knowledge check
+    // ---------------------------------------------------------------------------
+
+    const hasRelevantKnowledge =
       hasCompanyProfile ||
       classification.intent === 'flight_list_query' ||
+      classification.intent === 'product_list_query' ||
       classification.intent === 'standalone_knowledge_page' ||
-      (await this.retrievalService.hasRelevantKnowledge(queryVector, userId));
-    if (!hasKnowledge && enabledChatToolConfigs.length === 0) {
-      this.logger.log('No relevant chunks in KB - returning fallback without calling LLM');
-      await this.saveTurn(sessionId, userId, message, this.fallbackMessage);
-      return { answer: this.fallbackMessage, cached: false, usage };
+      (await this.retrievalService.hasRelevantKnowledge(
+        queryVector,
+        userId,
+      ));
+
+    if (!hasRelevantKnowledge && !toolsEnabled) {
+      this.logger.log(
+        'No relevant chunks in KB - returning fallback without calling LLM',
+      );
+
+      await this.saveTurn(
+        sessionId,
+        userId,
+        message,
+        this.fallbackMessage,
+      );
+
+      return {
+        answer: this.fallbackMessage,
+        cached: false,
+        usage,
+      };
     }
 
-    let answer: string;
+    // ---------------------------------------------------------------------------
+    // Agent execution
+    // ---------------------------------------------------------------------------
+
+    const agentTools =
+      classification.intent === 'flight_list_query' &&
+        flightListContext
+        ? enabledTools.filter(
+          (tool) => tool.toolKey !== 'flight_search',
+        )
+        : enabledTools;
+
+    let answer = this.fallbackMessage;
     let action: ChatRedirectAction | undefined;
     let dommanipulate: WidgetDomManipulation | undefined;
     let usedToolKeys: string[] = [];
-    const agentChatToolConfigs =
-      classification.intent === 'flight_list_query' && flightListContext
-        ? enabledChatToolConfigs.filter((config) => config.toolKey !== 'flight_search')
-        : enabledChatToolConfigs;
+
     try {
-      const agentResult = await this.aiService.runAgenticLoop(
+      const result = await this.aiService.runAgenticLoop(
         systemPrompt.prompt,
         history,
         message,
         userId,
-        classification.intent === 'direct' ? undefined : retrievalIntent ?? undefined,
-        agentChatToolConfigs,
+        classification.intent === 'direct'
+          ? undefined
+          : retrievalIntent ?? undefined,
+        agentTools,
         flightListContext,
+        productListContext,
       );
-      answer = agentResult.answer;
-      action = agentResult.action;
-      dommanipulate = agentResult.dommanipulate;
-      usedToolKeys = agentResult.usedToolKeys ?? [];
-    } catch (err) {
-      this.logger.error('Agentic loop failed', err);
-      answer = this.fallbackMessage;
+
+      answer = result.answer;
+      action = result.action;
+      dommanipulate = result.dommanipulate;
+      usedToolKeys = result.usedToolKeys ?? [];
+    } catch (error) {
+      this.logger.error('Agentic loop failed', error);
     }
 
-    const isFallback = answer.trim() === this.fallbackMessage.trim();
+    // ---------------------------------------------------------------------------
+    // Cache save
+    // ---------------------------------------------------------------------------
+
+    const isFallback =
+      answer.trim() === this.fallbackMessage.trim();
+
     const usedFlightTool = usedToolKeys.some((toolKey) =>
-      ['city_to_airport', 'flight_search', 'analyze_visible_flights'].includes(toolKey),
+      [
+        'city_to_airport',
+        'flight_search',
+        'analyze_visible_flights',
+      ].includes(toolKey),
     );
 
-    const tasks: Promise<unknown>[] = [
+    const shouldCache =
+      !isFallback &&
+      !action &&
+      !usedFlightTool &&
+      classification.intent !== 'flight_list_query' &&
+      classification.intent !== 'product_list_query';
+
+    await Promise.all([
       this.saveTurn(sessionId, userId, message, answer),
-    ];
-    if (!isFallback && !action && !usedFlightTool && classification.intent !== 'flight_list_query') {
-      tasks.push(this.cacheService.save(retrievalQuery, queryVector, answer, userId));
-    }
-    await Promise.all(tasks);
+      ...(shouldCache
+        ? [
+          this.cacheService.save(
+            retrievalQuery,
+            queryVector,
+            answer,
+            userId,
+          ),
+        ]
+        : []),
+    ]);
 
     return {
       answer,
       cached: false,
       usage,
-      ...(action ? { action } : {}),
-      ...(dommanipulate ? { dommanipulate } : {}),
+      ...(action && { action }),
+      ...(dommanipulate && { dommanipulate }),
     };
   }
 

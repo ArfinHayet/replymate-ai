@@ -39,6 +39,7 @@ describe('AgenticLoopService', () => {
       retrievalService as never,
       toolRetrievalService as never,
       visibleFlightAnalyzer as never,
+      {} as never,
     );
   }
 

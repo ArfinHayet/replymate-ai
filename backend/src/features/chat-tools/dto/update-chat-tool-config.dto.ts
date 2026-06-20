@@ -6,5 +6,5 @@ export class UpdateChatToolConfigDto {
 }
 
 export function isChatToolKey(value: string): value is ChatToolKey {
-  return value === 'flight_search' || value === 'live_agent_contact';
+  return value === 'flight_search' || value === 'live_agent_contact' || value === 'ecommerce_product';
 }
