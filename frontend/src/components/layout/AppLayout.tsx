@@ -87,19 +87,19 @@ const navGroups: NavGroup[] = [
     label: "Knowledge",
     items: [
       { to: "/pdfs", icon: Files, label: "Documents", requiresCompletion: true },
-      { to: "/web-pages", icon: Globe, label: "Web Pages", requiresCompletion: true },
-      { to: "/images", icon: Images, label: "Images", requiresCompletion: true },
+      // { to: "/web-pages", icon: Globe, label: "Web Pages", requiresCompletion: true },
+      // { to: "/images", icon: Images, label: "Images", requiresCompletion: true },
     ],
   },
-  {
-    id: "workspace",
-    icon: ChartColumn,
-    label: "Workspace",
-    items: [
-      { to: "/analytics", icon: ChartColumn, label: "Analytics", requiresCompletion: true },
-      { to: "/embed", icon: Code2, label: "Website Widget", requiresCompletion: true },
-    ],
-  },
+  // {
+  //   id: "workspace",
+  //   icon: ChartColumn,
+  //   label: "Workspace",
+  //   items: [
+  //     { to: "/analytics", icon: ChartColumn, label: "Analytics", requiresCompletion: true },
+  //     { to: "/embed", icon: Code2, label: "Website Widget", requiresCompletion: true },
+  //   ],
+  // },
   {
     id: "account",
     icon: UserRound,

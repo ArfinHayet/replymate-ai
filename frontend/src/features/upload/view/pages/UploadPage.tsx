@@ -7,13 +7,13 @@ import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/apiRoutes";
 import { useUploadViewModel } from "../../viewModel/useUploadViewModel";
 import type { UploadActionResult } from "../../viewModel/UploadViewModel";
-import { CsvUploadPanel } from "../components/CsvUploadPanel";
-import { ImageUploadPanel } from "../components/ImageUploadPanel";
-import { MarkdownUploadPanel } from "../components/MarkdownUploadPanel";
+// import { CsvUploadPanel } from "../components/CsvUploadPanel";
+// import { ImageUploadPanel } from "../components/ImageUploadPanel";
+// import { MarkdownUploadPanel } from "../components/MarkdownUploadPanel";
 import { PdfUploadPanel } from "../components/PdfUploadPanel";
 import { UploadSteps } from "../components/UploadSteps";
 import { UploadTabs } from "../components/UploadTabs";
-import { UrlUploadPanel } from "../components/UrlUploadPanel";
+// import { UrlUploadPanel } from "../components/UrlUploadPanel";
 
 function showActionResult(result: UploadActionResult) {
   if (result.message) toast.success(result.message);
@@ -97,34 +97,34 @@ export function UploadPage() {
     }
   };
 
-  const uploadMarkdown = async () => {
-    showActionResult(await viewModel.uploadSelectedMarkdown());
-  };
+  // const uploadMarkdown = async () => {
+  //   showActionResult(await viewModel.uploadSelectedMarkdown());
+  // };
 
-  const ingestUrls = async () => {
-    const result = await viewModel.ingestUrls();
-    showActionResult(result);
-    if (result.message) {
-      window.dispatchEvent(new Event("supportmate-profile-completion-updated"));
-      void loadUsage();
-    }
-  };
+  // const ingestUrls = async () => {
+  //   const result = await viewModel.ingestUrls();
+  //   showActionResult(result);
+  //   if (result.message) {
+  //     window.dispatchEvent(new Event("supportmate-profile-completion-updated"));
+  //     void loadUsage();
+  //   }
+  // };
 
-  const handleAsyncFileResult = async (result: Promise<UploadActionResult>) => {
-    showActionResult(await result);
-  };
+  // const handleAsyncFileResult = async (result: Promise<UploadActionResult>) => {
+  //   showActionResult(await result);
+  // };
 
-  const saveImage = async () => {
-    const result = await viewModel.saveSelectedImage();
-    showActionResult(result);
-    if (result.success) void loadUsage();
-  };
+  // const saveImage = async () => {
+  //   const result = await viewModel.saveSelectedImage();
+  //   showActionResult(result);
+  //   if (result.success) void loadUsage();
+  // };
 
-  const uploadCsv = async () => {
-    const result = await viewModel.uploadSelectedCsv();
-    showActionResult(result);
-    if (result.success) void loadUsage();
-  };
+  // const uploadCsv = async () => {
+  //   const result = await viewModel.uploadSelectedCsv();
+  //   showActionResult(result);
+  //   if (result.success) void loadUsage();
+  // };
 
   return (
     <div className="min-h-screen bg-rm-trip-surface">
@@ -141,28 +141,28 @@ export function UploadPage() {
           {viewModel.activeTab === "pdf" && (
             <PdfUploadPanel viewModel={viewModel} onUpload={() => void uploadPdf()} onFileResult={showActionResult} />
           )}
-          {viewModel.activeTab === "markdown" && (
+          {/* viewModel.activeTab === "markdown" && (
             <MarkdownUploadPanel
               viewModel={viewModel}
               onUpload={() => void uploadMarkdown()}
               onFileResult={showActionResult}
             />
-          )}
-          {viewModel.activeTab === "url" && <UrlUploadPanel viewModel={viewModel} onIngest={() => void ingestUrls()} />}
-          {viewModel.activeTab === "image" && (
+          ) */}
+          {/* viewModel.activeTab === "url" && <UrlUploadPanel viewModel={viewModel} onIngest={() => void ingestUrls()} /> */}
+          {/* viewModel.activeTab === "image" && (
             <ImageUploadPanel
               viewModel={viewModel}
               onSave={() => void saveImage()}
               onFileResult={(result) => void handleAsyncFileResult(result)}
             />
-          )}
-          {viewModel.activeTab === "csv" && (
+          ) */}
+          {/* viewModel.activeTab === "csv" && (
             <CsvUploadPanel
               viewModel={viewModel}
               onUpload={() => void uploadCsv()}
               onFileResult={showActionResult}
             />
-          )}
+          ) */}
         </div>
 
         <UploadSteps />
@@ -208,10 +208,10 @@ function SubscriptionLimitAlert({ usage }: { usage: UsageResponse["usage"] | nul
   }
 
   const items = [
-    { label: "URLs", quota: contentUsage.webPages },
+    // { label: "URLs", quota: contentUsage.webPages },
     { label: "PDFs", quota: contentUsage.pdfs },
-    { label: "images", quota: contentUsage.images },
-    { label: "CSVs", quota: contentUsage.csvs },
+    // { label: "images", quota: contentUsage.images },
+    // { label: "CSVs", quota: contentUsage.csvs },
   ];
   const hasBlockedContentType = items.some(({ quota }) => quota.remaining === 0);
 

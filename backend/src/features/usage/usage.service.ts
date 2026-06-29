@@ -45,31 +45,31 @@ export type ContentUsageSnapshot = Record<
   }
 >;
 
-const DEFAULT_PLANS = [
-  {
-    id: 1,
-    name: "free",
-    monthlyMessageLimit: 50,
-    creemProductId: null,
-    webCrawlLimit: 1,
-    pdfUploadLimit: 10,
-    imageUploadLimit: 10,
-    csvUploadLimit: 5
-  },
-  {
-    id: 2,
-    name: "premium",
-    monthlyMessageLimit: 2000,
-    creemProductId: "prod_35bC6WQHnFraq8HmtyE4YI",
-    webCrawlLimit: 10,
-    pdfUploadLimit: 100,
-    imageUploadLimit: 200,
-    csvUploadLimit: 50
-  }
-];
+// const DEFAULT_PLANS = [
+//   {
+//     id: 1,
+//     name: "free",
+//     monthlyMessageLimit: 50,
+//     creemProductId: null,
+//     webCrawlLimit: 1,
+//     pdfUploadLimit: 10,
+//     imageUploadLimit: 10,
+//     csvUploadLimit: 5
+//   },
+//   {
+//     id: 2,
+//     name: "premium",
+//     monthlyMessageLimit: 2000,
+//     creemProductId: "prod_35bC6WQHnFraq8HmtyE4YI",
+//     webCrawlLimit: 10,
+//     pdfUploadLimit: 100,
+//     imageUploadLimit: 200,
+//     csvUploadLimit: 50
+//   }
+// ];
 
 @Injectable()
-export class UsageService implements OnModuleInit {
+export class UsageService {
   constructor(
     @InjectRepository(Plan)
     private readonly planRepo: Repository<Plan>,
@@ -78,9 +78,9 @@ export class UsageService implements OnModuleInit {
     private readonly dataSource: DataSource
   ) {}
 
-  async onModuleInit() {
-    await this.planRepo.upsert(DEFAULT_PLANS, ["id"]);
-  }
+  // async onModuleInit() {
+  //   await this.planRepo.upsert(DEFAULT_PLANS, ["id"]);
+  // }
 
   async ensureCurrentUsage(userId: string): Promise<MessageUsageSnapshot> {
     const today = this.today();
