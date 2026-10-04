@@ -157,7 +157,7 @@ function LegalPage({ content }: { content: LegalPageContent }) {
           {content.sections.map((legalSection) => (
             <section
               key={legalSection.title}
-              className="rounded-[calc(var(--rm-trip-smooth)+6px)] border border-[rgba(15,23,42,0.10)] bg-white p-6 shadow-[var(--rm-trip-card-shadow)]"
+              className="rounded-rm-trip-smooth border border-gray-200 bg-white p-6 shadow-rm-trip-card"
             >
               <h2 className="font-[var(--rm-trip-font-heading)] text-xl font-bold text-[var(--rm-trip-text)]">
                 {legalSection.title}

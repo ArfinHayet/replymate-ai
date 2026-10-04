@@ -9,15 +9,11 @@ import {
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Building2,
-  ChartColumn,
   CheckCircle2,
   ChevronDown,
-  Code2,
   FileUp,
   Files,
-  Globe,
   History,
-  Images,
   Lightbulb,
   LogOut,
   MessageSquare,
@@ -317,7 +313,7 @@ export function AppLayout() {
                   ? "rounded-2xl px-3.5 py-3 text-sm"
                   : "rounded-rm-trip-smooth px-3 py-2.5 text-sm",
                 isGroupActive
-                  ? "bg-rm-trip-brand text-white shadow-rm-trip-card"
+                  ? "bg-rm-trip-brand text-rm-trip-on-brand shadow-rm-trip-card"
                   : "text-rm-trip-text-muted hover:bg-gray-50 hover:text-rm-trip-text",
               )}
             >
@@ -437,7 +433,7 @@ export function AppLayout() {
           onClick={closeMobileMenu}
         >
           <div
-            className="flex h-full w-80 max-w-[86vw] flex-col rounded-r-[28px] bg-white shadow-[16px_0_60px_rgba(15,23,42,0.18)]"
+            className="flex h-full w-80 max-w-[86vw] flex-col rounded-r-[var(--radius-dialog)] bg-white shadow-rm-trip-lift"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-gray-100 px-5 py-5">

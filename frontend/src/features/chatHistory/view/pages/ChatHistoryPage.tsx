@@ -22,7 +22,7 @@ export function ChatHistoryPage() {
     <div className="flex h-full flex-col bg-rm-trip-surface">
       <PageHeader title="Chat History" subtitle="Review user conversations.">
         {!isMobileConversationView && (
-          <div className="inline-flex items-center gap-2 rounded-rm-trip-pill border border-blue-100 bg-blue-50 px-3 py-1 text-xs font-bold text-rm-trip-brand">
+          <div className="inline-flex items-center gap-2 rounded-rm-trip-pill border border-rm-trip-brand/20 bg-rm-trip-brand-light px-3 py-1 text-xs font-bold text-rm-trip-brand">
             <MessageSquare className="h-3.5 w-3.5" />
             {viewModel.sessions.length} sessions
           </div>

@@ -1,5 +1,5 @@
 import { Loader2, Trash2 } from "lucide-react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Company } from "../../model/entities/Company";
 
 interface CompanyDeleteDialogProps {
@@ -22,10 +22,10 @@ export function CompanyDeleteDialog({ deleteTarget, deleting, onCancel, onDelete
           </div>
         </DialogHeader>
         <div className="px-6 py-5 bg-white">
-          <p className="text-sm text-rm-trip-text-muted leading-relaxed">
+          <DialogDescription className="text-sm text-rm-trip-text-muted leading-relaxed">
             This will permanently delete <span className="font-bold text-rm-trip-text">{deleteTarget?.name}</span>. The
             chatbot will no longer have a company identity until another profile is added.
-          </p>
+          </DialogDescription>
         </div>
         <DialogFooter className="px-6 py-4 border-t border-gray-100 bg-gray-50/60 flex gap-2">
           <button
@@ -37,7 +37,7 @@ export function CompanyDeleteDialog({ deleteTarget, deleting, onCancel, onDelete
           <button
             onClick={onDelete}
             disabled={deleting}
-            className="flex-1 flex items-center justify-center gap-2 bg-rm-trip-state-error hover:bg-red-700 text-white font-bold py-2.5 px-4 rounded-rm-trip-smooth transition-all duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 bg-rm-trip-state-error hover:bg-red-700 text-rm-trip-on-brand font-bold py-2.5 px-4 rounded-rm-trip-smooth transition-all duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
             Delete

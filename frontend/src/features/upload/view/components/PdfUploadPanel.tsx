@@ -21,9 +21,9 @@ export function PdfUploadPanel({ viewModel, onUpload, onFileResult }: PdfUploadP
         className={cn(
           "relative border-2 border-dashed rounded-rm-trip-smooth p-10 text-center cursor-pointer transition-all duration-200 select-none group",
           viewModel.pdfDragging
-            ? "border-rm-trip-brand bg-blue-50 scale-[1.01]"
+            ? "border-rm-trip-brand bg-rm-trip-brand-light scale-[1.01]"
             : viewModel.selectedPdf
-              ? "border-rm-trip-brand/60 bg-blue-50/40"
+              ? "border-rm-trip-brand/60 bg-rm-trip-brand/6"
               : "border-gray-200 hover:border-rm-trip-brand/50 hover:bg-gray-50/60",
         )}
         onDragOver={(event) => {
@@ -85,7 +85,7 @@ export function PdfUploadPanel({ viewModel, onUpload, onFileResult }: PdfUploadP
         <button
           onClick={onUpload}
           disabled={!viewModel.selectedPdf || viewModel.pdfState === "uploading"}
-          className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <Upload className="h-4 w-4" />
           {viewModel.pdfState === "uploading" ? "Processing..." : "Upload document"}

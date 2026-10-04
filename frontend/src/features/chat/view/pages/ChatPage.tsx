@@ -9,7 +9,7 @@ export function ChatPage() {
   const viewModel = useChatViewModel();
 
   return (
-    <div className="flex flex-col h-full" style={{ background: "var(--chat-bg, #F7F8FC)" }}>
+    <div className="flex h-full flex-col bg-rm-trip-surface">
       <ChatStyles />
       <PageHeader title="Chat" subtitle="Ask questions using your approved business content.">
         <div className="flex items-center gap-2">

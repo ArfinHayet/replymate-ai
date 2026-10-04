@@ -73,7 +73,7 @@ export function EmbedPage() {
                 <button
                   onClick={() => void run(vm.createKey())}
                   disabled={!vm.newLabel.trim()}
-                  className="flex items-center justify-center gap-1.5 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-semibold text-white shadow-rm-trip-card disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex items-center justify-center gap-1.5 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-semibold text-rm-trip-on-brand shadow-rm-trip-card disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Create
@@ -232,7 +232,7 @@ export function EmbedPage() {
                 />
                 <button
                   onClick={() => void run(vm.createDomain())}
-                  className="flex items-center justify-center gap-1.5 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-semibold text-white shadow-rm-trip-card"
+                  className="flex items-center justify-center gap-1.5 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-semibold text-rm-trip-on-brand shadow-rm-trip-card"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   Add

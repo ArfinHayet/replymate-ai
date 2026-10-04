@@ -18,7 +18,7 @@ interface DataTableProps<T> {
   emptyState?: ReactNode;
   /** Optional; defaults to array index. */
   getRowKey?: (item: T) => string | number;
-  /** Extra classes per row. Function form varies by row. Defaults to "hover:bg-blue-50/20 cursor-default". */
+  /** Extra classes per row. Function form varies by row. Defaults to "hover:bg-rm-trip-brand/5 cursor-default". */
   rowClassName?: string | ((item: T, index: number) => string);
 }
 
@@ -65,19 +65,13 @@ export function DataTable<T>({
                 </tr>
               ))}
 
-            {!isLoading && data.length === 0 && emptyState && (
-              <tr>
-                <td colSpan={columns.length}>{emptyState}</td>
-              </tr>
-            )}
-
             {!isLoading &&
               data.map((item, index) => {
                 const rowKey = getRowKey ? getRowKey(item) : index;
                 const extra =
                   typeof rowClassName === "function"
                     ? rowClassName(item, index)
-                    : (rowClassName ?? "hover:bg-blue-50/20 cursor-default");
+                    : (rowClassName ?? "hover:bg-rm-trip-brand/5 cursor-default");
                 return (
                   <tr
                     key={rowKey}
@@ -94,6 +88,7 @@ export function DataTable<T>({
           </tbody>
         </table>
       </div>
+      {!isLoading && data.length === 0 && emptyState && <div>{emptyState}</div>}
     </div>
   );
 }

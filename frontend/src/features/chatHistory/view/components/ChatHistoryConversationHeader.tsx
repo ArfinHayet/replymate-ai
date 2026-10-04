@@ -28,7 +28,7 @@ export function ChatHistoryConversationHeader({ session, onBack }: ChatHistoryCo
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand text-sm font-bold text-white shadow-rm-trip-glow">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand text-sm font-bold text-rm-trip-on-brand shadow-rm-trip-glow">
             #
           </div>
           <div className="min-w-0">

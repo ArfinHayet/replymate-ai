@@ -58,7 +58,7 @@ export function CompanyPage() {
           </button>
           <button
             onClick={viewModel.openCreate}
-            className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-bold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-glow transition-all duration-150 text-sm"
+            className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-bold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-glow transition-all duration-150 text-sm"
           >
             <Plus className="h-4 w-4" />
             Add Company

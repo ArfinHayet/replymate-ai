@@ -86,18 +86,17 @@ export const faqs = [
 ];
 
 export const shell = "mx-auto max-w-[1180px]";
-export const section = `${shell} px-7 py-20`;
-export const sectionWhite = "border-y border-[rgba(15,23,42,0.10)] bg-white";
+export const section = `${shell} px-7 py-[var(--space-section)]`;
+export const sectionWhite = "border-y border-gray-200 bg-rm-trip-surface-card";
 export const eyebrow = "mb-2.5 text-[11px] font-bold uppercase tracking-[0.12em] text-[var(--rm-trip-brand)]";
 export const sectionTitle =
   "font-[var(--rm-trip-font-heading)] text-[clamp(28px,3.5vw,40px)] font-extrabold leading-[1.1] text-[var(--rm-trip-text)]";
 export const sectionSub =
   "mt-3 max-w-[540px] text-base font-light leading-[1.68] text-[var(--rm-trip-text-muted)]";
-export const card =
-  "rounded-[calc(var(--rm-trip-smooth)+6px)] border border-[rgba(15,23,42,0.10)] bg-white shadow-[var(--rm-trip-card-shadow)]";
-export const hoverCard = "transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[var(--rm-trip-lift-shadow)]";
+export const card = "rounded-rm-trip-smooth border border-gray-200 bg-white shadow-rm-trip-card";
+export const hoverCard = "transition-shadow duration-200 hover:shadow-rm-trip-lift";
 export const logoClasses = "flex min-w-0 shrink-0 items-center gap-[9px] no-underline";
 export const logoMarkClasses =
-  "block h-[34px] w-[34px] rounded-[10px] object-contain shadow-[var(--rm-trip-glow-shadow)]";
+  "block h-[34px] w-[34px] rounded-rm-trip-smooth object-contain shadow-[var(--rm-trip-glow-shadow)]";
 export const logoNameClasses =
   "whitespace-nowrap font-[var(--rm-trip-font-heading)] text-lg font-bold text-[var(--rm-trip-text)]";

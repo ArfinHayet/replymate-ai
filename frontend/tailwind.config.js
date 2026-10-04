@@ -1,69 +1,191 @@
 /** @type {import('tailwindcss').Config} */
+const token = (name) => `rgb(var(${name}) / <alpha-value>)`;
+
 module.exports = {
-  darkMode: ['class'],
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  darkMode: ["class"],
+  content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     container: {
       center: true,
-      padding: '2rem',
-      screens: { '2xl': '1400px' },
+      padding: "2rem",
+      screens: { "2xl": "1400px" },
+    },
+    colors: {
+      inherit: "inherit",
+      current: "currentColor",
+      transparent: "transparent",
+      white: token("--color-surface"),
+      black: token("--color-text"),
+      border: token("--color-border"),
+      input: token("--color-border"),
+      ring: token("--color-focus"),
+      background: token("--color-canvas"),
+      foreground: token("--color-text"),
+      primary: {
+        DEFAULT: token("--color-brand"),
+        foreground: token("--color-on-brand"),
+      },
+      secondary: {
+        DEFAULT: token("--color-surface-muted"),
+        foreground: token("--color-text"),
+      },
+      destructive: {
+        DEFAULT: token("--color-error"),
+        foreground: token("--color-on-brand"),
+      },
+      muted: {
+        DEFAULT: token("--color-surface-muted"),
+        foreground: token("--color-text-muted"),
+      },
+      accent: {
+        DEFAULT: token("--color-brand-soft"),
+        foreground: token("--color-brand"),
+      },
+      popover: {
+        DEFAULT: token("--color-surface"),
+        foreground: token("--color-text"),
+      },
+      card: {
+        DEFAULT: token("--color-surface"),
+        foreground: token("--color-text"),
+      },
+      brand: {
+        DEFAULT: token("--color-brand"),
+        hover: token("--color-brand-hover"),
+        active: token("--color-brand-active"),
+        soft: token("--color-brand-soft"),
+      },
+      gray: {
+        50: token("--color-surface-muted"),
+        100: token("--color-surface-muted"),
+        200: token("--color-border"),
+        300: token("--color-border-strong"),
+        400: token("--color-text-muted"),
+        500: token("--color-text-muted"),
+        600: token("--color-text-muted"),
+        700: token("--color-text"),
+        800: token("--color-text"),
+        900: token("--color-text"),
+      },
+      red: {
+        50: token("--color-error-surface"),
+        100: token("--color-error-surface"),
+        200: token("--color-error-border"),
+        300: token("--color-error-border"),
+        500: token("--color-error"),
+        600: token("--color-error"),
+        700: token("--color-error"),
+      },
+      emerald: {
+        50: token("--color-success-surface"),
+        100: token("--color-success-surface"),
+        200: token("--color-success-border"),
+        500: token("--color-success"),
+        600: token("--color-success"),
+        700: token("--color-success"),
+        800: token("--color-success"),
+      },
+      green: {
+        50: token("--color-success-surface"),
+        100: token("--color-success-surface"),
+        200: token("--color-success-border"),
+        500: token("--color-success"),
+        600: token("--color-success"),
+        700: token("--color-success"),
+      },
+      amber: {
+        50: token("--color-warning-surface"),
+        100: token("--color-warning-surface"),
+        500: token("--color-warning"),
+        600: token("--color-warning"),
+        700: token("--color-warning"),
+      },
+      yellow: {
+        50: token("--color-warning-surface"),
+        100: token("--color-warning-surface"),
+        500: token("--color-warning"),
+        600: token("--color-warning"),
+        700: token("--color-warning"),
+      },
+      slate: {
+        950: token("--color-overlay"),
+      },
+      "rm-trip": {
+        "on-brand": token("--color-on-brand"),
+        brand: {
+          DEFAULT: token("--color-brand"),
+          dark: token("--color-brand-hover"),
+          light: token("--color-brand-soft"),
+        },
+        highlight: {
+          DEFAULT: token("--color-focus"),
+          dark: token("--color-brand-active"),
+          light: token("--color-brand-soft"),
+        },
+        surface: {
+          DEFAULT: token("--color-canvas"),
+          muted: token("--color-surface-muted"),
+          card: token("--color-surface"),
+        },
+        text: {
+          DEFAULT: token("--color-text"),
+          muted: token("--color-text-muted"),
+        },
+        state: {
+          success: token("--color-success"),
+          error: token("--color-error"),
+          warning: token("--color-warning"),
+        },
+      },
     },
     extend: {
-      colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
+      fontFamily: {
+        sans: ["var(--font-body)"],
+        display: ["var(--font-display)"],
+        editorial: ["var(--font-editorial)"],
+        mono: ["var(--font-mono)"],
+        "rm-trip-heading": ["var(--font-display)"],
+        "rm-trip-body": ["var(--font-body)"],
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        none: "0",
+        sm: "var(--radius-control)",
+        DEFAULT: "var(--radius-control)",
+        md: "var(--radius-control)",
+        lg: "var(--radius-card)",
+        xl: "var(--radius-dialog)",
+        "2xl": "var(--radius-dialog)",
+        "3xl": "var(--radius-dialog)",
+        full: "var(--radius-full)",
+        "rm-trip-smooth": "var(--radius-control)",
+        "rm-trip-pill": "var(--radius-full)",
+      },
+      boxShadow: {
+        sm: "var(--shadow-control)",
+        DEFAULT: "var(--shadow-card)",
+        md: "var(--shadow-overlay)",
+        lg: "var(--shadow-overlay)",
+        xl: "var(--shadow-overlay)",
+        "2xl": "var(--shadow-offset)",
+        "rm-trip-card": "var(--shadow-card)",
+        "rm-trip-lift": "var(--shadow-overlay)",
+        "rm-trip-glow": "var(--shadow-card)",
       },
       keyframes: {
-        'accordion-down': {
-          from: { height: '0' },
-          to: { height: 'var(--radix-accordion-content-height)' },
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
-        'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: '0' },
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
       },
     },
   },
-  plugins: [require('tailwindcss-animate'), require('@tailwindcss/typography')],
-}
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+};

@@ -44,7 +44,7 @@ export function LoginPage() {
 
   return (
     <AuthSurface>
-      <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-white/80 sm:bg-white/95 sm:p-9 sm:shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:backdrop-blur">
+      <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
         <AuthBrandHeader title="Sign in to SupportMate AI" subtitle="Manage your business content and assistant settings." />
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
@@ -94,7 +94,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={viewModel.formStatus === "loading" || viewModel.formStatus === "success"}
-            className="flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-white shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-rm-trip-on-brand shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-70"
           >
             {viewModel.formStatus === "loading" && <Loader2 className="h-4 w-4 animate-spin" />}
             {viewModel.formStatus === "success" && <CheckCircle2 className="h-4 w-4" />}

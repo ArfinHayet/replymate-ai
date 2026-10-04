@@ -9,7 +9,7 @@ export function ChatEmptyState({ suggestions, onSelectSuggestion }: ChatEmptySta
   return (
     <div className="empty-state">
       <div className="empty-orb">
-        <Sparkles size={28} color="#2563EB" strokeWidth={1.5} />
+        <Sparkles size={28} className="text-rm-trip-brand" strokeWidth={1.5} />
       </div>
       <div className="empty-title">Ask anything about your business</div>
       <div className="empty-sub">I'll find accurate answers from your website, uploaded documents/ images.</div>

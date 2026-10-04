@@ -36,9 +36,9 @@ export function ForgotPasswordPage() {
   if (sent) {
     return (
       <AuthSurface>
-        <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-white/80 sm:bg-white/95 sm:p-9 sm:shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:backdrop-blur">
+        <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
           <div className="mb-6 flex justify-center">
-            <div className="flex h-14 w-14 items-center justify-center rounded-rm-trip-smooth bg-blue-50">
+            <div className="flex h-14 w-14 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand-light">
               <CheckCircle2 className="h-8 w-8 text-rm-trip-brand" />
             </div>
           </div>
@@ -51,7 +51,7 @@ export function ForgotPasswordPage() {
           </div>
           <Link
             to="/login"
-            className="mt-7 inline-flex w-full items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-white shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark"
+            className="mt-7 inline-flex w-full items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-rm-trip-on-brand shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark"
           >
             Back to Sign In
           </Link>
@@ -62,7 +62,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthSurface>
-      <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-white/80 sm:bg-white/95 sm:p-9 sm:shadow-[0_24px_70px_rgba(15,23,42,0.16)] sm:backdrop-blur">
+      <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
         <AuthBrandHeader title="Reset your password" subtitle="Enter your email and we will send reset instructions." />
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,7 +87,7 @@ export function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={!email.trim() || submitting}
-            className="flex w-full items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-white shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-rm-trip-on-brand shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {submitting ? "Sending..." : "Send Reset Link"}

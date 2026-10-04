@@ -66,13 +66,13 @@ export function ChatHistorySidebar({
                 type="button"
                 className={cn(
                   "mb-1 flex w-full touch-manipulation items-center gap-3 rounded-rm-trip-smooth px-3 py-3.5 text-left transition-all active:scale-[0.99]",
-                  isSelected ? "bg-rm-trip-brand text-white shadow-rm-trip-card" : "text-rm-trip-text hover:bg-gray-50",
+                  isSelected ? "bg-rm-trip-brand text-rm-trip-on-brand shadow-rm-trip-card" : "text-rm-trip-text hover:bg-gray-50",
                 )}
               >
                 <div
                   className={cn(
                     "flex h-11 w-11 shrink-0 items-center justify-center rounded-rm-trip-smooth text-sm font-bold",
-                    isSelected ? "bg-white/15 text-white" : "bg-blue-50 text-rm-trip-brand",
+                    isSelected ? "bg-white/15 text-rm-trip-on-brand" : "bg-rm-trip-brand-light text-rm-trip-brand",
                   )}
                 >
                   #
@@ -83,13 +83,13 @@ export function ChatHistorySidebar({
                     <span
                       className={cn(
                         "shrink-0 text-[11px] font-semibold",
-                        isSelected ? "text-white/75" : "text-rm-trip-text-muted",
+                        isSelected ? "text-rm-trip-on-brand/75" : "text-rm-trip-text-muted",
                       )}
                     >
                       {formatRelativeTime(session.lastMessageAt)}
                     </span>
                   </div>
-                  <p className={cn("mt-1 truncate text-xs font-medium", isSelected ? "text-white/80" : "text-rm-trip-text-muted")}>
+                  <p className={cn("mt-1 truncate text-xs font-medium", isSelected ? "text-rm-trip-on-brand/80" : "text-rm-trip-text-muted")}>
                     {session.lastMessage}
                   </p>
                 </div>

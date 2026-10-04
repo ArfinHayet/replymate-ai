@@ -47,7 +47,7 @@ export function UrlUploadPanel({ viewModel, onIngest }: UrlUploadPanelProps) {
       </button>
       {viewModel.urlState === "uploading" && <ProgressBar value={viewModel.urlProgress} />}
       {(viewModel.urlState === "uploading" || viewModel.urlState === "success") && viewModel.urlScanItems.length > 0 && (
-        <div className="rounded-rm-trip-smooth border border-blue-100 bg-blue-50/60 p-4">
+        <div className="rounded-rm-trip-smooth border border-rm-trip-brand/20 bg-rm-trip-brand/8 p-4">
           <div className="flex items-center justify-between gap-3 mb-3">
             <p className="text-xs font-semibold text-rm-trip-brand">Live scan</p>
             <p className="text-xs text-rm-trip-text-muted">
@@ -107,7 +107,7 @@ export function UrlUploadPanel({ viewModel, onIngest }: UrlUploadPanelProps) {
         <button
           onClick={onIngest}
           disabled={viewModel.validUrls.length === 0 || viewModel.urlState === "uploading"}
-          className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <ArrowRight className="h-4 w-4" />
           {viewModel.urlState === "uploading"

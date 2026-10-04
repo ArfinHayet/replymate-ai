@@ -85,7 +85,7 @@ export function ImagesPage() {
               label: "Actions",
               render: (image) => (
                 <div className="flex gap-1">
-                  <button onClick={() => vm.openEdit(image)} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-blue-100 hover:text-rm-trip-brand" title="Edit">
+                  <button onClick={() => vm.openEdit(image)} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-rm-trip-brand-light hover:text-rm-trip-brand" title="Edit">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button onClick={() => vm.requestDelete(image)} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-red-50 hover:text-rm-trip-state-error" title="Delete">
@@ -122,7 +122,7 @@ export function ImagesPage() {
             <button onClick={vm.closeEdit} className="rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-rm-trip-text-muted">
               Cancel
             </button>
-            <button onClick={() => void save()} disabled={vm.editing || !vm.editTitle.trim() || !vm.editDescription.trim()} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            <button onClick={() => void save()} disabled={vm.editing || !vm.editTitle.trim() || !vm.editDescription.trim()} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2 text-sm font-bold text-rm-trip-on-brand disabled:opacity-50">
               {vm.editing && <Loader2 className="h-4 w-4 animate-spin" />}
               Save
             </button>
@@ -142,7 +142,7 @@ export function ImagesPage() {
             <button onClick={vm.cancelDelete} className="rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-rm-trip-text-muted">
               Cancel
             </button>
-            <button onClick={() => void remove()} disabled={vm.deleting} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-state-error px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            <button onClick={() => void remove()} disabled={vm.deleting} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-state-error px-4 py-2 text-sm font-bold text-rm-trip-on-brand disabled:opacity-50">
               {vm.deleting && <Loader2 className="h-4 w-4 animate-spin" />}
               Delete
             </button>

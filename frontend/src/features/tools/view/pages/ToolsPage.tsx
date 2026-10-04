@@ -267,7 +267,7 @@ function ToolCard({
           type="button"
           onClick={onSave}
           disabled={saving}
-          className="inline-flex items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-bold text-white shadow-rm-trip-card transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2.5 text-sm font-bold text-rm-trip-on-brand shadow-rm-trip-card transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-60"
         >
           {saving ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
           Save Tool

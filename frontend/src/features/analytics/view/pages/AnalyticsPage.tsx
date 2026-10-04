@@ -24,12 +24,20 @@ import type { ChartPoint } from "../../viewModel/AnalyticsViewModel";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, PointElement, LineElement, ArcElement, Filler, Tooltip, Legend);
 
-const brandBlue = "#2563eb";
-const brandTeal = "#14b8a6";
-const warningAmber = "#f59e0b";
-const errorRed = "#dc2626";
-const mutedText = "#6b7280";
-const gridLine = "rgba(148, 163, 184, 0.18)";
+function themeColor(token: string, alpha = 1) {
+  const channels = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  return alpha === 1 ? `rgb(${channels})` : `rgb(${channels} / ${alpha})`;
+}
+
+const chartPrimary = themeColor("--color-chart-primary");
+const chartSecondary = themeColor("--color-chart-secondary");
+const chartTertiary = themeColor("--color-chart-tertiary");
+const chartQuaternary = themeColor("--color-chart-quaternary");
+const warningColor = themeColor("--color-warning");
+const errorColor = themeColor("--color-error");
+const mutedText = themeColor("--color-text-muted");
+const gridLine = themeColor("--color-border", 0.55);
+const chartFont = getComputedStyle(document.documentElement).getPropertyValue("--font-body").trim();
 
 const baseChartOptions = {
   responsive: true,
@@ -40,21 +48,21 @@ const baseChartOptions = {
         boxWidth: 10,
         boxHeight: 10,
         color: mutedText,
-        font: { family: "Inter", size: 12, weight: 600 },
+        font: { family: chartFont, size: 12, weight: 600 },
         usePointStyle: true,
       },
     },
     tooltip: {
-      backgroundColor: "#111827",
-      bodyColor: "#ffffff",
-      borderColor: "rgba(255,255,255,0.08)",
+      backgroundColor: themeColor("--color-terminal-bg"),
+      bodyColor: themeColor("--color-terminal-text"),
+      borderColor: themeColor("--color-terminal-border"),
       borderWidth: 1,
-      cornerRadius: 8,
+      cornerRadius: 3,
       displayColors: false,
       padding: 12,
-      titleColor: "#ffffff",
-      titleFont: { family: "Inter", size: 12, weight: 700 },
-      bodyFont: { family: "Inter", size: 12, weight: 600 },
+      titleColor: themeColor("--color-terminal-text"),
+      titleFont: { family: chartFont, size: 12, weight: 700 },
+      bodyFont: { family: chartFont, size: 12, weight: 600 },
     },
   },
 } satisfies ChartOptions;
@@ -65,13 +73,13 @@ const axisOptions = {
     x: {
       border: { display: false },
       grid: { display: false },
-      ticks: { color: mutedText, font: { family: "Inter", size: 12, weight: 600 } },
+      ticks: { color: mutedText, font: { family: chartFont, size: 12, weight: 600 } },
     },
     y: {
       beginAtZero: true,
       border: { display: false },
       grid: { color: gridLine },
-      ticks: { color: mutedText, precision: 0, font: { family: "Inter", size: 12, weight: 600 } },
+      ticks: { color: mutedText, precision: 0, font: { family: chartFont, size: 12, weight: 600 } },
     },
   },
 } satisfies ChartOptions<"bar" | "line">;
@@ -171,7 +179,7 @@ function MetricCard({ icon, label, value, loading }: { icon: ReactNode; label: s
     <div className="min-w-0 rounded-rm-trip-smooth border border-gray-100 bg-white p-5 shadow-rm-trip-card">
       <div className="mb-4 flex items-center justify-between gap-3">
         <p className="truncate text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">{label}</p>
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-rm-trip-smooth bg-blue-50 text-rm-trip-brand">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand-light text-rm-trip-brand">
           {icon}
         </span>
       </div>
@@ -220,12 +228,12 @@ function LineChart({ data }: { data: ChartPoint[] }) {
       {
         label: "Activity",
         data: data.map((item) => item.value),
-        backgroundColor: "rgba(37, 99, 235, 0.12)",
-        borderColor: brandBlue,
+        backgroundColor: themeColor("--color-chart-primary", 0.14),
+        borderColor: chartPrimary,
         borderWidth: 3,
         fill: true,
-        pointBackgroundColor: "#ffffff",
-        pointBorderColor: brandBlue,
+        pointBackgroundColor: themeColor("--color-surface"),
+        pointBorderColor: chartPrimary,
         pointBorderWidth: 3,
         pointHoverRadius: 6,
         pointRadius: 4,
@@ -249,11 +257,11 @@ function DoughnutChart({ data }: { data: ChartPoint[] }) {
     datasets: [
       {
         data: data.map((item) => item.value),
-        backgroundColor: [brandBlue, brandTeal, warningAmber],
-        borderColor: "#ffffff",
-        borderRadius: 8,
-        borderWidth: 4,
-        hoverOffset: 8,
+        backgroundColor: [chartPrimary, chartSecondary, warningColor, chartTertiary, chartQuaternary],
+        borderColor: themeColor("--color-surface"),
+        borderRadius: 2,
+        borderWidth: 2,
+        hoverOffset: 4,
       },
     ],
   };
@@ -274,8 +282,8 @@ function CrawlHealthChart({ data }: { data: ChartPoint[] }) {
       {
         label: "Pages",
         data: data.map((item) => item.value),
-        backgroundColor: [brandTeal, errorRed],
-        borderRadius: 10,
+        backgroundColor: [chartQuaternary, errorColor],
+        borderRadius: 2,
         borderSkipped: false,
       },
     ],
@@ -309,8 +317,8 @@ function TopSitesChart({ data }: { data: ChartPoint[] }) {
       {
         label: "Sections",
         data: data.map((item) => item.value),
-        backgroundColor: "rgba(37, 99, 235, 0.88)",
-        borderRadius: 10,
+        backgroundColor: themeColor("--color-chart-primary", 0.9),
+        borderRadius: 2,
         borderSkipped: false,
       },
     ],
@@ -325,7 +333,7 @@ function TopSitesChart({ data }: { data: ChartPoint[] }) {
         {data.slice(0, 3).map((item, index) => (
           <div key={item.label} className="flex min-w-0 items-center justify-between gap-3 rounded-rm-trip-smooth bg-gray-50 px-3 py-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-rm-trip-smooth bg-blue-50 text-xs font-bold text-rm-trip-brand">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand-light text-xs font-bold text-rm-trip-brand">
                 {index + 1}
               </span>
               <p className="truncate text-sm font-semibold text-rm-trip-text">{item.label}</p>

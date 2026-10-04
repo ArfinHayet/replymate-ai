@@ -111,7 +111,7 @@ export function ChatSuggestionsPage() {
                 type="button"
                 onClick={() => void saveSuggestions()}
                 disabled={loading || saving}
-                className="inline-flex h-10 items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 text-sm font-semibold text-white shadow-rm-trip-card transition-all hover:bg-rm-trip-brand/90 disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 text-sm font-semibold text-rm-trip-on-brand shadow-rm-trip-card transition-all hover:bg-rm-trip-brand/90 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 <Save className="h-4 w-4" />
                 {saving ? "Saving..." : "Save"}

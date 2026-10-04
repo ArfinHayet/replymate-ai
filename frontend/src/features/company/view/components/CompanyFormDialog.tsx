@@ -1,5 +1,5 @@
 import { Building2, Loader2 } from "lucide-react";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { Company } from "../../model/entities/Company";
 import type { CompanyFormState } from "../../model/entities/CompanyFormState";
 
@@ -38,9 +38,9 @@ export function CompanyFormDialog({
               <DialogTitle className="font-rm-trip-heading font-bold text-rm-trip-text leading-tight">
                 {editTarget ? "Edit Company" : "Add Company"}
               </DialogTitle>
-              <p className="text-xs text-rm-trip-text-muted mt-0.5">
+              <DialogDescription className="text-xs text-rm-trip-text-muted mt-0.5">
                 {editTarget ? "Update company details" : "Create a new company profile"}
-              </p>
+              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -75,7 +75,7 @@ export function CompanyFormDialog({
           <button
             onClick={onSave}
             disabled={saving || !canSave}
-            className="flex-1 flex items-center justify-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-bold py-2.5 px-4 rounded-rm-trip-smooth shadow-rm-trip-glow transition-all duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-bold py-2.5 px-4 rounded-rm-trip-smooth shadow-rm-trip-glow transition-all duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {editTarget ? "Save Changes" : "Create"}

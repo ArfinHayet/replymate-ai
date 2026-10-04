@@ -22,7 +22,7 @@ function Avatar({ profile }: { profile: UserProfile }) {
 
   return (
     <div className="flex h-20 w-20 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand shadow-rm-trip-glow sm:h-24 sm:w-24">
-      <span className="font-rm-trip-heading text-3xl font-bold text-white">{initial}</span>
+      <span className="font-rm-trip-heading text-3xl font-bold text-rm-trip-on-brand">{initial}</span>
     </div>
   );
 }
@@ -81,7 +81,7 @@ export function ProfilePage() {
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
               <Avatar profile={vm.profile} />
               <div className="min-w-0 flex-1">
-                <div className="mb-3 inline-flex items-center gap-1.5 rounded-rm-trip-smooth border border-blue-100 bg-blue-50 px-2.5 py-1 text-xs font-semibold text-rm-trip-brand">
+                <div className="mb-3 inline-flex items-center gap-1.5 rounded-rm-trip-smooth border border-rm-trip-brand/20 bg-rm-trip-brand-light px-2.5 py-1 text-xs font-semibold text-rm-trip-brand">
                   <ShieldCheck className="h-3.5 w-3.5" />
                   Active account
                 </div>

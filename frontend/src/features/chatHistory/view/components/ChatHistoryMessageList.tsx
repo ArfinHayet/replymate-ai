@@ -38,7 +38,7 @@ export function ChatHistoryMessageList({ sessionId, messages }: ChatHistoryMessa
                 className={cn(
                   "flex h-8 w-8 shrink-0 items-center justify-center rounded-rm-trip-smooth border shadow-sm sm:h-9 sm:w-9",
                   message.role === "user"
-                    ? "border-rm-trip-brand bg-rm-trip-brand text-white"
+                    ? "border-rm-trip-brand bg-rm-trip-brand text-rm-trip-on-brand"
                     : "border-gray-100 bg-white",
                 )}
               >
@@ -54,7 +54,7 @@ export function ChatHistoryMessageList({ sessionId, messages }: ChatHistoryMessa
                   className={cn(
                     "rounded-rm-trip-smooth px-3.5 py-2.5 text-[13.5px] leading-relaxed shadow-sm sm:px-4 sm:py-3 sm:text-sm",
                     message.role === "user"
-                      ? "bg-rm-trip-brand text-white"
+                      ? "bg-rm-trip-brand text-rm-trip-on-brand"
                       : "border border-gray-100 bg-white text-rm-trip-text",
                   )}
                 >

@@ -73,7 +73,7 @@ export function PdfsPage() {
               label: "File Name",
               render: (pdf, index) => (
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-rm-trip-smooth ${index === 0 ? "bg-rm-trip-brand text-white" : "bg-gray-100 text-rm-trip-text-muted"}`}>
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-rm-trip-smooth ${index === 0 ? "bg-rm-trip-brand text-rm-trip-on-brand" : "bg-gray-100 text-rm-trip-text-muted"}`}>
                     <FileText className="h-4 w-4" />
                   </div>
                   <p className="truncate text-sm font-semibold text-rm-trip-text">{pdf.fileName}</p>
@@ -95,7 +95,7 @@ export function PdfsPage() {
               label: "Actions",
               render: (pdf) => (
                 <div className="flex gap-1">
-                  <button onClick={() => vm.openRename(pdf)} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-blue-100 hover:text-rm-trip-brand" title="Rename">
+                  <button onClick={() => vm.openRename(pdf)} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-rm-trip-brand-light hover:text-rm-trip-brand" title="Rename">
                     <Pencil className="h-3.5 w-3.5" />
                   </button>
                   <button onClick={() => vm.requestDelete(pdf)} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-red-50 hover:text-rm-trip-state-error" title="Delete">
@@ -134,7 +134,7 @@ export function PdfsPage() {
             <button onClick={vm.closeRename} className="rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-rm-trip-text-muted">
               Cancel
             </button>
-            <button onClick={() => void rename()} disabled={vm.renaming || !vm.renameValue.trim()} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            <button onClick={() => void rename()} disabled={vm.renaming || !vm.renameValue.trim()} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-2 text-sm font-bold text-rm-trip-on-brand disabled:opacity-50">
               {vm.renaming && <Loader2 className="h-4 w-4 animate-spin" />}
               Save
             </button>
@@ -154,7 +154,7 @@ export function PdfsPage() {
             <button onClick={vm.cancelDelete} className="rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-rm-trip-text-muted">
               Cancel
             </button>
-            <button onClick={() => void deletePdf()} disabled={vm.deleting} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-state-error px-4 py-2 text-sm font-bold text-white disabled:opacity-50">
+            <button onClick={() => void deletePdf()} disabled={vm.deleting} className="flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-state-error px-4 py-2 text-sm font-bold text-rm-trip-on-brand disabled:opacity-50">
               {vm.deleting && <Loader2 className="h-4 w-4 animate-spin" />}
               Delete
             </button>

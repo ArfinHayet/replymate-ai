@@ -15,13 +15,13 @@ export function CompanyTableRow({ company, index, onEdit, onDelete }: CompanyTab
   return (
     <div
       className={`grid grid-cols-[2fr_3fr_2fr_80px] px-6 py-4 items-center border-b border-gray-50 last:border-0 transition-colors duration-100 group cursor-default ${
-        isActive ? "bg-emerald-50/30 hover:bg-emerald-50/50" : "hover:bg-blue-50/20"
+        isActive ? "bg-emerald-50/30 hover:bg-emerald-50/50" : "hover:bg-rm-trip-brand/5"
       }`}
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={`h-9 w-9 rounded-rm-trip-smooth flex items-center justify-center shrink-0 font-bold text-sm ${
-            isActive ? "bg-rm-trip-brand text-white" : "bg-gray-100 text-rm-trip-text-muted"
+            isActive ? "bg-rm-trip-brand text-rm-trip-on-brand" : "bg-gray-100 text-rm-trip-text-muted"
           }`}
         >
           {company.name.charAt(0).toUpperCase()}
@@ -29,7 +29,7 @@ export function CompanyTableRow({ company, index, onEdit, onDelete }: CompanyTab
         <div className="min-w-0 flex items-center gap-2">
           <p className="font-semibold text-rm-trip-text text-sm truncate leading-tight">{company.name}</p>
           {isActive && (
-            <span className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-white bg-rm-trip-state-success px-2 py-0.5 rounded-rm-trip-pill">
+            <span className="shrink-0 inline-flex items-center gap-1 text-xs font-semibold text-rm-trip-on-brand bg-rm-trip-state-success px-2 py-0.5 rounded-rm-trip-pill">
               Active
             </span>
           )}
@@ -46,7 +46,7 @@ export function CompanyTableRow({ company, index, onEdit, onDelete }: CompanyTab
       <div className="flex justify-end gap-1">
         <button
           onClick={() => onEdit(company)}
-          className="h-8 w-8 flex items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:text-rm-trip-brand hover:bg-blue-100 border border-transparent hover:border-blue-200 transition-all duration-150"
+          className="h-8 w-8 flex items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:text-rm-trip-brand hover:bg-rm-trip-brand-light border border-transparent hover:border-rm-trip-brand/30 transition-all duration-150"
           title="Edit"
         >
           <Pencil className="h-3.5 w-3.5" />

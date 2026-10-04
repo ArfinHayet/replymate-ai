@@ -21,10 +21,10 @@ export function MarkdownUploadPanel({ viewModel, onUpload, onFileResult }: Markd
         className={cn(
           "relative border-2 border-dashed rounded-rm-trip-smooth p-10 text-center cursor-pointer transition-all duration-200 select-none group",
           viewModel.mdDragging
-            ? "border-rm-trip-accent bg-teal-50 scale-[1.01]"
+            ? "border-rm-trip-brand bg-rm-trip-brand-light scale-[1.01]"
             : viewModel.selectedMd
-              ? "border-rm-trip-accent/60 bg-teal-50/40"
-              : "border-gray-200 hover:border-rm-trip-accent/50 hover:bg-gray-50/60",
+              ? "border-rm-trip-brand/60 bg-rm-trip-brand-light/40"
+              : "border-gray-200 hover:border-rm-trip-brand/50 hover:bg-gray-50/60",
         )}
         onDragOver={(event) => {
           event.preventDefault();
@@ -43,8 +43,8 @@ export function MarkdownUploadPanel({ viewModel, onUpload, onFileResult }: Markd
         />
         {viewModel.selectedMd ? (
           <div className="flex flex-col items-center gap-3">
-            <div className="h-14 w-14 rounded-rm-trip-smooth bg-rm-trip-accent/10 flex items-center justify-center">
-              <FileText className="h-7 w-7 text-rm-trip-accent" />
+            <div className="h-14 w-14 rounded-rm-trip-smooth bg-rm-trip-brand/10 flex items-center justify-center">
+              <FileText className="h-7 w-7 text-rm-trip-brand" />
             </div>
             <div>
               <p className="font-semibold text-rm-trip-text text-sm">{viewModel.selectedMd.name}</p>
@@ -52,23 +52,23 @@ export function MarkdownUploadPanel({ viewModel, onUpload, onFileResult }: Markd
                 {(viewModel.selectedMd.size / 1024).toFixed(1)} KB
               </p>
             </div>
-            <span className="text-xs text-rm-trip-accent font-medium">Click to change file</span>
+            <span className="text-xs text-rm-trip-brand font-medium">Click to change file</span>
           </div>
         ) : (
           <div className="flex flex-col items-center gap-3 text-rm-trip-text-muted">
-            <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-rm-trip-accent/10 transition-colors duration-200">
-              <FileText className="h-7 w-7 group-hover:text-rm-trip-accent transition-colors duration-200" />
+            <div className="h-14 w-14 rounded-rm-trip-smooth bg-gray-100 flex items-center justify-center group-hover:bg-rm-trip-brand/10 transition-colors duration-200">
+              <FileText className="h-7 w-7 group-hover:text-rm-trip-brand transition-colors duration-200" />
             </div>
             <div>
               <p className="font-semibold text-rm-trip-text text-sm">Drop your Markdown file here</p>
               <p className="text-xs mt-0.5">
-                or <span className="text-rm-trip-accent font-medium">click to browse</span>
+                or <span className="text-rm-trip-brand font-medium">click to browse</span>
               </p>
             </div>
           </div>
         )}
       </div>
-      {viewModel.mdState === "uploading" && <ProgressBar value={viewModel.mdProgress} color="bg-rm-trip-accent" />}
+      {viewModel.mdState === "uploading" && <ProgressBar value={viewModel.mdProgress} color="bg-rm-trip-brand" />}
       {viewModel.mdState === "success" && (
         <SuccessBanner>
           <p className="text-sm font-semibold text-emerald-800">Markdown file added</p>
@@ -79,7 +79,7 @@ export function MarkdownUploadPanel({ viewModel, onUpload, onFileResult }: Markd
         <button
           onClick={onUpload}
           disabled={!viewModel.selectedMd || viewModel.mdState === "uploading"}
-          className="flex items-center gap-2 bg-rm-trip-accent hover:bg-rm-trip-accent-dark text-white font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+          className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-semibold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-card transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
         >
           <Upload className="h-4 w-4" />
           {viewModel.mdState === "uploading" ? "Processing..." : "Upload file"}

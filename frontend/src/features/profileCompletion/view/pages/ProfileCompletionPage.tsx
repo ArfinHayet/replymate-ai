@@ -113,7 +113,7 @@ export function ProfileCompletionPage({
               <Link
                 key={step.key}
                 to={step.to}
-                className="group flex min-h-40 cursor-pointer flex-col justify-between rounded-rm-trip-smooth border border-gray-100 bg-white p-5 shadow-rm-trip-card transition-all hover:-translate-y-0.5 hover:border-rm-trip-brand/45 hover:shadow-[0_18px_45px_rgba(15,23,42,0.10)] focus:outline-none focus:ring-2 focus:ring-rm-trip-brand/35 focus:ring-offset-2"
+                className="group flex min-h-40 cursor-pointer flex-col justify-between rounded-rm-trip-smooth border border-gray-100 bg-white p-5 shadow-rm-trip-card transition-colors hover:border-rm-trip-brand/45 focus:outline-none focus:ring-2 focus:ring-rm-trip-brand/35 focus:ring-offset-2"
                 aria-label={`Open ${step.title}`}
               >
                 <div className="flex items-start justify-between gap-4">
@@ -142,7 +142,7 @@ export function ProfileCompletionPage({
                 </div>
                 <div className="mt-4">
                   <p className="text-sm leading-6 text-rm-trip-text-muted">{step.description}</p>
-                  <div className="mt-4 inline-flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-3 py-2 text-sm font-bold text-white shadow-sm transition-all group-hover:bg-rm-trip-brand-dark">
+                  <div className="mt-4 inline-flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-3 py-2 text-sm font-bold text-rm-trip-on-brand shadow-sm transition-all group-hover:bg-rm-trip-brand-dark">
                     {done ? "Review step" : "Complete step"}
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </div>

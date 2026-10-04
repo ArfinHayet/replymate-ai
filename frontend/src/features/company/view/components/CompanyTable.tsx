@@ -28,8 +28,7 @@ export function CompanyTable({ companies, loading, onCreate, onEdit, onDelete }:
           </div>
 
           {loading && <CompanyTableLoadingRows />}
-          {!loading && companies.length === 0 && <CompanyEmptyState onCreate={onCreate} />}
-          {!loading &&
+          {!loading && companies.length > 0 &&
             companies.map((company, index) => (
               <CompanyTableRow
                 key={company.id}
@@ -41,6 +40,7 @@ export function CompanyTable({ companies, loading, onCreate, onEdit, onDelete }:
             ))}
         </div>
       </div>
+      {!loading && companies.length === 0 && <CompanyEmptyState onCreate={onCreate} />}
     </div>
   );
 }

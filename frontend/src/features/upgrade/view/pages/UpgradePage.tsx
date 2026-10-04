@@ -284,7 +284,7 @@ export function UpgradePage() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <div className="inline-flex items-center gap-2 rounded-rm-trip-smooth bg-blue-50 px-3 py-1 text-xs font-semibold text-rm-trip-brand">
+                          <div className="inline-flex items-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand-light px-3 py-1 text-xs font-semibold text-rm-trip-brand">
                             <Sparkles className="h-3.5 w-3.5" />
                             {formatPlanName(plan.name)}
                           </div>
@@ -326,7 +326,7 @@ export function UpgradePage() {
                               checkoutPlanId !== null ||
                               config?.configured === false
                             }
-                            className="inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-semibold text-white shadow-rm-trip-card transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="inline-flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-semibold text-rm-trip-on-brand shadow-rm-trip-card transition-all hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                           >
                             {isStarting && (
                               <Loader2 className="h-4 w-4 animate-spin" />

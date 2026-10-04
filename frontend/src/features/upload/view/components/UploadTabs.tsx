@@ -22,9 +22,9 @@ export function UploadTabs({ activeTab, onChange }: UploadTabsProps) {
           key={tab.id}
           onClick={() => onChange(tab.id)}
           className={cn(
-            "flex items-center justify-center gap-1 py-1.5 px-3 rounded-[0.4rem] text-xs font-semibold transition-all duration-200",
+            "flex items-center justify-center gap-1 py-1.5 px-3 rounded-rm-trip-smooth text-xs font-semibold transition-all duration-200",
             activeTab === tab.id
-              ? "bg-rm-trip-brand text-white"
+              ? "bg-rm-trip-brand text-rm-trip-on-brand"
               : "text-rm-trip-text-muted hover:text-rm-trip-text hover:bg-gray-50",
           )}
         >

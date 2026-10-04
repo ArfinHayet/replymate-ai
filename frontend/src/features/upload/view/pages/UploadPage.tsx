@@ -218,7 +218,7 @@ function SubscriptionLimitAlert({ usage }: { usage: UsageResponse["usage"] | nul
   return (
     <div
       className={`rounded-rm-trip-smooth border px-4 py-3 text-sm text-rm-trip-text shadow-rm-trip-card ${
-        hasBlockedContentType ? "border-amber-100 bg-amber-50" : "border-blue-100 bg-blue-50"
+        hasBlockedContentType ? "border-amber-100 bg-amber-50" : "border-rm-trip-brand/20 bg-rm-trip-brand-light"
       }`}
     >
       <div className="flex items-start gap-3">

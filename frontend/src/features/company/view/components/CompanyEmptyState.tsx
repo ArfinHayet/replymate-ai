@@ -16,7 +16,7 @@ export function CompanyEmptyState({ onCreate }: CompanyEmptyStateProps) {
       </div>
       <button
         onClick={onCreate}
-        className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-white font-bold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-glow text-sm transition-all duration-150"
+        className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-bold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-glow text-sm transition-all duration-150"
       >
         <Plus className="h-4 w-4" /> Add Company
       </button>

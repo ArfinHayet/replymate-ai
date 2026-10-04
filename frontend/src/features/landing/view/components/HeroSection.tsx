@@ -1,100 +1,106 @@
-import type { ReactNode } from "react";
 import { ArrowRight, Send, Sparkles, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { shell } from "./landingContent";
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-[#f8fbff] before:pointer-events-none before:absolute before:inset-0 before:bg-[radial-gradient(ellipse_70%_55%_at_15%_25%,rgba(37,99,235,0.16)_0%,transparent_55%),radial-gradient(ellipse_45%_40%_at_90%_10%,rgba(20,184,166,0.12)_0%,transparent_45%),radial-gradient(ellipse_50%_60%_at_55%_95%,rgba(37,99,235,0.10)_0%,transparent_50%)] after:pointer-events-none after:absolute after:inset-0 after:bg-[radial-gradient(rgba(15,23,42,0.06)_1px,transparent_1px)] after:bg-[length:28px_28px]">
-      <div className={cn(shell, "relative z-[1] grid grid-cols-2 items-center gap-[60px] px-7 py-[88px] pb-24 max-[900px]:grid-cols-1 max-[900px]:gap-12 max-[900px]:px-5 max-[900px]:py-16 max-[900px]:pb-[72px]")}>
+    <section className="landing-hero relative overflow-hidden border-b border-gray-200">
+      <div className={cn(shell, "relative z-[1] grid grid-cols-[1.05fr_0.95fr] items-center gap-14 px-7 py-20 max-[900px]:grid-cols-1 max-[900px]:gap-12 max-[900px]:px-5 max-[900px]:py-14")}>
         <div>
-          <div className="mb-[22px] inline-flex items-center gap-1.5 rounded-full border border-[rgba(37,99,235,0.28)] bg-[var(--rm-trip-brand-light)] px-[13px] py-[5px] text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--rm-trip-brand)]">
-            <Sparkles size={12} />
-            AI support assistant for your knowledge base
+          <div className="mb-6 inline-flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-rm-trip-brand">
+            <Sparkles size={13} />
+            SupportMate / Knowledge support system
           </div>
-          <h1 className="mb-[22px] font-[var(--rm-trip-font-heading)] text-[clamp(40px,5.2vw,62px)] font-extrabold leading-[1.06] text-[#0f172a]">
-            A grounded AI assistant for your <span className="text-[#60a5fa]">support content</span>
+          <h1 className="mb-6 max-w-[680px] font-[var(--font-display)] text-[clamp(3.5rem,7.6vw,6rem)] font-extrabold leading-[0.94] tracking-[-0.065em] text-rm-trip-text">
+            Knowledge in.
+            <br />
+            <em className="font-[var(--font-editorial)] font-normal tracking-[-0.055em] text-rm-trip-brand">
+              Answers out.
+            </em>
           </h1>
-          <p className="mb-9 max-w-[500px] text-[17px] leading-[1.7] text-[#64748b]">
+          <p className="mb-8 max-w-[540px] text-base leading-7 text-rm-trip-text-muted sm:text-lg">
             SupportMate answers from your approved documents and pages, powers your website widget, and gives your team
-            full visibility with analytics and conversation history.
+            visibility with analytics and conversation history.
           </p>
-          <div className="mb-11 flex flex-wrap gap-3">
+          <div className="mb-9 flex flex-wrap gap-3">
             <a
               href="#cta"
-              className="inline-flex items-center gap-2 rounded-[var(--rm-trip-smooth)] bg-[var(--rm-trip-brand)] px-6 py-[13px] text-[15px] font-semibold text-white no-underline shadow-[var(--rm-trip-glow-shadow)] transition hover:-translate-y-px hover:bg-[var(--rm-trip-brand-dark)] hover:shadow-[0_0_32px_rgba(37,99,235,0.22),var(--rm-trip-glow-shadow)]"
+              className="inline-flex min-h-11 items-center gap-2 border border-rm-trip-brand bg-rm-trip-brand px-5 py-3 text-sm font-semibold text-rm-trip-on-brand no-underline shadow-rm-trip-card transition-colors hover:bg-rm-trip-brand-dark"
             >
               Get a workspace walkthrough <ArrowRight size={16} />
             </a>
             <a
               href="#screenshots"
-              className="inline-flex items-center gap-2 rounded-[var(--rm-trip-smooth)] border border-[rgba(15,23,42,0.16)] bg-white px-[22px] py-[13px] text-[15px] font-medium text-[var(--rm-trip-text)] no-underline transition hover:border-[var(--rm-trip-brand-light)] hover:bg-[var(--rm-trip-surface)]"
+              className="inline-flex min-h-11 items-center gap-2 border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-rm-trip-text no-underline transition-colors hover:border-rm-trip-brand hover:text-rm-trip-brand"
             >
-              See the dashboard
+              See the workspace
             </a>
           </div>
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="grid max-w-[600px] grid-cols-3 border-y border-gray-200 bg-rm-trip-surface-card/70">
             {[
-              ["4", "content types supported"],
+              ["4", "content types"],
               ["1 script", "to embed your widget"],
               ["Live", "analytics and chat history"],
-            ].map(([value, label]) => (
-              <div key={value} className="rounded-[var(--rm-trip-smooth)] border border-[rgba(15,23,42,0.10)] bg-white px-4 py-3.5 shadow-[var(--rm-trip-card-shadow)]">
-                <strong className="block font-[var(--rm-trip-font-heading)] text-xl font-bold text-[#0f172a]">{value}</strong>
-                <span className="text-[11.5px] font-medium text-[#64748b]">{label}</span>
+            ].map(([value, label], index) => (
+              <div
+                key={value}
+                className={cn("px-4 py-4", index > 0 && "border-l border-gray-200")}
+              >
+                <strong className="block font-[var(--font-display)] text-xl font-bold text-rm-trip-text">{value}</strong>
+                <span className="mt-1 block text-[11px] font-medium leading-4 text-rm-trip-text-muted">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="relative">
-          <div className="overflow-hidden rounded-[calc(var(--rm-trip-smooth)+6px)] border border-[rgba(15,23,42,0.10)] bg-white shadow-[var(--rm-trip-lift-shadow)]">
-            <div className="flex items-center gap-2.5 border-b border-[rgba(15,23,42,0.10)] px-4 py-3.5">
-              <span className="h-[9px] w-[9px] rounded-full bg-[#22c55e] shadow-[0_0_0_3px_rgba(34,197,94,0.18),0_0_10px_rgba(34,197,94,0.35)] animate-pulse" />
-              <div>
-                <p className="text-[13.5px] font-semibold text-[#0f172a]">SupportMate Assistant</p>
-                <p className="text-[11.5px] text-[#64748b]">Online now</p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2.5 bg-[var(--rm-trip-surface)] p-4">
-              <ChatBubble>Hi, I can help using your uploaded docs and indexed website pages.</ChatBubble>
-              <ChatBubble user>Can I add our help center and product PDFs?</ChatBubble>
-              <ChatBubble>
-                Yes. Add URLs, PDFs, markdown, and images in Add Content, then ask questions from Chat.
-              </ChatBubble>
-              <div className="max-w-[88%] rounded-[12px_12px_12px_4px] border border-[rgba(37,99,235,0.28)] bg-[var(--rm-trip-brand-light)] px-3.5 py-2.5 text-[13px] font-semibold text-[var(--rm-trip-brand)]">
-                Indexed source match: 5 sections
-              </div>
-            </div>
-            <div className="flex items-center justify-between border-t border-[rgba(15,23,42,0.10)] px-4 py-3 text-[13px] text-[var(--rm-trip-text-muted)]">
-              <span>Ask about your knowledge base...</span>
-              <Send size={14} className="text-[var(--rm-trip-brand)]" />
-            </div>
+        <div className="relative mx-auto w-full max-w-[560px] px-2 py-5">
+          <div className="tape-mark absolute -left-3 top-2 z-10 rotate-[-4deg] px-3 py-1.5 text-[10px] font-bold">
+            Approved sources
           </div>
-          <div className="absolute left-[-18px] top-8 rounded-[var(--rm-trip-smooth)] border border-[rgba(15,23,42,0.10)] bg-white px-[13px] py-2 shadow-[var(--rm-trip-lift-shadow)]">
-            <div className="mb-0.5 flex items-center gap-1 text-[11px] font-semibold text-[#94a3b8]">
-              <Zap size={11} className="text-[var(--rm-trip-brand)]" />
-              Source status
+          <div className="theme-terminal">
+            <div className="theme-terminal-titlebar flex items-center justify-between gap-3 px-4 py-3">
+              <span className="font-mono text-xs font-bold tracking-[0.1em]">SUPPORTMATE / ANSWER TERMINAL</span>
+              <span className="theme-terminal-meta text-[10px]">PREVIEW 01</span>
             </div>
-            <div className="text-[13px] font-bold text-[var(--rm-trip-brand)]">Grounded answer</div>
+            <div className="p-5 sm:p-7">
+              <p className="theme-terminal-meta flex items-center gap-2 text-[11px]">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                Static example / grounded in your knowledge
+              </p>
+              <div className="mt-7 space-y-5">
+                <div>
+                  <p className="theme-terminal-meta mb-2 text-[10px]">Visitor asks</p>
+                  <div className="border border-[rgb(var(--color-terminal-border))] bg-[rgb(var(--color-terminal-text))] px-3.5 py-3 text-sm leading-6 text-rm-trip-text">
+                    Can I add our help center and product PDFs?
+                  </div>
+                </div>
+                <div>
+                  <p className="theme-terminal-meta mb-2 text-[10px]">SupportMate answers</p>
+                  <p className="max-w-[440px] text-sm leading-6 text-[rgb(var(--color-terminal-text))]">
+                    Yes. Add website URLs, PDFs, markdown files, and images. Your assistant answers using that approved content.
+                  </p>
+                </div>
+                <div className="border-l-2 border-rm-trip-brand-light pl-3.5">
+                  <p className="theme-terminal-meta mb-1 text-[10px]">Source / Content pipeline</p>
+                  <p className="flex items-center gap-2 text-xs font-semibold text-[rgb(var(--color-terminal-accent))]">
+                    <Zap size={13} /> Answer linked to approved sources
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-[rgb(var(--color-terminal-border))] px-4 py-3">
+              <span className="font-mono text-[10px] tracking-wide text-[rgb(var(--color-terminal-muted))]">
+                ILLUSTRATIVE EXAMPLE — NO LIVE REQUEST
+              </span>
+              <Send size={14} className="text-[rgb(var(--color-terminal-accent))]" aria-hidden="true" />
+            </div>
           </div>
         </div>
       </div>
+      <div className={cn(shell, "relative z-[1] flex items-center justify-between gap-4 border-t border-gray-300 px-7 py-4 font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-rm-trip-text-muted max-[700px]:flex-wrap max-[700px]:px-5")}>
+        <span>01 / Support grounded in your business knowledge</span>
+        <span>PDFs · Markdown · Web pages · Images</span>
+      </div>
     </section>
-  );
-}
-
-function ChatBubble({ children, user = false }: { children: ReactNode; user?: boolean }) {
-  return (
-    <div
-      className={cn(
-        "max-w-[88%] px-3.5 py-2.5 text-[13.5px] leading-normal",
-        user
-          ? "self-end rounded-[12px_12px_4px_12px] bg-[var(--rm-trip-brand)] font-medium text-white"
-          : "rounded-[12px_12px_12px_4px] border border-[rgba(15,23,42,0.10)] bg-white text-[var(--rm-trip-text)]",
-      )}
-    >
-      {children}
-    </div>
   );
 }

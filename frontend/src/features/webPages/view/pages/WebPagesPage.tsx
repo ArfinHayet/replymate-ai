@@ -54,7 +54,7 @@ export function WebPagesPage() {
               className: "w-[46%]",
               render: (page, index) => (
                 <div className="flex min-w-0 items-center gap-3">
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-rm-trip-smooth ${index === 0 ? "bg-rm-trip-brand text-white" : "bg-gray-100 text-rm-trip-text-muted"}`}>
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-rm-trip-smooth ${index === 0 ? "bg-rm-trip-brand text-rm-trip-on-brand" : "bg-gray-100 text-rm-trip-text-muted"}`}>
                     <Globe className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
@@ -73,7 +73,7 @@ export function WebPagesPage() {
               className: "w-[19%]",
               render: (page) => (
                 <div className="flex flex-col items-start gap-1">
-                  <span className="rounded-full border border-blue-100 bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-rm-trip-brand">{page.chunksCreated} sections</span>
+                  <span className="rounded-full border border-rm-trip-brand/20 bg-rm-trip-brand-light px-2.5 py-0.5 text-xs font-semibold text-rm-trip-brand">{page.chunksCreated} sections</span>
                   <span className="text-xs text-rm-trip-text-muted">
                     {page.pagesFetched ?? 1} page{(page.pagesFetched ?? 1) !== 1 ? "s" : ""}
                     {(page.pagesFailed ?? 0) > 0 ? ` - ${page.pagesFailed} failed` : ""}
@@ -99,7 +99,7 @@ export function WebPagesPage() {
               headerClassName: "text-right",
               render: (page) => (
                 <div className="flex justify-end gap-1">
-                  <button onClick={() => void vm.refetchPage(page).then(showResult)} disabled={vm.refetchingId === page.id} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-blue-50 hover:text-rm-trip-brand disabled:opacity-50" title="Refetch">
+                  <button onClick={() => void vm.refetchPage(page).then(showResult)} disabled={vm.refetchingId === page.id} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-rm-trip-brand-light hover:text-rm-trip-brand disabled:opacity-50" title="Refetch">
                     {vm.refetchingId === page.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
                   </button>
                   <button onClick={() => vm.requestDelete(page)} className="flex h-8 w-8 items-center justify-center rounded-rm-trip-smooth text-rm-trip-text-muted hover:bg-red-50 hover:text-rm-trip-state-error" title="Delete">
@@ -135,7 +135,7 @@ export function WebPagesPage() {
             <button onClick={vm.cancelDelete} className="rounded-rm-trip-smooth border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-rm-trip-text-muted">
               Cancel
             </button>
-            <button onClick={() => void remove()} disabled={vm.deleting} className="flex items-center gap-2 rounded-rm-trip-smooth bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+            <button onClick={() => void remove()} disabled={vm.deleting} className="flex items-center gap-2 rounded-rm-trip-smooth bg-red-600 px-4 py-2 text-sm font-semibold text-rm-trip-on-brand disabled:opacity-50">
               {vm.deleting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
               Delete
             </button>

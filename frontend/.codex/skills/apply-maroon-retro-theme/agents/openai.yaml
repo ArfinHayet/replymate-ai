@@ -1,0 +1,14 @@
+interface:
+  display_name: Maroon Retro Theme
+  short_description: Restyle existing projects with a central maroon theme
+  default_prompt: Use $apply-maroon-retro-theme to restyle my existing project using
+    the approved maroon retro design and one central source for all theme colours.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
+  allow_implicit_invocation: true

@@ -15,7 +15,7 @@ export function UploadSteps() {
       <ol className="space-y-2.5">
         {steps.map((step, index) => (
           <li key={step} className="flex items-start gap-3 text-sm text-rm-trip-text-muted">
-            <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-rm-trip-brand text-white text-xs font-bold flex items-center justify-center">
+            <span className="mt-0.5 h-5 w-5 shrink-0 rounded-full bg-rm-trip-brand text-rm-trip-on-brand text-xs font-bold flex items-center justify-center">
               {index + 1}
             </span>
             {step}
