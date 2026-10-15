@@ -320,4 +320,14 @@ export class DocumentService {
     await this.pdfRepo.remove(pdf);
     await this.profileCompletionService.refresh(userId);
   }
+
+  async deletePdfAsAdmin(id: string): Promise<void> {
+    const pdf = await this.pdfRepo.findOne({ where: { id } });
+    if (!pdf) throw new NotFoundException(`PDF ${id} not found`);
+    await this.pdfRepo.remove(pdf);
+    if (pdf.userId) {
+      await this.dataSource.query('DELETE FROM cached_answers WHERE "userId" = $1', [pdf.userId]);
+      await this.profileCompletionService.refresh(pdf.userId);
+    }
+  }
 }

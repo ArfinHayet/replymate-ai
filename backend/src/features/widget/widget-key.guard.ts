@@ -6,6 +6,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { ConfigService } from '@nestjs/config';
+import { createClient } from '@supabase/supabase-js';
 import { WidgetKeyService } from './widget-key.service';
 import { AllowedDomainService } from './allowed-domain.service';
 
@@ -30,10 +32,19 @@ function requestOrigin(req: Request): string | undefined {
 
 @Injectable()
 export class WidgetKeyGuard implements CanActivate {
+  private readonly supabase: ReturnType<typeof createClient>;
+
   constructor(
     private readonly widgetKeyService: WidgetKeyService,
     private readonly allowedDomainService: AllowedDomainService,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.supabase = createClient(
+      config.getOrThrow<string>('supabase.url'),
+      config.getOrThrow<string>('supabase.serviceRoleKey'),
+      { auth: { autoRefreshToken: false, persistSession: false } },
+    );
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<WidgetRequest>();
@@ -45,6 +56,12 @@ export class WidgetKeyGuard implements CanActivate {
 
     const keyRecord = await this.widgetKeyService.findByKey(key);
     if (!keyRecord) throw new UnauthorizedException('Invalid widget key');
+
+    const { data: owner, error: ownerError } = await this.supabase.auth.admin.getUserById(keyRecord.userId);
+    if (ownerError || !owner.user) throw new ForbiddenException('Widget owner is unavailable');
+    if (owner.user.banned_until && new Date(owner.user.banned_until).getTime() > Date.now()) {
+      throw new ForbiddenException('Widget owner is blocked');
+    }
 
     const origin = req.headers['origin'] as string | undefined;
 

@@ -37,6 +37,7 @@ import { ProfileCompletion } from './features/profile-completion/profile-complet
 import { ProfileCompletionModule } from './features/profile-completion/profile-completion.module';
 import { ChatToolConfig } from './features/chat-tools/chat-tool-config.entity';
 import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
+import { AdminModule } from './features/admin/admin.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
     PaymentsModule,
     ProfileCompletionModule,
     ChatToolsModule,
+    AdminModule,
   ],
 })
 export class AppModule implements OnModuleInit {

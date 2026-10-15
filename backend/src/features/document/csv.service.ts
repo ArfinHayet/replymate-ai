@@ -185,4 +185,14 @@ export class CsvService {
     await this.csvRepo.remove(csv);
     await this.profileCompletionService.refresh(userId);
   }
+
+  async deleteCsvAsAdmin(id: string): Promise<void> {
+    const csv = await this.csvRepo.findOne({ where: { id } });
+    if (!csv) throw new NotFoundException(`CSV ${id} not found`);
+    await this.csvRepo.remove(csv);
+    if (csv.userId) {
+      await this.dataSource.query('DELETE FROM cached_answers WHERE "userId" = $1', [csv.userId]);
+      await this.profileCompletionService.refresh(csv.userId);
+    }
+  }
 }

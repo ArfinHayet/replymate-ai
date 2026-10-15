@@ -22,5 +22,6 @@ import { ProfileCompletionModule } from '../profile-completion/profile-completio
   ],
   controllers: [DocumentController],
   providers: [DocumentService, CsvService],
+  exports: [DocumentService, CsvService],
 })
 export class DocumentModule {}

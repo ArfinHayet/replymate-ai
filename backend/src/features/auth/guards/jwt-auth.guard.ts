@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   Injectable,
   Logger,
+  ForbiddenException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -44,6 +45,10 @@ export class JwtAuthGuard implements CanActivate {
     if (error || !data.user) {
       this.logger.error(`Supabase token validation failed: ${error?.message}`);
       throw new UnauthorizedException(error?.message);
+    }
+
+    if (data.user.banned_until && new Date(data.user.banned_until).getTime() > Date.now()) {
+      throw new ForbiddenException('This account is blocked');
     }
 
     (req as Request & { user: unknown }).user = data.user;

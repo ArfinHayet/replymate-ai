@@ -11,5 +11,6 @@ import { UsageModule } from '../usage/usage.module';
   imports: [TypeOrmModule.forFeature([ImageRecord]), AiModule, LlmFactoryModule, UsageModule],
   controllers: [ImageController],
   providers: [ImageService],
+  exports: [ImageService],
 })
 export class ImageModule {}
