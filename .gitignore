@@ -13,7 +13,7 @@ infra/node_modules/
 backend/.lambda-build/
 
 # Dependencies
-node_modules/
+node_modules
 
 # Build output
 dist/
