@@ -143,7 +143,7 @@ case "$ACTION" in
       API_URL=$(node -e "
         const o = require('./cdk-outputs.json');
         const stack = Object.keys(o)[0];
-        console.log(o[stack]?.ApiUrl ?? '');
+        console.log(o[stack]?.CustomApiUrl ?? o[stack]?.ApiUrl ?? '');
       " 2>/dev/null || true)
 
       if [[ -n "$API_URL" ]]; then

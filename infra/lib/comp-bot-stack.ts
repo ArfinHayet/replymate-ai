@@ -7,6 +7,7 @@ import * as apigatewayv2 from 'aws-cdk-lib/aws-apigatewayv2';
 import * as apigatewayv2integrations from 'aws-cdk-lib/aws-apigatewayv2-integrations';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as iam from 'aws-cdk-lib/aws-iam';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 
 export interface CompBotStackProps extends cdk.StackProps {
   /** Deployment environment label, e.g. 'prod' | 'staging' */
@@ -87,7 +88,7 @@ export class CompBotStack extends cdk.Stack {
       description: `Comp-bot backend API (${deployEnv})`,
       corsPreflight: {
         // Fine-grained CORS is handled by NestJS; API GW passes OPTIONS through.
-        allowHeaders: ['*'],
+        allowHeaders: ['*', 'Authorization'],
         allowMethods: [apigatewayv2.CorsHttpMethod.ANY],
         allowOrigins: ['*'],
         maxAge: cdk.Duration.days(1),
@@ -115,6 +116,37 @@ export class CompBotStack extends cdk.Stack {
         { payloadFormatVersion: apigatewayv2.PayloadFormatVersion.VERSION_2_0 },
       ),
     });
+
+    // Production uses Vercel DNS. Add ACM's validation CNAME there while the
+    // first deployment waits, then point api at CustomApiDnsTarget below.
+    if (deployEnv === 'prod') {
+      const hostname = 'api.supportmate.online';
+      const certificate = new acm.Certificate(this, 'ApiDomainCertificate', {
+        domainName: hostname,
+        allowExport: false,
+        validation: acm.CertificateValidation.fromDns(),
+      });
+
+      const customDomain = new apigatewayv2.DomainName(this, 'ApiCustomDomain', {
+        domainName: hostname,
+        certificate,
+        endpointType: apigatewayv2.EndpointType.REGIONAL,
+        securityPolicy: apigatewayv2.SecurityPolicy.TLS_1_2,
+      });
+
+      new apigatewayv2.ApiMapping(this, 'ApiCustomDomainMapping', {
+        api: httpApi,
+        domainName: customDomain,
+      });
+
+      new cdk.CfnOutput(this, 'CustomApiUrl', {
+        value: `https://${hostname}`,
+      });
+
+      new cdk.CfnOutput(this, 'CustomApiDnsTarget', {
+        value: customDomain.regionalDomainName,
+      });
+    }
 
     // ── Stack outputs ─────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'ApiUrl', {
