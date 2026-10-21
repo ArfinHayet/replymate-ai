@@ -18,13 +18,12 @@ export function CompanyDeleteDialog({ deleteTarget, deleting, onCancel, onDelete
             <div className="h-9 w-9 rounded-rm-trip-smooth bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
               <Trash2 className="h-5 w-5 text-rm-trip-state-error" />
             </div>
-            <DialogTitle className="font-rm-trip-heading font-bold text-rm-trip-text">Delete Company?</DialogTitle>
+            <DialogTitle className="font-rm-trip-heading font-bold text-rm-trip-text">Delete Bot Information?</DialogTitle>
           </div>
         </DialogHeader>
         <div className="px-6 py-5 bg-white">
           <DialogDescription className="text-sm text-rm-trip-text-muted leading-relaxed">
-            This will permanently delete <span className="font-bold text-rm-trip-text">{deleteTarget?.name}</span>. The
-            chatbot will no longer have a company identity until another profile is added.
+            This will permanently delete the bot information for <span className="font-bold text-rm-trip-text">{deleteTarget?.name}</span>.
           </DialogDescription>
         </div>
         <DialogFooter className="px-6 py-4 border-t border-gray-100 bg-gray-50/60 flex gap-2">

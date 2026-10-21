@@ -36,7 +36,7 @@ export function ForgotPasswordPage() {
   if (sent) {
     return (
       <AuthSurface>
-        <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
+        <div className="flex min-h-[calc(100dvh-58px)] w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
           <div className="mb-6 flex justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand-light">
               <CheckCircle2 className="h-8 w-8 text-rm-trip-brand" />
@@ -62,7 +62,7 @@ export function ForgotPasswordPage() {
 
   return (
     <AuthSurface>
-      <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
+      <div className="flex min-h-[calc(100dvh-58px)] w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
         <AuthBrandHeader title="Reset your password" subtitle="Enter your email and we will send reset instructions." />
 
         <form onSubmit={handleSubmit} className="space-y-4">

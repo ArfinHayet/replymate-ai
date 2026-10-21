@@ -1,7 +1,10 @@
 import { type FormEvent, useMemo, useState } from "react";
+import axios from "axios";
 import { isLoggedIn } from "@/lib/auth";
+import { API_BASE_URL } from "@/lib/api";
+import { apiRoutes } from "@/lib/apiRoutes";
+import { useTurnstile } from "@/lib/turnstile";
 import {
-  CONTACT_EMAIL,
   type ContactFormState,
   CommandCenterSection,
   ContactSection,
@@ -12,7 +15,6 @@ import {
   LandingFooter,
   LandingHeader,
   MetricsStrip,
-  PricingSection,
   ScreenshotsSection,
   TrustSection,
   WorkflowSection,
@@ -24,6 +26,7 @@ export function LandingPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const isAuthenticated = isLoggedIn();
+  const turnstile = useTurnstile();
 
   const messagePreview = useMemo(() => {
     const content = form.message.trim();
@@ -39,22 +42,58 @@ export function LandingPage() {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
-      return setError("Please fill in your name, email, and message.");
+    if (submitting) return;
+    setError(null);
+    setSuccess(null);
+
+    const payload = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      subject: form.subject.trim(),
+      message: form.message.trim(),
+    };
+    if (!payload.name || !payload.email || !payload.message) {
+      setError("Please fill in your name, email, and message.");
+      return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      return setError("Please enter a valid email address.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    if (payload.name.length > 120 || payload.email.length > 254 ||
+        payload.subject.length > 200 || payload.message.length > 5000) {
+      setError("Please shorten the fields to their allowed lengths.");
+      return;
     }
 
-    const subject = form.subject.trim() || "New contact request from SupportMate landing page";
-    const body = [`Name: ${form.name.trim()}`, `Email: ${form.email.trim()}`, "", form.message.trim()].join("\n");
+    const turnstileToken = turnstile.consumeToken();
+    if (!turnstileToken) {
+      setError("Please complete the security check.");
+      return;
+    }
 
     setSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setSuccess(`Thanks ${form.name.split(" ")[0] || "there"}. Your contact request is ready to send.`);
-    setSubmitting(false);
-    setForm({ name: "", email: "", subject: "", message: "" });
+    try {
+      await axios.post<{ id: string; createdAt: string }>(
+        apiRoutes.contactMessages.create,
+        { ...payload, turnstileToken },
+        { baseURL: API_BASE_URL, timeout: 20000 },
+      );
+      setForm({ name: "", email: "", subject: "", message: "" });
+      setSuccess(`Thanks ${payload.name.split(/\s+/)[0]}. Your message has been sent. We will get back to you by email.`);
+    } catch (reason: unknown) {
+      let message = "Could not send your message. Please try again.";
+      if (axios.isAxiosError<{ message?: string | string[] }>(reason) &&
+          (reason.response?.status === 400 || reason.response?.status === 503)) {
+        const serverMessage = reason.response.data?.message;
+        if (Array.isArray(serverMessage)) message = serverMessage.join(" ");
+        else if (typeof serverMessage === "string" && serverMessage) message = serverMessage;
+      }
+      setError(message);
+    } finally {
+      setSubmitting(false);
+      turnstile.reset();
+    }
   }
 
   return (
@@ -69,7 +108,6 @@ export function LandingPage() {
         <FeaturesSection />
         <CommandCenterSection />
         <TrustSection />
-        <PricingSection />
         <FaqSection />
         <ContactSection
           error={error}
@@ -80,6 +118,7 @@ export function LandingPage() {
           set={set}
           submitting={submitting}
           success={success}
+          turnstile={turnstile}
         />
       </main>
       <LandingFooter />

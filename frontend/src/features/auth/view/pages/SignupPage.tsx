@@ -2,6 +2,7 @@ import { type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 import { useSignupViewModel } from "../../viewModel/useSignupViewModel";
 import { AuthBrandHeader } from "../components/AuthBrandHeader";
 import { AuthDivider } from "../components/AuthDivider";
@@ -38,7 +39,7 @@ export function SignupPage() {
   if (viewModel.done) {
     return (
       <AuthSurface>
-        <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 text-center sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
+        <div className="flex min-h-[calc(100dvh-58px)] w-full flex-col justify-center bg-white px-5 py-8 text-center sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
           <div className="mb-4 flex justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-rm-trip-smooth bg-emerald-50">
               <CheckCircle2 className="h-8 w-8 text-rm-trip-success" />
@@ -71,7 +72,7 @@ export function SignupPage() {
 
   return (
     <AuthSurface>
-      <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
+      <div className="flex min-h-[calc(100dvh-58px)] w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
         <AuthBrandHeader title="Create your SupportMate AI account" subtitle="Set up your business assistant workspace." />
 
         <form onSubmit={(event) => void handleSubmit(event)} className="space-y-4">
@@ -120,9 +121,11 @@ export function SignupPage() {
             />
           </div>
 
+          <TurnstileWidget action="signup" control={viewModel.turnstile} />
+
           <button
             type="submit"
-            disabled={viewModel.loading}
+            disabled={viewModel.loading || !viewModel.turnstile.token}
             className="flex w-full items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand px-4 py-3 text-sm font-bold text-rm-trip-on-brand shadow-rm-trip-glow transition-all hover:bg-rm-trip-brand-dark disabled:cursor-not-allowed disabled:opacity-70"
           >
             {viewModel.loading && <Loader2 className="h-4 w-4 animate-spin" />}

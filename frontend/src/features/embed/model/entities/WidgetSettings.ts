@@ -10,13 +10,3 @@ export interface AllowedDomain {
   domain: string;
   createdAt: string;
 }
-
-export type ChatToolKey = "flight_search" | "live_agent_contact" | "ecommerce_product";
-
-export interface ChatToolConfig {
-  toolKey: ChatToolKey;
-  enabled: boolean;
-  config: Record<string, unknown>;
-  createdAt?: string;
-  updatedAt?: string;
-}

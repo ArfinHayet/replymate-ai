@@ -13,7 +13,7 @@ import {
   type ChartData,
   type ChartOptions,
 } from "chart.js";
-import { Bar, Doughnut, Line } from "react-chartjs-2";
+import { Doughnut, Line } from "react-chartjs-2";
 import { BarChart3, FileText, MessageSquare, RefreshCw, TrendingUp } from "lucide-react";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -34,7 +34,6 @@ const chartSecondary = themeColor("--color-chart-secondary");
 const chartTertiary = themeColor("--color-chart-tertiary");
 const chartQuaternary = themeColor("--color-chart-quaternary");
 const warningColor = themeColor("--color-warning");
-const errorColor = themeColor("--color-error");
 const mutedText = themeColor("--color-text-muted");
 const gridLine = themeColor("--color-border", 0.55);
 const chartFont = getComputedStyle(document.documentElement).getPropertyValue("--font-body").trim();
@@ -156,19 +155,6 @@ export function AnalyticsPage() {
           </ChartPanel>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-2">
-          <ChartPanel
-            title="Web Crawl Health"
-            subtitle="Fetched pages compared with failed crawl attempts"
-            aside={!vm.loading && <HealthBadge data={vm.crawlHealth} />}
-          >
-            {vm.loading ? <ChartSkeleton /> : <CrawlHealthChart data={vm.crawlHealth} />}
-          </ChartPanel>
-
-          <ChartPanel title="Top Indexed Sites" subtitle="Largest web sources by content sections">
-            {vm.loading ? <ChartSkeleton /> : <TopSitesChart data={vm.topWebPages} />}
-          </ChartPanel>
-        </div>
       </PageContent>
     </div>
   );
@@ -210,11 +196,7 @@ function ChartPanel({
           <h2 className="truncate font-rm-trip-heading text-base font-semibold text-rm-trip-text">{title}</h2>
           <p className="mt-1 text-sm text-rm-trip-text-muted">{subtitle}</p>
         </div>
-        {aside ?? (
-          <span className="hidden rounded-rm-trip-smooth bg-gray-50 px-2.5 py-1 text-xs font-semibold text-rm-trip-text-muted sm:inline-flex">
-            Chart.js
-          </span>
-        )}
+        {aside ?? null}
       </div>
       {children}
     </section>
@@ -273,79 +255,6 @@ function DoughnutChart({ data }: { data: ChartPoint[] }) {
   );
 }
 
-function CrawlHealthChart({ data }: { data: ChartPoint[] }) {
-  if (data.every((item) => item.value === 0)) return <EmptyChart label="No crawl data yet" />;
-
-  const chartData: ChartData<"bar"> = {
-    labels: data.map((item) => item.label),
-    datasets: [
-      {
-        label: "Pages",
-        data: data.map((item) => item.value),
-        backgroundColor: [chartQuaternary, errorColor],
-        borderRadius: 2,
-        borderSkipped: false,
-      },
-    ],
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="h-64">
-        <Bar data={chartData} options={axisOptions as ChartOptions<"bar">} />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        {data.map((item, index) => (
-          <div key={item.label} className="rounded-rm-trip-smooth bg-gray-50 px-4 py-3">
-            <p className="text-xs font-semibold text-rm-trip-text-muted">{item.label}</p>
-            <p className={`mt-1 font-rm-trip-heading text-xl font-bold ${index === 1 ? "text-rm-trip-state-error" : "text-rm-trip-brand"}`}>
-              {item.value.toLocaleString()}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function TopSitesChart({ data }: { data: ChartPoint[] }) {
-  if (data.length === 0 || data.every((item) => item.value === 0)) return <EmptyChart label="No indexed web pages yet" />;
-
-  const chartData: ChartData<"bar"> = {
-    labels: data.map((item) => truncateLabel(item.label)),
-    datasets: [
-      {
-        label: "Sections",
-        data: data.map((item) => item.value),
-        backgroundColor: themeColor("--color-chart-primary", 0.9),
-        borderRadius: 2,
-        borderSkipped: false,
-      },
-    ],
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="h-64">
-        <Bar data={chartData} options={axisOptions as ChartOptions<"bar">} />
-      </div>
-      <div className="space-y-2">
-        {data.slice(0, 3).map((item, index) => (
-          <div key={item.label} className="flex min-w-0 items-center justify-between gap-3 rounded-rm-trip-smooth bg-gray-50 px-3 py-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-rm-trip-smooth bg-rm-trip-brand-light text-xs font-bold text-rm-trip-brand">
-                {index + 1}
-              </span>
-              <p className="truncate text-sm font-semibold text-rm-trip-text">{item.label}</p>
-            </div>
-            <span className="shrink-0 text-sm font-bold text-rm-trip-brand">{item.value.toLocaleString()}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function EmptyChart({ label }: { label: string }) {
   return (
     <div className="flex h-72 items-center justify-center rounded-rm-trip-smooth border border-dashed border-gray-200 bg-gray-50 text-sm font-semibold text-rm-trip-text-muted">
@@ -361,23 +270,6 @@ function ChartSkeleton({ compact = false }: { compact?: boolean }) {
       <Skeleton className="h-4 w-2/3" />
       <Skeleton className="h-4 w-1/2" />
     </div>
-  );
-}
-
-function truncateLabel(label: string) {
-  return label.length > 18 ? `${label.slice(0, 18)}...` : label;
-}
-
-function HealthBadge({ data }: { data: ChartPoint[] }) {
-  const fetched = data.find((item) => item.label === "Fetched")?.value ?? 0;
-  const failed = data.find((item) => item.label === "Failed")?.value ?? 0;
-  const total = fetched + failed;
-  const rate = total === 0 ? 0 : Math.round((fetched / total) * 100);
-
-  return (
-    <span className="hidden rounded-rm-trip-smooth bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-rm-trip-success sm:inline-flex">
-      {rate}% success
-    </span>
   );
 }
 

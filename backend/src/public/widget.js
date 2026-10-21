@@ -17,15 +17,19 @@
     currentScript.getAttribute("data-brand-url") || "https://supportmate.online";
   var welcomeMsg = currentScript.getAttribute("data-welcome") || "";
   var displayMode = currentScript.getAttribute("data-mode") || "bubble";
-  var flightCardSelector =
-    (currentScript.getAttribute("data-flight-card-selector") || "").trim();
-  var productCardSelector =
-    (currentScript.getAttribute("data-product-card-selector") || "").trim();
   var alwaysOpen = currentScript.getAttribute("data-open") === "true" || displayMode === "page";
   var isPageMode = displayMode === "page";
-  var supportMateIconUrl = "https://www.supportmate.online/favicon.svg";
+  var themeUrl =
+    currentScript.getAttribute("data-theme-url") ||
+    "https://www.supportmate.online/theme-tokens.css";
+  var supportMateIconUrl =
+    currentScript.getAttribute("data-icon") ||
+    "https://www.supportmate.online/favicon.svg";
+  var safeSupportMateIconUrl = supportMateIconUrl
+    .replace(/&/g, "&amp;")
+    .replace(/\"/g, "&quot;");
   var supportMateIconHtml =
-    '<img src="' + supportMateIconUrl + '" alt="" aria-hidden="true">';
+    '<img src="' + safeSupportMateIconUrl + '" alt="" aria-hidden="true">';
 
   if (!widgetKey) {
     console.error("[comp-bot widget] Missing data-key attribute");
@@ -51,59 +55,6 @@
       Date.now().toString(36);
 
     sessionStorage.setItem(SESSION_KEY, sessionId);
-  }
-
-  // ─── Google Fonts ─────────────────────────────────────────────────────────────
-  if (!document.getElementById("compbot-fonts")) {
-    var fl = document.createElement("link");
-    fl.id = "compbot-fonts";
-    fl.rel = "stylesheet";
-    fl.href =
-      "https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap";
-    document.head.appendChild(fl);
-  }
-
-  if (!document.getElementById("compbot-flight-highlight-styles")) {
-    var highlightStyle = document.createElement("style");
-    highlightStyle.id = "compbot-flight-highlight-styles";
-    highlightStyle.textContent = [
-      ".compbot-flight-card-highlight{",
-      "position:relative!important;",
-      "isolation:isolate;",
-      "border-radius:12px;",
-      "box-shadow:0 0 0 5px rgba(37,99,235,.26),0 18px 54px rgba(37,99,235,.28)!important;",
-      "animation:compbot-flight-card-glow 1.9s ease-in-out infinite;",
-      "}",
-      ".compbot-flight-card-highlight::before{",
-      'content:"";position:absolute;inset:-5px;z-index:2147483644;',
-      "border-radius:inherit;padding:5px;pointer-events:none;",
-      "background:linear-gradient(90deg,#ff2d55,#ffcc00,#22c55e,#06b6d4,#2563eb,#a855f7,#ff2d55);",
-      "background-size:300% 300%;",
-      "animation:compbot-flight-border-flow 2.4s linear infinite;",
-      "-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);",
-      "-webkit-mask-composite:xor;",
-      "mask-composite:exclude;",
-      "}",
-      ".compbot-flight-card-highlight::after{",
-      'content:"";position:absolute;inset:-12px;z-index:-1;border-radius:inherit;pointer-events:none;',
-      "background:linear-gradient(90deg,rgba(255,45,85,.35),rgba(255,204,0,.25),rgba(34,197,94,.3),rgba(37,99,235,.35),rgba(168,85,247,.3));",
-      "filter:blur(18px);opacity:.78;",
-      "animation:compbot-flight-aura 2.6s ease-in-out infinite;",
-      "}",
-      "@keyframes compbot-flight-border-flow{",
-      "0%{background-position:0% 50%;}",
-      "100%{background-position:300% 50%;}",
-      "}",
-      "@keyframes compbot-flight-card-glow{",
-      "0%,100%{transform:translateZ(0);box-shadow:0 0 0 5px rgba(37,99,235,.26),0 18px 54px rgba(37,99,235,.28);}",
-      "50%{transform:translateZ(0) scale(1.01);box-shadow:0 0 0 8px rgba(168,85,247,.3),0 24px 70px rgba(6,182,212,.32);}",
-      "}",
-      "@keyframes compbot-flight-aura{",
-      "0%,100%{opacity:.55;transform:scale(.98);}",
-      "50%{opacity:.9;transform:scale(1.03);}",
-      "}"
-    ].join("");
-    document.head.appendChild(highlightStyle);
   }
 
   // ─── SVG Icons ────────────────────────────────────────────────────────────────
@@ -136,353 +87,414 @@
     "</svg>";
 
   // ─── CSS ─────────────────────────────────────────────────────────────────────
-  var CSS = [
-    ":host{",
-    "all:initial;",
-    "--rm-trip-brand:#2563eb;",
-    "--rm-trip-brand-soft:#dbeafe;",
-    "--rm-trip-brand-light:#1d4ed8;",
-    "--rm-trip-accent:#14b8a6;",
-    "--rm-trip-accent-soft:#ecfeff;",
-    "--rm-trip-surface:#f6f8fb;",
-    "--rm-trip-card:#ffffff;",
-    "--rm-trip-border:#e2e8f0;",
-    "--rm-trip-text:#0f172a;",
-    "--rm-trip-muted:#64748b;",
-    "--rm-trip-success:#16a34a;",
-    "--rm-trip-error:#dc2626;",
-    'font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;',
-    "}",
+  var CSS = `
+    :host {
+      all: initial;
+      display: block;
+      color: rgb(var(--color-text));
+      font-family: var(--font-body);
+    }
 
-    "*{box-sizing:border-box;}",
+    *, *::before, *::after { box-sizing: border-box; }
 
-    "#toggle-btn{",
-    "position:fixed;bottom:28px;right:28px;z-index:2147483647;",
-    "width:62px;height:62px;border-radius:999px;",
-    "background:transparent;",
-    "border:0;",
-    "cursor:pointer;",
-    "display:flex;align-items:center;justify-content:center;",
-    "overflow:hidden;",
-    "box-shadow:0 18px 44px rgba(15,23,42,.24),0 8px 22px rgba(37,99,235,.26);",
-    "transition:transform .28s ease,box-shadow .28s ease,background .28s ease,border-color .28s ease;",
-    "}",
-    "#toggle-btn::before,#toggle-btn::after{content:none;}",
-    "#toggle-btn.compbot-dom-active::before,#toggle-btn.compbot-flight-page-active::before,#toggle-btn.compbot-product-page-active::before{",
-    'content:"";position:absolute;inset:0;border-radius:inherit;padding:4px;pointer-events:none;z-index:3;',
-    "background:linear-gradient(90deg,#ff2d55,#ffcc00,#22c55e,#06b6d4,#2563eb,#a855f7,#ff2d55);",
-    "background-size:300% 300%;",
-    "animation:compbot-bubble-border-flow 2.6s linear infinite;",
-    "-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);",
-    "-webkit-mask-composite:xor;",
-    "mask-composite:exclude;",
-    "}",
-    "#toggle-btn.compbot-dom-active::after,#toggle-btn.compbot-flight-page-active::after,#toggle-btn.compbot-product-page-active::after{",
-    'content:"";position:absolute;inset:2px;border-radius:inherit;pointer-events:none;z-index:2;',
-    "background:linear-gradient(90deg,rgba(255,45,85,.35),rgba(255,204,0,.25),rgba(34,197,94,.3),rgba(37,99,235,.35),rgba(168,85,247,.32));",
-    "filter:blur(9px);opacity:.8;",
-    "animation:compbot-bubble-aura 2.8s ease-in-out infinite;",
-    "}",
-    "@keyframes compbot-bubble-border-flow{",
-    "0%{background-position:0% 50%;}",
-    "100%{background-position:300% 50%;}",
-    "}",
-    "@keyframes compbot-bubble-aura{",
-    "0%,100%{opacity:.52;transform:scale(.96);}",
-    "50%{opacity:.9;transform:scale(1.06);}",
-    "}",
-    "#toggle-btn:hover{",
-    "transform:translateY(-3px) scale(1.04);",
-    "box-shadow:0 24px 56px rgba(15,23,42,.28),0 12px 28px rgba(37,99,235,.34);",
-    "}",
-    "#toggle-btn>*{position:relative;z-index:1;}",
-    "#toggle-btn svg{width:25px;height:25px;color:#ffffff;}",
-    "#toggle-btn img{width:100%;height:100%;display:block;object-fit:cover;transform:scale(1.32);}",
-    "#toggle-btn.open{background:transparent;border-color:transparent;}",
-    "#toggle-btn.open svg{color:var(--rm-trip-brand);}",
+    #toggle-btn {
+      position: fixed;
+      right: 28px;
+      bottom: 28px;
+      z-index: 2147483647;
+      display: flex;
+      width: 62px;
+      height: 62px;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: 0;
+      border: 1px solid rgb(var(--color-border-strong));
+      border-radius: var(--radius-full);
+      background: rgb(var(--color-brand));
+      box-shadow: var(--shadow-offset);
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    #toggle-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-card); }
+    #toggle-btn img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    #toggle-btn svg { width: 25px; height: 25px; color: rgb(var(--color-on-brand)); }
+    #toggle-btn.open { background: rgb(var(--color-brand-tint)); }
+    #toggle-btn.open svg { color: rgb(var(--color-brand)); }
 
-    "#chat-window{",
-    "position:fixed;bottom:104px;right:28px;z-index:2147483646;",
-    "width:390px;max-width:calc(100vw - 32px);",
-    "height:570px;max-height:calc(100vh - 130px);",
-    "display:flex;flex-direction:column;overflow:hidden;",
-    "border-radius:18px;",
-    "background:#ffffff;",
-    "border:1px solid var(--rm-trip-border);",
-    "box-shadow:0 26px 90px rgba(17,24,39,.16);",
-    "transition:opacity .25s ease,transform .32s ease;",
-    "transform-origin:bottom right;",
-    "}",
-    "#chat-window.hidden{opacity:0;pointer-events:none;transform:scale(.92) translateY(18px);}",
-    ":host(.compbot-page-mode) #toggle-btn{display:none;}",
-    ":host(.compbot-page-mode) #chat-window{top:0;right:auto;bottom:0;left:50%;width:60vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;transform:translateX(-50%);transform-origin:center;border-top:0;border-bottom:0;}",
-    ":host(.compbot-page-mode) #chat-window.hidden{transform:translateX(-50%) translateY(18px);}",
-    ":host(.compbot-page-mode) #minimize-btn{display:none;}",
-    ":host(.compbot-page-mode) #chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
-    ":host(.compbot-page-mode) #input-row{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));}",
-    ":host(.compbot-page-mode) #chat-footer{padding-bottom:calc(9px + env(safe-area-inset-bottom));}",
+    #chat-window {
+      position: fixed;
+      right: 28px;
+      bottom: 104px;
+      z-index: 2147483646;
+      display: flex;
+      width: 390px;
+      max-width: calc(100vw - 32px);
+      height: 570px;
+      max-height: calc(100vh - 130px);
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgb(var(--color-border-strong));
+      border-radius: var(--radius-card);
+      background: rgb(var(--color-surface));
+      box-shadow: var(--shadow-offset);
+      transition: opacity .25s ease, transform .32s ease;
+      transform-origin: bottom right;
+    }
+    #chat-window.hidden { opacity: 0; pointer-events: none; transform: scale(.96) translateY(12px); }
+    :host(.compbot-page-mode) #toggle-btn { display: none; }
+    :host(.compbot-page-mode) #chat-window {
+      top: 0;
+      right: auto;
+      bottom: 0;
+      left: 50%;
+      width: 60vw;
+      max-width: none;
+      height: 100vh;
+      height: 100dvh;
+      max-height: none;
+      border-radius: 0;
+      transform: translateX(-50%);
+      transform-origin: center;
+    }
+    :host(.compbot-page-mode) #chat-window.hidden { transform: translateX(-50%) translateY(12px); }
+    :host(.compbot-page-mode) #minimize-btn { display: none; }
+    :host(.compbot-page-mode) #chat-header { padding-top: calc(18px + env(safe-area-inset-top)); }
+    :host(.compbot-page-mode) #input-row {
+      padding: 12px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left));
+    }
+    :host(.compbot-page-mode) #chat-footer { padding-bottom: calc(9px + env(safe-area-inset-bottom)); }
 
-    "#chat-header{",
-    "position:relative;padding:18px;flex-shrink:0;overflow:hidden;",
-    "background:#ffffff;",
-    "border-bottom:1px solid var(--rm-trip-border);",
-    "}",
-    "#chat-header::before{",
-    'content:"";position:absolute;top:-45px;right:-30px;',
-    "width:160px;height:160px;",
-    "background:radial-gradient(circle,rgba(37,99,235,.16),transparent 70%);",
-    "pointer-events:none;",
-    "}",
-    "#chat-header::after{",
-    'content:"";position:absolute;bottom:-55px;left:-28px;',
-    "width:135px;height:135px;",
-    "background:radial-gradient(circle,rgba(20,184,166,.13),transparent 70%);",
-    "pointer-events:none;",
-    "}",
+    #chat-header {
+      position: relative;
+      flex-shrink: 0;
+      overflow: hidden;
+      padding: 18px;
+      border-bottom: 1px solid rgb(var(--color-border-strong));
+      background-color: rgb(var(--color-brand));
+      background-image:
+        linear-gradient(to right, rgb(var(--color-on-brand) / .08) 1px, transparent 1px),
+        linear-gradient(to bottom, rgb(var(--color-on-brand) / .08) 1px, transparent 1px);
+      background-size: 24px 24px;
+      color: rgb(var(--color-on-brand));
+    }
+    #header-inner { position: relative; z-index: 1; display: flex; align-items: center; gap: 12px; }
+    #bot-avatar {
+      display: flex;
+      width: 44px;
+      height: 44px;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid rgb(var(--color-on-brand) / .55);
+      border-radius: var(--radius-card);
+      background: rgb(var(--color-surface));
+    }
+    #bot-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    #bot-avatar svg { width: 24px; height: 24px; color: rgb(var(--color-brand)); }
+    #header-text { flex: 1; min-width: 0; }
+    #bot-name {
+      display: block;
+      color: rgb(var(--color-on-brand));
+      font-family: var(--font-display);
+      font-size: 15.5px;
+      font-weight: 700;
+      line-height: 1.25;
+      letter-spacing: -.02em;
+    }
+    #bot-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 4px;
+      color: rgb(var(--color-terminal-muted));
+      font-size: 12px;
+      font-weight: 600;
+    }
+    #status-dot {
+      width: 7px;
+      height: 7px;
+      flex-shrink: 0;
+      border-radius: var(--radius-full);
+      background: rgb(var(--color-success));
+      box-shadow: 0 0 0 3px rgb(var(--color-success) / .2);
+    }
 
-    "#header-inner{position:relative;z-index:1;display:flex;align-items:center;gap:12px;}",
-    "#bot-avatar{",
-    "width:44px;height:44px;border-radius:16px;flex-shrink:0;",
-    "background:transparent;",
-    "display:flex;align-items:center;justify-content:center;",
-    "overflow:hidden;",
-    "box-shadow:0 10px 24px rgba(37,99,235,.22);",
-    "}",
-    "#bot-avatar svg{width:24px;height:24px;color:#ffffff;}",
-    "#bot-avatar img{width:100%;height:100%;display:block;object-fit:cover;transform:scale(1.32);}",
+    #minimize-btn {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      padding: 8px;
+      border: 1px solid rgb(var(--color-terminal-border));
+      border-radius: var(--radius-control);
+      background: rgb(var(--color-brand-active));
+      color: rgb(var(--color-on-brand));
+      cursor: pointer;
+      transition: background .2s ease;
+    }
+    #minimize-btn:hover { background: rgb(var(--color-brand-hover)); }
+    #minimize-btn svg { width: 17px; height: 17px; color: currentColor; }
 
-    "#header-text{flex:1;min-width:0;}",
-    "#bot-name{",
-    'font-family:"Geist",system-ui,sans-serif;',
-    "font-size:15.5px;font-weight:700;color:var(--rm-trip-text);",
-    "display:block;line-height:1.25;letter-spacing:-.02em;",
-    "}",
-    "#bot-status{",
-    "font-size:12px;color:var(--rm-trip-muted);",
-    "display:flex;align-items:center;gap:6px;margin-top:4px;font-weight:600;",
-    "}",
-    "#status-dot{",
-    "width:7px;height:7px;border-radius:999px;flex-shrink:0;",
-    "background:var(--rm-trip-success);",
-    "box-shadow:0 0 0 4px rgba(22,163,74,.12);",
-    "}",
+    #messages {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 11px;
+      overflow-y: auto;
+      padding: 16px 14px;
+      background: rgb(var(--color-canvas));
+      scroll-behavior: smooth;
+    }
+    #messages::-webkit-scrollbar { width: 4px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { border-radius: var(--radius-full); background: rgb(var(--color-brand-border)); }
 
-    "#minimize-btn{",
-    "background:#f8fafc;border:1px solid #e5e7eb;cursor:pointer;",
-    "padding:8px;border-radius:12px;flex-shrink:0;",
-    "display:flex;align-items:center;justify-content:center;",
-    "transition:all .2s ease;",
-    "}",
-    "#minimize-btn:hover{background:#eff6ff;border-color:#bfdbfe;}",
-    "#minimize-btn svg{width:17px;height:17px;color:var(--rm-trip-brand);}",
+    .msg {
+      max-width: 84%;
+      padding: 11px 14px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-card);
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      line-height: 1.58;
+      word-break: break-word;
+      animation: msg-in .28s ease both;
+    }
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .msg.user {
+      align-self: flex-end;
+      border-color: rgb(var(--color-brand-active));
+      background: rgb(var(--color-brand));
+      box-shadow: var(--shadow-control);
+      color: rgb(var(--color-on-brand));
+      font-weight: 600;
+    }
+    .msg.bot {
+      align-self: flex-start;
+      border-color: rgb(var(--color-border));
+      background: rgb(var(--color-surface));
+      box-shadow: var(--shadow-control);
+      color: rgb(var(--color-text));
+    }
+    .msg.error {
+      align-self: flex-start;
+      border-color: rgb(var(--color-error-border));
+      background: rgb(var(--color-error-surface));
+      color: rgb(var(--color-error));
+    }
+    .msg.welcome {
+      border-color: rgb(var(--color-brand-border));
+      background: rgb(var(--color-brand-tint));
+      color: rgb(var(--color-text));
+      font-size: 13px;
+      font-weight: 600;
+    }
 
-    "#messages{",
-    "flex:1;overflow-y:auto;padding:16px 14px;",
-    "display:flex;flex-direction:column;gap:11px;",
-    "scroll-behavior:smooth;background:var(--rm-trip-surface);",
-    "}",
-    "#messages::-webkit-scrollbar{width:4px;}",
-    "#messages::-webkit-scrollbar-track{background:transparent;}",
-    "#messages::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px;}",
+    #suggestions {
+      display: none;
+      width: 100%;
+      flex-shrink: 0;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px 12px;
+      border-top: 1px solid rgb(var(--color-border));
+      background: rgb(var(--color-surface));
+    }
+    #suggestions.visible { display: flex; }
+    .suggestion-btn {
+      width: 100%;
+      max-width: 280px;
+      overflow: hidden;
+      padding: 9px 12px;
+      border: 1px solid rgb(var(--color-brand-border));
+      border-radius: var(--radius-control);
+      background: rgb(var(--color-surface));
+      box-shadow: var(--shadow-control);
+      color: rgb(var(--color-brand));
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      text-overflow: ellipsis;
+      transition: background .2s ease, border-color .2s ease, transform .2s ease;
+      white-space: nowrap;
+    }
+    .suggestion-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgb(var(--color-brand));
+      background: rgb(var(--color-brand-tint));
+    }
 
-    ".msg{",
-    "max-width:84%;padding:11px 14px;border-radius:18px;",
-    "font-size:13.5px;line-height:1.58;word-break:break-word;",
-    'font-family:"Inter",system-ui,sans-serif;',
-    "animation:msg-in .28s ease both;",
-    "}",
-    "@keyframes msg-in{",
-    "from{opacity:0;transform:translateY(10px);}",
-    "to{opacity:1;transform:translateY(0);}",
-    "}",
+    .typing {
+      display: flex;
+      align-self: flex-start;
+      align-items: center;
+      gap: 5px;
+      padding: 13px 16px;
+      border: 1px solid rgb(var(--color-border));
+      border-radius: var(--radius-card);
+      background: rgb(var(--color-surface));
+      box-shadow: var(--shadow-control);
+      animation: msg-in .28s ease both;
+    }
+    .typing span {
+      width: 6px;
+      height: 6px;
+      border-radius: var(--radius-full);
+      background: rgb(var(--color-brand));
+      animation: dot-wave 1.2s ease-in-out infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: .14s; }
+    .typing span:nth-child(3) { animation-delay: .28s; }
+    @keyframes dot-wave {
+      0%, 60%, 100% { transform: translateY(0); opacity: .35; }
+      30% { transform: translateY(-7px); opacity: 1; }
+    }
 
-    ".msg.user{",
-    "align-self:flex-end;border-bottom-right-radius:6px;",
-    "background:var(--rm-trip-brand);",
-    "color:#ffffff;font-weight:600;",
-    "box-shadow:0 8px 22px rgba(37,99,235,.24);",
-    "}",
-    ".msg.bot{",
-    "align-self:flex-start;border-bottom-left-radius:6px;",
-    "background:#ffffff;color:#1f2937;",
-    "border:1px solid var(--rm-trip-border);",
-    "box-shadow:0 4px 14px rgba(17,24,39,.05);",
-    "}",
-    ".msg.error{",
-    "align-self:flex-start;border-bottom-left-radius:6px;",
-    "background:#fef2f2;color:var(--rm-trip-error);",
-    "border:1px solid #fecaca;",
-    "}",
+    #input-row {
+      display: flex;
+      flex-shrink: 0;
+      align-items: center;
+      gap: 10px;
+      padding: 13px;
+      border-top: 1px solid rgb(var(--color-border));
+      background: rgb(var(--color-surface));
+    }
+    #user-input {
+      flex: 1;
+      height: 46px;
+      min-height: 46px;
+      max-height: 46px;
+      overflow-y: auto;
+      padding: 12px 14px;
+      border: 1px solid rgb(var(--color-border));
+      border-radius: var(--radius-control);
+      outline: none;
+      background: rgb(var(--color-surface));
+      color: rgb(var(--color-text));
+      caret-color: rgb(var(--color-brand));
+      font-family: var(--font-body);
+      font-size: 13.5px;
+      font-weight: 500;
+      line-height: 20px;
+      resize: none;
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease;
+    }
+    #user-input::placeholder { color: rgb(var(--color-text-muted)); font-weight: 500; }
+    #user-input:focus {
+      border-color: rgb(var(--color-brand));
+      background: rgb(var(--color-surface));
+      box-shadow: var(--shadow-focus);
+    }
+    #user-input:disabled { background: rgb(var(--color-disabled-bg)); color: rgb(var(--color-disabled-text)); cursor: not-allowed; }
+    #user-input::-webkit-scrollbar { width: 3px; }
+    #user-input::-webkit-scrollbar-track { background: transparent; }
+    #user-input::-webkit-scrollbar-thumb { border-radius: var(--radius-full); background: rgb(var(--color-brand-border)); }
 
-    ".msg.welcome{",
-    "background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;",
-    "font-size:13px;font-weight:600;",
-    "}",
+    #send-btn {
+      display: flex;
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgb(var(--color-brand-active));
+      border-radius: var(--radius-control);
+      background: rgb(var(--color-brand));
+      box-shadow: var(--shadow-control);
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    #send-btn:hover:not(:disabled) { transform: translateY(-1px); background: rgb(var(--color-brand-hover)); box-shadow: var(--shadow-card); }
+    #send-btn:active:not(:disabled) { transform: scale(.97); }
+    #send-btn:disabled { border-color: rgb(var(--color-border)); background: rgb(var(--color-disabled-bg)); box-shadow: none; cursor: not-allowed; }
+    #send-btn svg { width: 18px; height: 18px; color: rgb(var(--color-on-brand)); }
+    #send-btn:disabled svg { color: rgb(var(--color-disabled-text)); }
 
-    "#suggestions{",
-    "display:none;flex-direction:column;align-items:center;gap:8px;",
-    "width:100%;padding:10px 14px 12px;",
-    "background:#ffffff;border-top:1px solid #eef2f7;",
-    "flex-shrink:0;",
-    "}",
-    "#suggestions.visible{display:flex;}",
-    "#flight-count-pill{",
-    "display:none;width:100%;max-width:280px;",
-    "padding:0 2px 3px;",
-    "background:transparent;border:0;",
-    "color:#64748b;font-size:11.5px;font-weight:800;text-align:left;",
-    "letter-spacing:.02em;text-transform:uppercase;",
-    "}",
-    "#flight-count-pill.visible{display:block;}",
-    "#flight-count-pill::before{",
-    'content:"";display:inline-block;width:7px;height:7px;border-radius:999px;',
-    "background:var(--rm-trip-success);margin-right:7px;",
-    "box-shadow:0 0 0 3px rgba(22,163,74,.12);vertical-align:1px;",
-    "}",
-    ".suggestion-btn{",
-    "width:100%;max-width:280px;border:1px solid #dbeafe;background:#ffffff;",
-    "color:var(--rm-trip-brand);border-radius:999px;",
-    "padding:9px 12px;font-size:12px;font-weight:700;line-height:1.25;",
-    "cursor:pointer;transition:all .2s ease;",
-    "white-space:nowrap;overflow:hidden;text-overflow:ellipsis;",
-    "box-shadow:0 8px 22px rgba(37,99,235,.08);",
-    "}",
-    ".suggestion-btn:hover{background:#eff6ff;border-color:#bfdbfe;transform:translateY(-1px);}",
+    #chat-footer {
+      flex-shrink: 0;
+      padding: 7px 0 9px;
+      border-top: 1px solid rgb(var(--color-border));
+      background: rgb(var(--color-surface-muted));
+      color: rgb(var(--color-text-muted));
+      font-family: var(--font-body);
+      font-size: 10.5px;
+      letter-spacing: .03em;
+      text-align: center;
+    }
+    #chat-footer a { color: rgb(var(--color-brand)); font-weight: 700; text-decoration: none; }
+    #chat-footer a:hover { text-decoration: underline; }
 
-    ".typing{",
-    "display:flex;align-items:center;gap:5px;",
-    "padding:13px 16px;",
-    "background:#ffffff;border:1px solid var(--rm-trip-border);",
-    "border-radius:18px;border-bottom-left-radius:6px;",
-    "align-self:flex-start;",
-    "box-shadow:0 4px 14px rgba(17,24,39,.05);",
-    "animation:msg-in .28s ease both;",
-    "}",
-    ".typing span{",
-    "width:6px;height:6px;background:var(--rm-trip-brand);",
-    "border-radius:999px;animation:dot-wave 1.2s ease-in-out infinite;",
-    "}",
-    ".typing span:nth-child(2){animation-delay:.14s;}",
-    ".typing span:nth-child(3){animation-delay:.28s;}",
-    "@keyframes dot-wave{",
-    "0%,60%,100%{transform:translateY(0);opacity:.35;}",
-    "30%{transform:translateY(-7px);opacity:1;}",
-    "}",
+    .msg.bot p { margin: 0 0 6px; }
+    .msg.bot p:last-child { margin-bottom: 0; }
+    .msg.bot ul, .msg.bot ol { margin: 4px 0 6px 18px; padding: 0; }
+    .msg.bot li { margin-bottom: 3px; }
+    .msg.bot code {
+      padding: 2px 6px;
+      border: 1px solid rgb(var(--color-border));
+      border-radius: var(--radius-control);
+      background: rgb(var(--color-surface-muted));
+      color: rgb(var(--color-brand));
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+    .msg.bot pre {
+      overflow-x: auto;
+      margin: 6px 0;
+      padding: 12px 14px;
+      border: 1px solid rgb(var(--color-terminal-border));
+      border-radius: var(--radius-control);
+      background: rgb(var(--color-terminal-bg));
+      color: rgb(var(--color-terminal-text));
+    }
+    .msg.bot pre code { padding: 0; border: 0; background: transparent; color: inherit; font-size: 12px; }
+    .msg.bot strong { color: rgb(var(--color-text)); font-weight: 800; }
+    .msg.bot em { color: rgb(var(--color-brand)); font-style: italic; }
+    .msg.bot a { border-bottom: 1px solid rgb(var(--color-brand-border)); color: rgb(var(--color-brand)); text-decoration: none; }
+    .msg.bot a:hover { border-color: rgb(var(--color-brand)); }
+    .msg.bot hr { margin: 8px 0; border: 0; border-top: 1px solid rgb(var(--color-border)); }
+    .msg.bot h1, .msg.bot h2, .msg.bot h3 {
+      margin: 8px 0 4px;
+      color: rgb(var(--color-text));
+      font-family: var(--font-display);
+      font-weight: 800;
+      letter-spacing: -.02em;
+    }
+    .msg.bot h1 { font-size: 1.12em; }
+    .msg.bot h2 { font-size: 1.06em; }
+    .msg.bot h3 { font-size: 1em; }
+    .msg.bot table { display: block; min-width: 100%; overflow-x: auto; margin: 6px 0; border-collapse: collapse; font-size: 12px; }
+    .msg.bot th, .msg.bot td { padding: 6px 10px; border: 1px solid rgb(var(--color-border)); text-align: left; }
+    .msg.bot th { background: rgb(var(--color-brand-tint)); color: rgb(var(--color-brand)); font-size: 10.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+    .msg.bot blockquote {
+      margin: 6px 0;
+      padding: 7px 12px;
+      border-left: 3px solid rgb(var(--color-brand));
+      background: rgb(var(--color-brand-tint));
+      color: rgb(var(--color-text-muted));
+    }
 
-    "#input-row{",
-    "display:flex;align-items:center;gap:10px;",
-    "padding:13px;flex-shrink:0;",
-    "background:#ffffff;border-top:1px solid var(--rm-trip-border);",
-    "}",
-
-    "#user-input{",
-    "flex:1;",
-    "height:46px;min-height:46px;max-height:46px;",
-    "background:#f8fafc;",
-    "border:1px solid #e5e7eb;",
-    "border-radius:16px;",
-    "padding:12px 14px;",
-    "font-size:13.5px;",
-    'font-family:"Inter",system-ui,sans-serif;',
-    "font-weight:600;",
-    "color:var(--rm-trip-text);",
-    "outline:none;",
-    "resize:none;",
-    "overflow-y:auto;",
-    "line-height:20px;",
-    "transition:border-color .2s ease,background .2s ease,box-shadow .2s ease;",
-    "caret-color:var(--rm-trip-brand);",
-    "box-sizing:border-box;",
-    "}",
-    "#user-input::placeholder{color:#94a3b8;font-weight:500;}",
-    "#user-input:focus{",
-    "background:#ffffff;",
-    "border-color:var(--rm-trip-brand-light);",
-    "box-shadow:0 0 0 4px rgba(96,165,250,.18);",
-    "}",
-    "#user-input:disabled{opacity:.75;cursor:not-allowed;}",
-    "#user-input::-webkit-scrollbar{width:3px;}",
-    "#user-input::-webkit-scrollbar-track{background:transparent;}",
-    "#user-input::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:999px;}",
-
-    "#send-btn{",
-    "width:46px;height:46px;flex-shrink:0;border:none;border-radius:16px;cursor:pointer;",
-    "background:var(--rm-trip-brand);",
-    "display:flex;align-items:center;justify-content:center;",
-    "transition:transform .24s ease,box-shadow .24s ease,background .24s ease;",
-    "box-shadow:0 8px 20px rgba(37,99,235,.24);",
-    "}",
-    "#send-btn:hover:not(:disabled){",
-    "transform:translateY(-2px);",
-    "box-shadow:0 12px 26px rgba(37,99,235,.32);",
-    "}",
-    "#send-btn:active:not(:disabled){transform:scale(.96);}",
-    "#send-btn:disabled{background:#cbd5e1;box-shadow:none;cursor:not-allowed;}",
-    "#send-btn svg{width:18px;height:18px;color:#ffffff;}",
-
-    "#chat-footer{",
-    "padding:7px 0 9px;text-align:center;font-size:10.5px;",
-    "color:#94a3b8;letter-spacing:.03em;flex-shrink:0;",
-    "background:#ffffff;border-top:1px solid #f1f5f9;",
-    'font-family:"Inter",system-ui,sans-serif;',
-    "}",
-    "#chat-footer a{color:var(--rm-trip-brand);font-weight:800;text-decoration:none;}",
-    "#chat-footer a:hover{text-decoration:underline;}",
-
-    ".msg.bot p{margin:0 0 6px;}",
-    ".msg.bot p:last-child{margin-bottom:0;}",
-    ".msg.bot ul,.msg.bot ol{margin:4px 0 6px 18px;padding:0;}",
-    ".msg.bot li{margin-bottom:3px;}",
-    ".msg.bot code{",
-    "background:#eff6ff;border:1px solid #bfdbfe;",
-    "border-radius:6px;padding:2px 6px;font-size:12px;",
-    'font-family:"Geist",monospace;',
-    "color:var(--rm-trip-brand);",
-    "}",
-    ".msg.bot pre{",
-    "background:#f8fafc;border:1px solid #e5e7eb;",
-    "border-radius:12px;padding:12px 14px;overflow-x:auto;margin:6px 0;",
-    "}",
-    ".msg.bot pre code{background:none;border:none;padding:0;color:#1f2937;font-size:12px;}",
-    ".msg.bot strong{font-weight:800;color:#111827;}",
-    ".msg.bot em{font-style:italic;color:var(--rm-trip-brand);}",
-    ".msg.bot a{color:var(--rm-trip-brand);text-decoration:none;border-bottom:1px solid rgba(37,99,235,.25);}",
-    ".msg.bot a:hover{border-color:var(--rm-trip-brand);}",
-    ".msg.bot hr{border:none;border-top:1px solid #e5e7eb;margin:8px 0;}",
-    ".msg.bot h1,.msg.bot h2,.msg.bot h3{",
-    'font-family:"Geist",system-ui,sans-serif;',
-    "font-weight:800;margin:8px 0 4px;color:#111827;letter-spacing:-.02em;",
-    "}",
-    ".msg.bot h1{font-size:1.12em;}",
-    ".msg.bot h2{font-size:1.06em;}",
-    ".msg.bot h3{font-size:1em;}",
-    ".msg.bot table{border-collapse:collapse;font-size:12px;margin:6px 0;min-width:100%;display:block;overflow-x:auto;}",
-    ".msg.bot th,.msg.bot td{border:1px solid #e5e7eb;padding:6px 10px;text-align:left;}",
-    ".msg.bot th{",
-    "background:#eff6ff;font-weight:800;color:var(--rm-trip-brand);",
-    "font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;",
-    "}",
-    ".msg.bot blockquote{",
-    "border-left:3px solid var(--rm-trip-brand);",
-    "margin:6px 0;padding:7px 12px;",
-    "color:#475569;background:#eff6ff;border-radius:0 10px 10px 0;",
-    "}",
-
-    "@media(max-width:768px){",
-    "#toggle-btn{right:18px;bottom:18px;width:58px;height:58px;}",
-    "#toggle-btn.open{display:none;}",
-    "#chat-window{inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;border:none;transform-origin:center;}",
-    "#chat-window.hidden{transform:translateY(100%);}",
-    ":host(.compbot-page-mode) #toggle-btn.open{display:none;}",
-    ":host(.compbot-page-mode) #chat-window{inset:0;width:100vw;max-width:none;height:100vh;height:100dvh;max-height:none;border-radius:0;border:none;transform:none;transform-origin:center;}",
-    ":host(.compbot-page-mode) #chat-window.hidden{transform:translateY(100%);}",
-    "#chat-header{padding-top:calc(18px + env(safe-area-inset-top));}",
-    "#messages{padding:14px 12px;}",
-    "#suggestions{padding:10px 12px 12px;}",
-    "#input-row{padding:12px max(12px,env(safe-area-inset-right)) 12px max(12px,env(safe-area-inset-left));}",
-    "#chat-footer{padding-bottom:calc(9px + env(safe-area-inset-bottom));}",
-    "}"
-  ].join("");
+    @media (max-width: 768px) {
+      #toggle-btn { right: 18px; bottom: 18px; width: 58px; height: 58px; }
+      #toggle-btn.open { display: none; }
+      #chat-window { inset: 0; width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none; border: 0; border-radius: 0; transform-origin: center; }
+      #chat-window.hidden { transform: translateY(100%); }
+      :host(.compbot-page-mode) #toggle-btn.open { display: none; }
+      :host(.compbot-page-mode) #chat-window { inset: 0; width: 100vw; max-width: none; height: 100vh; height: 100dvh; max-height: none; border: 0; border-radius: 0; transform: none; transform-origin: center; }
+      :host(.compbot-page-mode) #chat-window.hidden { transform: translateY(100%); }
+      #chat-header { padding-top: calc(18px + env(safe-area-inset-top)); }
+      #messages { padding: 14px 12px; }
+      #suggestions { padding: 10px 12px 12px; }
+      #input-row { padding: 12px max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left)); }
+      #chat-footer { padding-bottom: calc(9px + env(safe-area-inset-bottom)); }
+    }
+  `;
 
   // ─── Markdown Renderer ───────────────────────────────────────────────────────
   function renderMarkdown(src) {
@@ -710,6 +722,17 @@
 
     var shadow = host.attachShadow({ mode: "open" });
 
+    var themeStylesheet = document.createElement("link");
+    themeStylesheet.rel = "stylesheet";
+    themeStylesheet.href = themeUrl;
+    shadow.appendChild(themeStylesheet);
+
+    var fontStylesheet = document.createElement("link");
+    fontStylesheet.rel = "stylesheet";
+    fontStylesheet.href =
+      "https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap";
+    shadow.appendChild(fontStylesheet);
+
     var style = document.createElement("style");
     style.textContent = CSS;
     shadow.appendChild(style);
@@ -776,10 +799,6 @@
     var suggestionsEl = document.createElement("div");
     suggestionsEl.id = "suggestions";
 
-    var flightCountPill = document.createElement("div");
-    flightCountPill.id = "flight-count-pill";
-    suggestionsEl.appendChild(flightCountPill);
-
     // Input Row
     var inputRow = document.createElement("div");
     inputRow.id = "input-row";
@@ -824,31 +843,6 @@
     var hasOpened = false;
     var hasSentMessage = false;
     var widgetSuggestions = [];
-    var flightListContext = null;
-    var flightObserverTimer = null;
-    var flightRouteRefreshTimer = null;
-    var flightRoutePollingTimer = null;
-    var flightRoutePollingStartedAt = 0;
-    var highlightedFlightCards = [];
-    var highlightedFlightLabels = [];
-    var domActivityGlowTimer = null;
-    var flightSuggestions = [
-      "Find cheapest flight",
-      "Find fastest flight",
-      "Non stop flight"
-    ];
-
-    // ─── Product State ─────────────────────────────────────────────────────────
-    var productListContext = null;
-    var productObserverTimer = null;
-    var productRouteRefreshTimer = null;
-    var productRoutePollingTimer = null;
-    var productRoutePollingStartedAt = 0;
-    var productSuggestions = [
-      "Find cheapest product",
-      "Find highest rated",
-      "Show discounted items"
-    ];
 
     // ─── Helpers ───────────────────────────────────────────────────────────────
     function scrollToBottom() {
@@ -865,23 +859,6 @@
         el.textContent = text;
       }
 
-      messages.appendChild(el);
-      scrollToBottom();
-
-      return el;
-    }
-
-    function addRedirectFallback(url) {
-      var el = document.createElement("div");
-      var link = document.createElement("a");
-
-      el.className = "msg bot";
-      link.href = url;
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.textContent = "Open page";
-
-      el.appendChild(link);
       messages.appendChild(el);
       scrollToBottom();
 
@@ -919,34 +896,16 @@
 
     function renderSuggestions() {
       suggestionsEl.innerHTML = "";
-      suggestionsEl.appendChild(flightCountPill);
 
       if (hasSentMessage) {
-        flightCountPill.classList.remove("visible");
         suggestionsEl.classList.remove("visible");
         return;
       }
 
-      var suggestions = flightListContext
-        ? flightSuggestions
-        : productListContext
-          ? productSuggestions
-          : widgetSuggestions.slice(0, 3);
-
+      var suggestions = widgetSuggestions.slice(0, 3);
       if (!suggestions.length) {
-        flightCountPill.classList.remove("visible");
         suggestionsEl.classList.remove("visible");
         return;
-      }
-
-      if (flightListContext) {
-        flightCountPill.textContent = flightListContext.totalFlights + " flights found";
-        flightCountPill.classList.add("visible");
-      } else if (productListContext) {
-        flightCountPill.textContent = productListContext.totalProducts + " products found";
-        flightCountPill.classList.add("visible");
-      } else {
-        flightCountPill.classList.remove("visible");
       }
 
       suggestions.forEach(function (suggestion) {
@@ -956,12 +915,6 @@
         btn.textContent = suggestion;
         btn.title = suggestion;
         btn.addEventListener("click", function () {
-          if (flightListContext && runFlightSuggestionAction(suggestion)) {
-            return;
-          }
-          if (productListContext && runProductSuggestionAction(suggestion)) {
-            return;
-          }
           sendMessage(suggestion);
         });
         suggestionsEl.appendChild(btn);
@@ -990,837 +943,6 @@
           widgetSuggestions = [];
           renderSuggestions();
         });
-    }
-
-    function safeQueryFlightCards() {
-      if (!flightCardSelector) {
-        return [];
-      }
-
-      try {
-        return Array.prototype.slice.call(
-          document.querySelectorAll(flightCardSelector)
-        );
-      } catch (_) {
-        return [];
-      }
-    }
-
-    function normalizeCardText(text) {
-      return String(text || "").replace(/\s+/g, " ").trim();
-    }
-
-    function matchText(text, pattern) {
-      var match = text.match(pattern);
-      return match ? normalizeCardText(match[0]) : null;
-    }
-
-    function extractPrice(text) {
-      return matchText(
-        text,
-        /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9][0-9,]*(?:\.[0-9]+)?|[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i
-      );
-    }
-
-    function extractBaggage(text) {
-      return matchText(
-        text,
-        /(?:\d+(?:\.\d+)?\s*(?:kg|kgs|lb|lbs)|(?:checked|cabin|carry[- ]?on)\s+baggage|baggage\s*(?:included|allowance)?)/i
-      );
-    }
-
-    function extractDuration(text) {
-      return matchText(
-        text,
-        /\d+(?:\.\d+)?\s*(?:h|hr|hrs|hour|hours)(?:\s*\d+\s*(?:m|min|mins|minute|minutes))?|\d+\s*(?:m|min|mins|minute|minutes)/i
-      );
-    }
-
-    function extractTime(text, occurrence) {
-      var matches = text.match(/\b(?:[01]?\d|2[0-3]):[0-5]\d\b/g) || [];
-      return matches[occurrence] || null;
-    }
-
-    function extractRouteCode(text, occurrence) {
-      var matches = text.match(/\b[A-Z]{3}\b/g) || [];
-      return matches[occurrence] || null;
-    }
-
-    function extractStops(text) {
-      return matchText(text, /\b(?:nonstop|non-stop|direct|\d+\s+stops?|\d+\s+layovers?)\b/i);
-    }
-
-    function extractRefundability(text) {
-      return matchText(text, /\b(?:non[-\s]?refundable|nonrefundable|refundable)\b/i);
-    }
-
-    /**
-     * Returns true when rawText contains at least 2 of the 3 core flight signals:
-     *   1. A price  (currency symbol + digits)
-     *   2. A time   (HH:MM pattern)
-     *   3. An IATA airport code (3 uppercase letters)
-     *
-     * This prevents the bubble from glowing on pages that happen to share the
-     * same CSS selector (e.g. generic ".box-item" on a contact-us page).
-     */
-    function isLikelyFlightCard(rawText) {
-      var hasPrice = /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9]|[0-9]\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i.test(rawText);
-      var hasTime  = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(rawText);
-      var hasCode  = /\b[A-Z]{3}\b/.test(rawText);
-      return (hasPrice ? 1 : 0) + (hasTime ? 1 : 0) + (hasCode ? 1 : 0) >= 2;
-    }
-
-    // ─── Product Card Helpers ────────────────────────────────────────────────────
-    function safeQueryProductCards() {
-      if (!productCardSelector) {
-        return [];
-      }
-
-      try {
-        return Array.prototype.slice.call(
-          document.querySelectorAll(productCardSelector)
-        );
-      } catch (_) {
-        return [];
-      }
-    }
-
-    /**
-     * Returns true when rawText contains at least 2 of the 4 core product signals:
-     *   1. A price          (currency symbol + digits)
-     *   2. A rating/stars   (decimal near a star or "out of" or "/5")
-     *   3. A discount       ("% off", "save", "sale")
-     *   4. A CTA / stock    ("add to cart", "buy now", "in stock", "out of stock")
-     */
-    function isLikelyProductCard(rawText) {
-      var hasPrice    = /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9]|[0-9]\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i.test(rawText);
-      var hasRating   = /(?:[0-9](?:\.[0-9])?\s*(?:out of|\/)\s*[0-9]|[0-9](?:\.[0-9])?\s*★|rating|review)/i.test(rawText);
-      var hasDiscount = /\b(?:\d+\s*%\s*off|save|sale|discount|offer)\b/i.test(rawText);
-      var hasCta      = /\b(?:add to cart|buy now|in stock|out of stock|shop now|order now)\b/i.test(rawText);
-      return (hasPrice ? 1 : 0) + (hasRating ? 1 : 0) + (hasDiscount ? 1 : 0) + (hasCta ? 1 : 0) >= 2;
-    }
-
-    function extractProductName(rawText) {
-      // Take the first non-empty line as the product title
-      var lines = rawText.split(/\s{2,}|\n/);
-      for (var i = 0; i < lines.length; i++) {
-        var ln = lines[i].trim();
-        if (ln && ln.length > 2 && !/^[\$\u20ac\u00a3\u09f3\d]/.test(ln)) {
-          return ln.slice(0, 120);
-        }
-      }
-      return null;
-    }
-
-    function extractProductPrice(rawText) {
-      // Reuse the existing price extractor
-      return extractPrice(rawText);
-    }
-
-    function extractOriginalPrice(rawText) {
-      // Look for a second (usually higher) price — naive but pragmatic
-      var matches = rawText.match(
-        /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*[0-9][0-9,]*(?:\.[0-9]+)?|[0-9][0-9,]*(?:\.[0-9]+)?\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/gi
-      );
-      return (matches && matches[1]) ? normalizeCardText(matches[1]) : null;
-    }
-
-    function extractDiscount(rawText) {
-      return matchText(rawText, /\d+\s*%\s*off|\bsave\s+[\$\u20ac\u00a3\u09f3]?\d+/i);
-    }
-
-    function extractRating(rawText) {
-      var m = rawText.match(/([0-9](?:\.[0-9])?)\s*(?:out of|\/)\s*[0-9]|([0-9](?:\.[0-9])?)\s*★/);
-      return m ? normalizeCardText(m[0]) : null;
-    }
-
-    function extractReviewCount(rawText) {
-      var m = rawText.match(/(\d[\d,]*)\s*(?:reviews?|ratings?|\(\d[\d,]*\))/i);
-      return m ? normalizeCardText(m[0]) : null;
-    }
-
-    function extractAvailability(rawText) {
-      return matchText(rawText, /\b(?:in stock|out of stock|limited stock|available|sold out)\b/i);
-    }
-
-    function extractProductBrand(rawText) {
-      // Heuristic: first short word-run before price/digits
-      var chunk = normalizeCardText(rawText)
-        .split(/(?:[\$\u20ac\u00a3\u09f3]|\d{2,})/)[0]
-        .trim();
-      return chunk.length > 0 && chunk.length <= 60 ? chunk : null;
-    }
-
-    function extractProductFromCard(card, index) {
-      var rawText = normalizeCardText(card.innerText || card.textContent || "");
-
-      return {
-        index: index + 1,
-        rawText: rawText,
-        name: extractProductName(rawText),
-        price: extractProductPrice(rawText),
-        originalPrice: extractOriginalPrice(rawText),
-        discount: extractDiscount(rawText),
-        rating: extractRating(rawText),
-        reviewCount: extractReviewCount(rawText),
-        availability: extractAvailability(rawText),
-        brand: extractProductBrand(rawText)
-      };
-    }
-
-    /** Parse a product price string to a float (reuses parsePriceAmount). */
-    function parseProductPrice(value) {
-      return parsePriceAmount(value);
-    }
-
-    /** Parse a rating string like "4.5 / 5" or "4.5 ★" to a float. */
-    function parseRatingValue(value) {
-      if (!value) {
-        return null;
-      }
-
-      var m = String(value).match(/([0-9](?:\.[0-9])?)/);
-      return m ? Number(m[1]) : null;
-    }
-
-    /** Parse a discount string like "20% off" to the numeric percentage. */
-    function parseDiscountPercent(value) {
-      if (!value) {
-        return null;
-      }
-
-      var m = String(value).match(/(\d+)\s*%/);
-      return m ? Number(m[1]) : null;
-    }
-
-    // ─── Product Context & Watchers ──────────────────────────────────────────────
-    function refreshProductListContext() {
-      var cards = safeQueryProductCards();
-
-      if (!cards.length) {
-        productListContext = null;
-        toggleBtn.classList.remove("compbot-product-page-active");
-        renderSuggestions();
-        return;
-      }
-
-      // Content-validation guard: only activate when cards look like real products.
-      var qualifiedCards = cards.filter(function (card) {
-        var rawText = normalizeCardText(card.innerText || card.textContent || "");
-        return isLikelyProductCard(rawText);
-      });
-
-      if (!qualifiedCards.length) {
-        productListContext = null;
-        toggleBtn.classList.remove("compbot-product-page-active");
-        renderSuggestions();
-        return;
-      }
-
-      productListContext = {
-        type: "product_list",
-        url: window.location.href,
-        detectedAt: new Date().toISOString(),
-        totalProducts: qualifiedCards.length,
-        products: qualifiedCards.map(extractProductFromCard)
-      };
-
-      toggleBtn.classList.add("compbot-product-page-active");
-      renderSuggestions();
-    }
-
-    function scheduleProductContextRefresh() {
-      if (!productCardSelector) {
-        return;
-      }
-
-      clearTimeout(productObserverTimer);
-      productObserverTimer = setTimeout(refreshProductListContext, 180);
-    }
-
-    function scheduleProductRouteRefresh() {
-      if (!productCardSelector) {
-        return;
-      }
-
-      clearTimeout(productRouteRefreshTimer);
-      productRouteRefreshTimer = setTimeout(function () {
-        scheduleProductContextRefresh();
-        startProductRoutePolling();
-      }, 80);
-    }
-
-    function startProductRoutePolling() {
-      if (!productCardSelector) {
-        return;
-      }
-
-      clearTimeout(productRoutePollingTimer);
-      productRoutePollingStartedAt = Date.now();
-
-      function poll() {
-        refreshProductListContext();
-
-        if (productListContext || Date.now() - productRoutePollingStartedAt >= 2800) {
-          clearTimeout(productRoutePollingTimer);
-          productRoutePollingTimer = null;
-          return;
-        }
-
-        productRoutePollingTimer = setTimeout(poll, 240);
-      }
-
-      productRoutePollingTimer = setTimeout(poll, 120);
-    }
-
-    function installProductRouteWatcher() {
-      if (!productCardSelector) {
-        return;
-      }
-
-      window.addEventListener("compbot:locationchange", scheduleProductRouteRefresh);
-      window.addEventListener("popstate", scheduleProductRouteRefresh);
-
-      // The history.pushState/replaceState patch is shared — installFlightRouteWatcher
-      // already sets it up (both features dispatch "compbot:locationchange").
-      // We only need to register our listener above; no need to patch history again.
-    }
-
-    function showLocalProductActionMiss() {
-      addMessage("I couldn't find a matching product in the visible results.", "bot");
-    }
-
-    function runProductSuggestionAction(suggestion) {
-      if (productSuggestions.indexOf(suggestion) === -1) {
-        return false;
-      }
-
-      refreshProductListContext();
-
-      if (!productListContext || !productListContext.products.length) {
-        showLocalProductActionMiss();
-        return true;
-      }
-
-      if (suggestion === "Find cheapest product") {
-        var priceRanked = productListContext.products
-          .map(function (product) {
-            return {
-              product: product,
-              price: parseProductPrice(product.price || product.rawText)
-            };
-          })
-          .filter(function (item) { return item.price !== null; })
-          .sort(function (a, b) { return a.price - b.price; });
-
-        if (!priceRanked.length) {
-          showLocalProductActionMiss();
-          return true;
-        }
-
-        handleDomManipulation({
-          type: "highlight_product_card",
-          productIndex: priceRanked[0].product.index,
-          label: "Cheapest product"
-        });
-        return true;
-      }
-
-      if (suggestion === "Find highest rated") {
-        var ratingRanked = productListContext.products
-          .map(function (product) {
-            return {
-              product: product,
-              rating: parseRatingValue(product.rating || product.rawText)
-            };
-          })
-          .filter(function (item) { return item.rating !== null; })
-          .sort(function (a, b) { return b.rating - a.rating; });
-
-        if (!ratingRanked.length) {
-          showLocalProductActionMiss();
-          return true;
-        }
-
-        handleDomManipulation({
-          type: "highlight_product_card",
-          productIndex: ratingRanked[0].product.index,
-          label: "Highest rated"
-        });
-        return true;
-      }
-
-      if (suggestion === "Show discounted items") {
-        var discountIndexes = productListContext.products
-          .filter(function (product) {
-            return parseDiscountPercent(product.discount || product.rawText) !== null;
-          })
-          .map(function (product) { return product.index; });
-
-        if (!discountIndexes.length) {
-          showLocalProductActionMiss();
-          return true;
-        }
-
-        handleDomManipulation({
-          type: "highlight_product_cards",
-          productIndexes: discountIndexes,
-          label: "On sale"
-        });
-        return true;
-      }
-
-      return false;
-    }
-
-    function extractAirline(text) {
-      var firstChunk = normalizeCardText(text)
-        .split(/(?:\b[A-Z]{3}\b|\b(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR)\b|৳|\$|€|£|\d{1,2}:\d{2})/)[0]
-        .trim();
-
-      return firstChunk || null;
-    }
-
-    function extractFlightFromCard(card, index) {
-      var rawText = normalizeCardText(card.innerText || card.textContent || "");
-
-      return {
-        index: index + 1,
-        rawText: rawText,
-        origin: extractRouteCode(rawText, 0),
-        destination: extractRouteCode(rawText, 1),
-        price: extractPrice(rawText),
-        baggage: extractBaggage(rawText),
-        airline: extractAirline(rawText),
-        refundability: extractRefundability(rawText),
-        duration: extractDuration(rawText),
-        departure: extractTime(rawText, 0),
-        arrival: extractTime(rawText, 1),
-        stops: extractStops(rawText)
-      };
-    }
-
-    function parsePriceAmount(value) {
-      if (!value) {
-        return null;
-      }
-
-      var normalized = String(value).replace(/,/g, "");
-      var patterns = [
-        /(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)\s*([0-9]+(?:\.[0-9]+)?)/i,
-        /([0-9]+(?:\.[0-9]+)?)\s*(?:USD|BDT|EUR|GBP|AED|SAR|INR|NPR|৳|\$|€|£)/i
-      ];
-
-      for (var i = 0; i < patterns.length; i++) {
-        var match = normalized.match(patterns[i]);
-        if (match) {
-          return Number(match[1]);
-        }
-      }
-
-      return null;
-    }
-
-    function parseDurationMinutes(value) {
-      if (!value) {
-        return null;
-      }
-
-      var normalized = String(value).toLowerCase();
-      var hourMinute = normalized.match(
-        /(\d+(?:\.\d+)?)\s*(?:h|hr|hrs|hour|hours)\s*(?:(\d+)\s*(?:m|min|mins|minute|minutes))?/
-      );
-
-      if (hourMinute) {
-        return Math.round(Number(hourMinute[1]) * 60 + Number(hourMinute[2] || 0));
-      }
-
-      var minutes = normalized.match(/(\d+)\s*(?:m|min|mins|minute|minutes)\b/);
-      return minutes ? Number(minutes[1]) : null;
-    }
-
-    function parseStopsCount(value) {
-      if (!value) {
-        return null;
-      }
-
-      var normalized = String(value).toLowerCase();
-      if (/\b(?:non[-\s]?stop|direct|no\s+stops?)\b/.test(normalized)) {
-        return 0;
-      }
-      if (/\bzero\s+stops?\b/.test(normalized)) {
-        return 0;
-      }
-
-      var stopMatch = normalized.match(/\b(\d+)\s+stops?\b/);
-      if (stopMatch) {
-        return Number(stopMatch[1]);
-      }
-
-      var layoverMatch = normalized.match(/\b(\d+)\s+layovers?\b/);
-      return layoverMatch ? Number(layoverMatch[1]) : null;
-    }
-
-    function refreshFlightListContext() {
-      var cards = safeQueryFlightCards();
-
-      if (!cards.length) {
-        flightListContext = null;
-        toggleBtn.classList.remove("compbot-flight-page-active");
-        renderSuggestions();
-        return;
-      }
-
-      // Content-validation guard: filter out elements that don't look like
-      // actual flight cards (e.g. generic .box-item on a contact-us page).
-      // A card must carry ≥2 of the 3 core flight signals:
-      // price, departure/arrival time, or IATA airport code.
-      var qualifiedCards = cards.filter(function (card) {
-        var rawText = normalizeCardText(card.innerText || card.textContent || "");
-        return isLikelyFlightCard(rawText);
-      });
-
-      if (!qualifiedCards.length) {
-        flightListContext = null;
-        toggleBtn.classList.remove("compbot-flight-page-active");
-        renderSuggestions();
-        return;
-      }
-
-      flightListContext = {
-        type: "flight_list",
-        url: window.location.href,
-        detectedAt: new Date().toISOString(),
-        totalFlights: qualifiedCards.length,
-        flights: qualifiedCards.map(extractFlightFromCard)
-      };
-
-      toggleBtn.classList.add("compbot-flight-page-active");
-      renderSuggestions();
-    }
-
-    function scheduleFlightContextRefresh() {
-      if (!flightCardSelector) {
-        return;
-      }
-
-      clearTimeout(flightObserverTimer);
-      flightObserverTimer = setTimeout(refreshFlightListContext, 180);
-    }
-
-    function scheduleFlightRouteRefresh() {
-      if (!flightCardSelector) {
-        return;
-      }
-
-      clearTimeout(flightRouteRefreshTimer);
-      flightRouteRefreshTimer = setTimeout(function () {
-        scheduleFlightContextRefresh();
-        startFlightRoutePolling();
-      }, 80);
-    }
-
-    function startFlightRoutePolling() {
-      if (!flightCardSelector) {
-        return;
-      }
-
-      clearTimeout(flightRoutePollingTimer);
-      flightRoutePollingStartedAt = Date.now();
-
-      function poll() {
-        refreshFlightListContext();
-
-        if (flightListContext || Date.now() - flightRoutePollingStartedAt >= 2800) {
-          clearTimeout(flightRoutePollingTimer);
-          flightRoutePollingTimer = null;
-          return;
-        }
-
-        flightRoutePollingTimer = setTimeout(poll, 240);
-      }
-
-      flightRoutePollingTimer = setTimeout(poll, 120);
-    }
-
-    function installFlightRouteWatcher() {
-      if (!flightCardSelector) {
-        return;
-      }
-
-      window.addEventListener("compbot:locationchange", scheduleFlightRouteRefresh);
-      window.addEventListener("popstate", scheduleFlightRouteRefresh);
-
-      if (window.__compbotFlightRouteWatcherInstalled) {
-        return;
-      }
-
-      window.__compbotFlightRouteWatcherInstalled = true;
-
-      function dispatchLocationChange() {
-        try {
-          window.dispatchEvent(new Event("compbot:locationchange"));
-        } catch (_) {
-          var event = document.createEvent("Event");
-          event.initEvent("compbot:locationchange", true, true);
-          window.dispatchEvent(event);
-        }
-      }
-
-      ["pushState", "replaceState"].forEach(function (methodName) {
-        var original = history[methodName];
-
-        if (typeof original !== "function") {
-          return;
-        }
-
-        history[methodName] = function () {
-          var result = original.apply(this, arguments);
-          dispatchLocationChange();
-          return result;
-        };
-      });
-    }
-
-    function showLocalFlightActionMiss() {
-      addMessage("I couldn't find a matching flight in the visible results.", "bot");
-    }
-
-    function runFlightSuggestionAction(suggestion) {
-      if (flightSuggestions.indexOf(suggestion) === -1) {
-        return false;
-      }
-
-      refreshFlightListContext();
-
-      if (!flightListContext || !flightListContext.flights.length) {
-        showLocalFlightActionMiss();
-        return true;
-      }
-
-      if (suggestion === "Find cheapest flight") {
-        var priceRanked = flightListContext.flights
-          .map(function (flight) {
-            return {
-              flight: flight,
-              price: parsePriceAmount(flight.price || flight.rawText)
-            };
-          })
-          .filter(function (item) {
-            return item.price !== null;
-          })
-          .sort(function (a, b) {
-            return a.price - b.price;
-          });
-
-        if (!priceRanked.length) {
-          showLocalFlightActionMiss();
-          return true;
-        }
-
-        handleDomManipulation({
-          type: "highlight_flight_card",
-          flightIndex: priceRanked[0].flight.index,
-          label: "Cheapest flight"
-        });
-        return true;
-      }
-
-      if (suggestion === "Find fastest flight") {
-        var durationRanked = flightListContext.flights
-          .map(function (flight) {
-            return {
-              flight: flight,
-              minutes: parseDurationMinutes(flight.duration || flight.rawText)
-            };
-          })
-          .filter(function (item) {
-            return item.minutes !== null;
-          })
-          .sort(function (a, b) {
-            return a.minutes - b.minutes;
-          });
-
-        if (!durationRanked.length) {
-          showLocalFlightActionMiss();
-          return true;
-        }
-
-        handleDomManipulation({
-          type: "highlight_flight_card",
-          flightIndex: durationRanked[0].flight.index,
-          label: "Fastest flight"
-        });
-        return true;
-      }
-
-      if (suggestion === "Non stop flight") {
-        var nonstopIndexes = flightListContext.flights
-          .filter(function (flight) {
-            return parseStopsCount(flight.stops || flight.rawText) === 0;
-          })
-          .map(function (flight) {
-            return flight.index;
-          });
-
-        if (!nonstopIndexes.length) {
-          showLocalFlightActionMiss();
-          return true;
-        }
-
-        handleDomManipulation({
-          type: "highlight_flight_cards",
-          flightIndexes: nonstopIndexes,
-          label: "Non stop flight"
-        });
-        return true;
-      }
-
-      return false;
-    }
-
-    function clearFlightHighlight() {
-      highlightedFlightCards.forEach(function (card) {
-        card.classList.remove("compbot-flight-card-highlight");
-        card.style.outline = "";
-        card.style.boxShadow = "";
-        card.style.position = card.dataset.compbotOriginalPosition || "";
-        delete card.dataset.compbotOriginalPosition;
-      });
-      highlightedFlightCards = [];
-
-      highlightedFlightLabels.forEach(function (label) {
-        label.remove();
-      });
-      highlightedFlightLabels = [];
-    }
-
-    function startDomActivityGlow() {
-      toggleBtn.classList.add("compbot-dom-active");
-      clearTimeout(domActivityGlowTimer);
-      domActivityGlowTimer = setTimeout(function () {
-        toggleBtn.classList.remove("compbot-dom-active");
-      }, 3200);
-    }
-
-    function prepareFlightCardForHighlight(card) {
-      if (!card.style.position) {
-        card.dataset.compbotOriginalPosition = "";
-        card.style.position = "relative";
-      } else {
-        card.dataset.compbotOriginalPosition = card.style.position;
-      }
-
-      card.classList.add("compbot-flight-card-highlight");
-      highlightedFlightCards.push(card);
-    }
-
-    function addFlightHighlightLabel(card, labelText) {
-      var label = document.createElement("div");
-      label.textContent = labelText || "Selected flight";
-      label.style.position = "absolute";
-      label.style.top = "10px";
-      label.style.right = "10px";
-      label.style.zIndex = "2147483645";
-      label.style.padding = "6px 10px";
-      label.style.borderRadius = "999px";
-      label.style.background = "linear-gradient(90deg,#2563eb,#06b6d4,#a855f7,#2563eb)";
-      label.style.backgroundSize = "240% 100%";
-      label.style.color = "#ffffff";
-      label.style.font = "700 12px Inter, system-ui, sans-serif";
-      label.style.boxShadow = "0 10px 24px rgba(37,99,235,.32)";
-      label.style.animation = "compbot-flight-border-flow 2.4s linear infinite";
-      label.dataset.compbotFlightHighlightLabel = "true";
-      card.appendChild(label);
-      highlightedFlightLabels.push(label);
-    }
-
-    function handleDomManipulation(dommanipulate) {
-      if (!dommanipulate) {
-        return;
-      }
-
-      var type = dommanipulate.type;
-
-      // ─── Flight highlight ───────────────────────────────────────────
-      if (
-        (type === "highlight_flight_card" || type === "highlight_flight_cards") &&
-        flightCardSelector
-      ) {
-        var flightCards = safeQueryFlightCards();
-        var flightIndexes =
-          type === "highlight_flight_cards"
-            ? dommanipulate.flightIndexes
-            : [dommanipulate.flightIndex];
-        var flightTargets = Array.isArray(flightIndexes)
-          ? flightIndexes
-              .map(function (idx) { return flightCards[Number(idx || 0) - 1]; })
-              .filter(Boolean)
-          : [];
-
-        if (!flightTargets.length) {
-          return;
-        }
-
-        clearFlightHighlight();
-        if (isOpen) { closeChat(true); }
-        startDomActivityGlow();
-
-        flightTargets.forEach(function (card, i) {
-          prepareFlightCardForHighlight(card);
-          addFlightHighlightLabel(
-            card,
-            flightTargets.length > 1
-              ? (dommanipulate.label || "Matching flight") + " " + (i + 1)
-              : dommanipulate.label || "Selected flight"
-          );
-        });
-
-        setTimeout(function () {
-          flightTargets[0].scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 80);
-        return;
-      }
-
-      // ─── Product highlight ─────────────────────────────────────────
-      if (
-        (type === "highlight_product_card" || type === "highlight_product_cards") &&
-        productCardSelector
-      ) {
-        var productCards = safeQueryProductCards();
-        var productIndexes =
-          type === "highlight_product_cards"
-            ? dommanipulate.productIndexes
-            : [dommanipulate.productIndex];
-        var productTargets = Array.isArray(productIndexes)
-          ? productIndexes
-              .map(function (idx) { return productCards[Number(idx || 0) - 1]; })
-              .filter(Boolean)
-          : [];
-
-        if (!productTargets.length) {
-          return;
-        }
-
-        clearFlightHighlight();
-        if (isOpen) { closeChat(true); }
-        startDomActivityGlow();
-
-        productTargets.forEach(function (card, i) {
-          prepareFlightCardForHighlight(card);
-          addFlightHighlightLabel(
-            card,
-            productTargets.length > 1
-              ? (dommanipulate.label || "Matching product") + " " + (i + 1)
-              : dommanipulate.label || "Selected product"
-          );
-        });
-
-        setTimeout(function () {
-          productTargets[0].scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 80);
-        return;
-      }
     }
 
     function openChat() {
@@ -1900,17 +1022,6 @@
         sessionId: sessionId
       };
 
-      refreshFlightListContext();
-      refreshProductListContext();
-
-      if (flightListContext) {
-        payload.flightListContext = flightListContext;
-      }
-
-      if (productListContext) {
-        payload.productListContext = productListContext;
-      }
-
       fetch(apiBase + "/widget/" + widgetKey + "/chat", {
         method: "POST",
         headers: {
@@ -1941,21 +1052,6 @@
             data.message || data.answer || data.response || "No response";
 
           addMessage(reply, "bot");
-          handleDomManipulation(data.dommanipulate);
-
-          if (
-            data.action &&
-            data.action.type === "redirect" &&
-            data.action.url
-          ) {
-            setTimeout(function () {
-              var opened = window.open(data.action.url, "_blank", "noopener");
-
-              if (!opened) {
-                addRedirectFallback(data.action.url);
-              }
-            }, Number(data.action.delayMs || 1200));
-          }
         })
         .catch(function (err) {
           hideTyping();
@@ -1980,28 +1076,6 @@
     }
 
     loadSuggestions();
-    refreshFlightListContext();
-    refreshProductListContext();
-
-    if (flightCardSelector) {
-      var flightObserver = new MutationObserver(scheduleFlightContextRefresh);
-      flightObserver.observe(document.body, {
-        childList: true,
-        subtree: true,
-        characterData: true
-      });
-      installFlightRouteWatcher();
-    }
-
-    if (productCardSelector) {
-      var productObserver = new MutationObserver(scheduleProductContextRefresh);
-      productObserver.observe(document.body, {
-        childList: true,
-        subtree: true,
-        characterData: true
-      });
-      installProductRouteWatcher();
-    }
 
     /*
       Important:

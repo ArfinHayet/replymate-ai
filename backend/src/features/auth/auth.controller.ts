@@ -18,6 +18,7 @@ import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { UsageService } from '../usage/usage.service';
 import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
+import { validateTurnstileToken } from '../../core/turnstile/turnstile-token';
 
 @Controller('auth')
 export class AuthController {
@@ -51,12 +52,14 @@ export class AuthController {
     };
   }
 
-    @Post('signup')
+  @Post('signup')
   async signup(@Body() body: SignupDto) {
-    if (!body.email?.trim()) throw new BadRequestException('email is required');
-    if (!body.password?.trim())
+    if (typeof body?.email !== 'string' || !body.email.trim())
+      throw new BadRequestException('email is required');
+    if (typeof body?.password !== 'string' || !body.password.trim())
       throw new BadRequestException('password is required');
-    return this.authService.signup(body.email.trim(), body.password);
+    const turnstileToken = validateTurnstileToken(body.turnstileToken);
+    return this.authService.signup(body.email.trim(), body.password, turnstileToken);
   }
 
   /**
@@ -164,10 +167,12 @@ export class AuthController {
 
   @Post('login')
   async login(@Body() body: LoginDto) {
-    if (!body.email?.trim()) throw new BadRequestException('email is required');
-    if (!body.password?.trim())
+    if (typeof body?.email !== 'string' || !body.email.trim())
+      throw new BadRequestException('email is required');
+    if (typeof body?.password !== 'string' || !body.password.trim())
       throw new BadRequestException('password is required');
-    return this.authService.login(body.email.trim(), body.password);
+    const turnstileToken = validateTurnstileToken(body.turnstileToken);
+    return this.authService.login(body.email.trim(), body.password, turnstileToken);
   }
 
   @Post('forgot-password')

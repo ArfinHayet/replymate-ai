@@ -15,8 +15,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { ChatService } from '../chat/chat.service';
 import { ChatSuggestionService } from '../chat/chat-suggestion.service';
-import type { FlightListContext } from '../chat/flight-list-context';
-import type { ProductListContext } from '../chat/product-list-context';
 import { WidgetKeyGuard } from './widget-key.guard';
 import type { WidgetRequest } from './widget-key.guard';
 import { WidgetKeyService } from './widget-key.service';
@@ -24,8 +22,6 @@ import { WidgetKeyService } from './widget-key.service';
 class WidgetChatDto {
   message!: string;
   sessionId!: string;
-  flightListContext?: FlightListContext;
-  productListContext?: ProductListContext;
 }
 
 function firstHeaderValue(value: string | string[] | undefined): string | undefined {
@@ -90,6 +86,8 @@ export class WidgetController {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="icon" type="image/svg+xml" href="https://www.supportmate.online/favicon.svg">
+    <link rel="stylesheet" href="https://www.supportmate.online/theme-tokens.css">
     <title>${escapeHtml(botName)} | SupportMate Ai</title>
     <style>
       html,
@@ -98,8 +96,9 @@ export class WidgetController {
         width: 100%;
         min-height: 100%;
         height: 100%;
-        background: #f6f8fb;
-        font-family: Inter, system-ui, -apple-system, Segoe UI, sans-serif;
+        background: rgb(var(--color-canvas));
+        color: rgb(var(--color-text));
+        font-family: var(--font-body);
         overflow: hidden;
       }
     </style>
@@ -141,16 +140,12 @@ export class WidgetController {
       body.message.trim(),
       scopedSessionId,
       req.widgetUserId,
-      body.flightListContext,
-      body.productListContext,
     );
 
     return {
       message: response.message ?? response.answer,
       answer: response.answer,
       cached: response.cached,
-      ...(response.action ? { action: response.action } : {}),
-      ...(response.dommanipulate ? { dommanipulate: response.dommanipulate } : {}),
     };
   }
 

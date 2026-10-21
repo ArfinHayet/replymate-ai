@@ -12,15 +12,13 @@ import {
   Languages,
   Lock,
   MessageCircle,
-  Minus,
   ShieldCheck,
-  Users,
   WandSparkles,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { TurnstileWidget } from "@/components/TurnstileWidget";
 import {
-  CONTACT_EMAIL,
   DASHBOARD_PATH,
   type ContactFormProps,
   card,
@@ -30,7 +28,6 @@ import {
   logoClasses,
   logoMarkClasses,
   logoNameClasses,
-  pricingPlans,
   section,
   sectionSub,
   sectionTitle,
@@ -42,10 +39,9 @@ import {
 export function MetricsStrip() {
   return (
     <div className="border-b border-[rgb(var(--color-border))] bg-white">
-      <div className={cn(shell, "grid grid-cols-4 gap-px bg-[rgb(var(--color-border))] max-[700px]:grid-cols-2")}>
+      <div className={cn(shell, "grid grid-cols-3 gap-px bg-[rgb(var(--color-border))] max-[700px]:grid-cols-2")}>
         {[
           ["PDF + Markdown", "document ingestion"],
-          ["Web Crawl", "URL indexing and refetch"],
           ["Widget Keys", "embed and domain control"],
           ["Analytics", "sessions, sources, sections"],
         ].map(([value, label]) => (
@@ -63,7 +59,7 @@ export function IntegrationsBar() {
   return (
     <div className={cn(shell, "flex flex-wrap items-center gap-3.5 px-7 py-7")}>
       <span className="mr-1 text-[11px] font-bold uppercase tracking-[0.12em] text-rm-trip-text-muted">Built for</span>
-      {["PDFs", "Markdown", "Web Pages", "Images", "Website Widget"].map((name) => (
+      {["PDFs", "Markdown", "Images", "Website Widget"].map((name) => (
         <span
           key={name}
           className="cursor-default rounded-full border border-[rgb(var(--color-border-strong))] bg-white px-[15px] py-1.5 text-[13px] font-semibold text-[var(--rm-trip-text-muted)] transition hover:border-rm-trip-brand hover:bg-[var(--rm-trip-brand-light)] hover:text-[var(--rm-trip-brand)]"
@@ -76,41 +72,16 @@ export function IntegrationsBar() {
 }
 
 export function ScreenshotsSection() {
-  const rows = [
-    {
-      alt: "SupportMate shared inbox with AI replies",
-      desc: "Add PDFs, markdown files, web pages, and images so every assistant response stays grounded in trusted material.",
-      img: "/landing/screenshot-inbox.png",
-      label: "Setup",
-      note: "Knowledge sources: PDFs, markdown, URLs, and images.",
-      title: "Upload your content",
-    },
-    {
-      alt: "Analytics dashboard",
-      desc: "Monitor sessions, source coverage, and answer quality from one dashboard to quickly spot where support needs tuning.",
-      img: "/landing/screenshot-analytics.png",
-      label: "Insights",
-      note: "Real-time visibility for conversations, usage, and content gaps.",
-      title: "Track performance live",
-    },
-    {
-      alt: "Workflow builder",
-      desc: "Route conversations, qualify leads, and standardize handoffs with repeatable rules based on what your team learns.",
-      img: "/landing/screenshot-builder.png",
-      label: "Automation",
-      note: "Operational playbooks that scale across agents and channels.",
-      title: "Automate your workflows",
-    },
-  ];
+  const rows = workflowSteps;
 
   return (
     <section id="screenshots">
       <div className={section}>
         <p className={eyebrow}>Screenshots</p>
-        <h2 className={sectionTitle}>A practical workspace for support operations</h2>
+        <h2 className={sectionTitle}>Your support chatbot in three simple steps</h2>
         <p className={sectionSub}>
-          Follow the same Z flow your team uses: upload trusted sources, monitor results in one dashboard, then refine
-          workflows to improve every reply.
+          Upload your content, copy the embed script into your website, and start helping visitors with your own support
+          chatbot.
         </p>
         <div className="mt-9 rounded-rm-trip-smooth border border-[rgb(var(--color-border))] bg-rm-trip-surface-card p-[18px] max-[900px]:p-3">
           <div className="flex flex-col gap-5">
@@ -129,11 +100,16 @@ export function ScreenshotsSection() {
                   <p className="text-sm leading-relaxed text-[var(--rm-trip-text-muted)]">{row.desc}</p>
                   <p className="mt-3 text-xs font-semibold leading-normal text-rm-trip-text-muted">{row.note}</p>
                 </div>
-                <figure className="overflow-hidden rounded-rm-trip-smooth border border-[rgb(var(--color-border))] bg-rm-trip-surface-card p-3 shadow-[var(--rm-trip-card-shadow)] transition duration-200 hover:-translate-y-[3px] hover:shadow-[var(--rm-trip-lift-shadow)]">
+                <figure className="flex items-center justify-center overflow-hidden rounded-rm-trip-smooth border border-[rgb(var(--color-border))] bg-rm-trip-surface-card p-3 shadow-[var(--rm-trip-card-shadow)] transition duration-200 hover:-translate-y-[3px] hover:shadow-[var(--rm-trip-lift-shadow)]">
                   <img
                     src={row.img}
                     alt={row.alt}
-                    className="block w-full rounded-rm-trip-smooth border border-[rgb(var(--color-border))]"
+                    loading="lazy"
+                    decoding="async"
+                    className={cn(
+                      "block h-auto max-w-full rounded-rm-trip-smooth border border-[rgb(var(--color-border))] object-contain",
+                      row.imageClass,
+                    )}
                   />
                 </figure>
               </article>
@@ -147,26 +123,27 @@ export function ScreenshotsSection() {
 
 export function WorkflowSection() {
   return (
-    <div className={sectionWhite} id="how">
+    <section id="how" className={cn(sectionWhite, "theme-grid")}>
       <div className={section}>
-        <p className={eyebrow}>Workflow</p>
-        <h2 className={sectionTitle}>Set up, deploy, and improve in three clear steps</h2>
-        <div className="mt-10 grid grid-cols-3 gap-4 max-md:grid-cols-1">
-          {workflowSteps.map((step, index) => (
-            <article
-              key={step.title}
-              className={cn(card, hoverCard, "relative overflow-hidden px-[26px] py-7 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[3px] after:origin-left after:scale-x-0 after:bg-rm-trip-brand after:transition-transform hover:after:scale-x-100")}
-            >
-              <div className="mb-2.5 font-[var(--rm-trip-font-heading)] text-[52px] font-extrabold leading-none text-[var(--rm-trip-brand-light)]">
-                0{index + 1}
-              </div>
-              <h3 className="mb-2 font-[var(--rm-trip-font-heading)] text-[17px] font-bold text-rm-trip-text">{step.title}</h3>
-              <p className="text-[13.5px] leading-[1.65] text-[var(--rm-trip-text-muted)]">{step.desc}</p>
-            </article>
-          ))}
-        </div>
+        <picture className="block">
+          <source
+            media="(max-width: 767px)"
+            srcSet="/landing/workflow-mobile.gif"
+            width={420}
+            height={910}
+          />
+          <img
+            src="/landing/workflow.gif"
+            alt="Upload your content, copy the embed script and paste in your website, and get your own support chatbot."
+            width={1392}
+            height={340}
+            loading="lazy"
+            decoding="async"
+            className="block h-auto w-full"
+          />
+        </picture>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -179,8 +156,8 @@ export function FeaturesSection() {
           <h2 className={cn(sectionTitle, "mx-auto max-w-[540px]")}>Everything needed to run a grounded support assistant</h2>
         </div>
         <div className="grid grid-cols-3 gap-3.5 max-[900px]:grid-cols-1">
-          <FeatureCard icon={<MessageCircle size={20} />} title="Instant answer engine" items={["Answers from approved content", "Chat against indexed documents and pages", "Clear context for manual follow-up"]} />
-          <FeatureCard icon={<Funnel size={20} />} title="Content pipeline" items={["Upload PDFs, markdown, and images", "Ingest and refetch website URLs", "Edit and manage saved sources"]} />
+          <FeatureCard icon={<MessageCircle size={20} />} title="Instant answer engine" items={["Answers from approved content", "Chat against indexed documents", "Clear context for manual follow-up"]} />
+          <FeatureCard icon={<Funnel size={20} />} title="Content pipeline" items={["Upload PDFs, markdown, and images", "Organize content for search", "Edit and manage saved sources"]} />
           <article className={cn(card, hoverCard, "p-7")}>
             <h3 className="mb-3.5 font-[var(--rm-trip-font-heading)] text-[17px] font-bold text-rm-trip-text">Platform essentials</h3>
             <ul className="flex flex-col gap-[11px]">
@@ -188,7 +165,6 @@ export function FeaturesSection() {
                 [ShieldCheck, "Widget keys and allowed domains"],
                 [Languages, "Public chatbot URL for quick sharing"],
                 [Activity, "Conversation analytics"],
-                [GitBranch, "Web crawl health and source mix"],
                 [Lock, "Chat history review tools"],
               ].map(([Icon, text]) => {
                 const TypedIcon = Icon as typeof ShieldCheck;
@@ -261,24 +237,16 @@ export function CommandCenterSection() {
               })}
             </div>
           </div>
-          <div className={cn(card, "bg-rm-trip-surface p-5")}>
-            <div className="mb-3.5 flex items-center justify-between rounded-rm-trip-smooth border border-[rgb(var(--color-border))] bg-white px-3.5 py-[11px]">
-              <span className="text-xs font-semibold text-rm-trip-text-muted">Live operations</span>
-              <span className="flex items-center gap-[5px] text-xs font-semibold text-[var(--rm-trip-state-success)]">
-                <span className="h-[7px] w-[7px] rounded-full bg-[var(--rm-trip-state-success)] animate-pulse" />
-                Healthy
-              </span>
-            </div>
-            {[
-              ["Indexed sources", "126"],
-              ["Active widget keys", "8"],
-              ["Crawled pages", "412"],
-            ].map(([label, value]) => (
-              <div key={label} className="flex items-center justify-between border-b border-[rgb(var(--color-border))] py-[9px] text-[13.5px] last:border-0">
-                <span className="text-[var(--rm-trip-text-muted)]">{label}</span>
-                <strong className="font-[var(--rm-trip-font-heading)] text-[15px] font-bold text-rm-trip-text">{value}</strong>
-              </div>
-            ))}
+          <div className={cn(card, "overflow-hidden bg-rm-trip-surface")}>
+            <img
+              src="/landing/rocket-launch.gif"
+              alt="Animated rocket launch"
+              width={640}
+              height={640}
+              loading="lazy"
+              decoding="async"
+              className="block h-auto w-full object-contain"
+            />
           </div>
         </div>
       </div>
@@ -288,7 +256,7 @@ export function CommandCenterSection() {
 
 export function TrustSection() {
   return (
-    <div className={sectionWhite}>
+    <div className={cn(sectionWhite, "landing-trust")}>
       <div className={cn(shell, "px-7 py-12")}>
         <div className="grid grid-cols-3 gap-3 max-[700px]:grid-cols-1">
           {[
@@ -313,94 +281,6 @@ export function TrustSection() {
         </div>
       </div>
     </div>
-  );
-}
-
-export function PricingSection() {
-  return (
-    <section id="pricing">
-      <div className={section}>
-        <div className="mb-10 text-center">
-          <p className={eyebrow}>Pricing</p>
-          <h2 className={cn(sectionTitle, "mx-auto max-w-[460px]")}>Choose a plan for your support volume</h2>
-        </div>
-        <div className="mb-3.5 grid grid-cols-2 gap-4 max-[700px]:grid-cols-1">
-          {pricingPlans.map((plan) => (
-            <article
-              key={plan.name}
-              className={cn(
-                card,
-                "relative flex h-full flex-col p-[30px]",
-                plan.highlighted && "-translate-y-1 border-2 border-rm-trip-brand shadow-rm-trip-card",
-              )}
-            >
-              {plan.highlighted && (
-                <span className="absolute right-5 top-[-12px] rounded-full bg-rm-trip-brand px-[11px] py-[5px] text-[11px] font-bold text-rm-trip-on-brand">
-                  Most popular
-                </span>
-              )}
-              <div className={cn("mb-2 text-[11px] font-bold uppercase tracking-[0.12em]", plan.highlighted ? "text-[var(--rm-trip-brand)]" : "text-[var(--rm-trip-text-muted)]")}>
-                {plan.name}
-              </div>
-              <div className={cn("mb-1.5 font-[var(--rm-trip-font-heading)] text-[56px] font-extrabold leading-none text-rm-trip-text", plan.highlighted && "text-[var(--rm-trip-brand)]")}>
-                {plan.price}
-              </div>
-              <p className={cn("mb-6 text-[13px] text-rm-trip-text-muted", plan.highlighted && "text-[var(--rm-trip-text-muted)]")}>
-                {plan.subtitle}
-              </p>
-              <ul className="flex flex-1 flex-col gap-2.5">
-                {plan.features.map((feature) => (
-                  <li
-                    key={feature.label}
-                    className={cn(
-                      "flex items-center gap-[9px] text-[13.5px] text-[var(--rm-trip-text-muted)]",
-                      !feature.included && "text-rm-trip-text-muted line-through decoration-[1.25px]",
-                    )}
-                  >
-                    {feature.included ? (
-                      <Check size={15} className="shrink-0 text-[var(--rm-trip-brand)]" />
-                    ) : (
-                      <Minus size={15} className="shrink-0 text-rm-trip-text-muted" />
-                    )}
-                    {feature.label}
-                  </li>
-                ))}
-              </ul>
-              <a
-                href="#cta"
-                className={cn(
-                  "mt-6 flex w-full items-center justify-center gap-1.5 rounded-rm-trip-smooth border p-[11px] text-sm font-semibold no-underline transition",
-                  plan.highlighted
-                    ? "border-rm-trip-brand bg-rm-trip-brand text-rm-trip-on-brand hover:border-[var(--rm-trip-brand-dark)] hover:bg-rm-trip-brand-dark"
-                    : "border-[rgb(var(--color-border-strong))] bg-transparent text-rm-trip-text hover:bg-rm-trip-surface",
-                )}
-              >
-                Get started <ChevronRight size={15} />
-              </a>
-            </article>
-          ))}
-        </div>
-        <div className="grid grid-cols-4 gap-2.5 max-[900px]:grid-cols-2">
-          {[
-            [Clock3, "Always available", "Keep your assistant active around the clock."],
-            [FileText, "Knowledge grounded", "Answer from docs, pages, markdown, and images."],
-            [Users, "Workspace control", "Manage company context, content, and widget keys."],
-            [BarChart3, "Actionable trends", "Track activity, source mix, and crawl health."],
-          ].map(([Icon, title, body]) => {
-            const TypedIcon = Icon as typeof Clock3;
-            return (
-              <article key={title as string} className={cn(card, "p-[18px]")}>
-                <TypedIcon size={18} className="text-[var(--rm-trip-brand)]" />
-                <h4 className="mb-1 mt-2.5 font-[var(--rm-trip-font-heading)] text-[13.5px] font-bold text-rm-trip-text">
-                  {title as string}
-                </h4>
-                <p className="text-xs leading-normal text-[var(--rm-trip-text-muted)]">{body as string}</p>
-              </article>
-            );
-          })}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -436,11 +316,12 @@ export function ContactSection({
   error,
   form,
   isAuthenticated,
-  messagePreview,
+  // messagePreview,
   onSubmit,
   set,
   submitting,
   success,
+  turnstile,
 }: ContactFormProps) {
   return (
     <section id="cta">
@@ -461,6 +342,8 @@ export function ContactSection({
                   value={form.name}
                   onChange={(e) => set("name", e.target.value)}
                   placeholder="Alex Morgan"
+                  maxLength={120}
+                  disabled={submitting}
                   required
                 />
               </ContactField>
@@ -471,6 +354,8 @@ export function ContactSection({
                   value={form.email}
                   onChange={(e) => set("email", e.target.value)}
                   placeholder="alex@company.com"
+                  maxLength={254}
+                  disabled={submitting}
                   required
                 />
               </ContactField>
@@ -481,6 +366,8 @@ export function ContactSection({
                   value={form.subject}
                   onChange={(e) => set("subject", e.target.value)}
                   placeholder="How can we help?"
+                  maxLength={200}
+                  disabled={submitting}
                 />
               </ContactField>
               <ContactField label="Message" wide>
@@ -489,12 +376,15 @@ export function ContactSection({
                   value={form.message}
                   onChange={(e) => set("message", e.target.value)}
                   placeholder="Write your message..."
+                  maxLength={5000}
+                  disabled={submitting}
                   required
                 />
               </ContactField>
+              <TurnstileWidget action="contact" control={turnstile} className="col-span-full" />
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || !turnstile.token}
                 className="col-span-full flex items-center justify-center gap-[7px] rounded-rm-trip-smooth bg-rm-trip-brand p-[13px] text-[15px] font-semibold text-rm-trip-on-brand shadow-[var(--rm-trip-glow-shadow)] transition hover:-translate-y-px hover:bg-rm-trip-brand-dark hover:shadow-rm-trip-card disabled:cursor-not-allowed disabled:opacity-65"
               >
                 {submitting ? "Submitting..." : "Send message"}
@@ -512,10 +402,11 @@ export function ContactSection({
                 Create account
               </Link>
             </div>
-            {error && <p className="mt-2.5 text-[13px] font-semibold text-[var(--rm-trip-state-error)]">{error}</p>}
-            {success && <p className="mt-2.5 text-[13px] font-semibold text-[var(--rm-trip-state-success)]">{success}</p>}
+            {error && <p role="alert" className="mt-2.5 text-[13px] font-semibold text-[var(--rm-trip-state-error)]">{error}</p>}
+            {success && <p role="status" className="mt-2.5 text-[13px] font-semibold text-[var(--rm-trip-state-success)]">{success}</p>}
           </div>
-          <div className="min-w-0 border-l border-[rgb(var(--color-border))] bg-rm-trip-surface p-8 max-[900px]:border-l-0 max-[900px]:border-t max-[700px]:px-5 max-[700px]:py-6">
+          <div className="relative min-w-0 overflow-hidden border-l border-[rgb(var(--color-border))] bg-rm-trip-surface max-[900px]:aspect-square max-[900px]:border-l-0 max-[900px]:border-t">
+            {/*
             <p className="mb-3.5 text-[10px] font-bold uppercase tracking-[0.12em] text-rm-trip-text-muted">Contact preview</p>
             <PreviewBlock label="Your message">{messagePreview}</PreviewBlock>
             <div className="flex items-center gap-2 rounded-rm-trip-smooth border border-[rgb(var(--color-border))] bg-white px-3.5 py-[11px] text-[12.5px] font-medium text-[var(--rm-trip-text-muted)]">
@@ -530,6 +421,16 @@ export function ContactSection({
                 </a>
               </span>
             </div>
+            */}
+            <img
+              src="/landing/logo-retro.gif"
+              alt="Animated SupportMate logo"
+              width={640}
+              height={640}
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 block h-full w-full object-cover"
+            />
           </div>
         </div>
       </div>
@@ -549,6 +450,7 @@ function ContactField({ children, label, wide = false }: { children: ReactNode; 
   );
 }
 
+/*
 function PreviewBlock({
   children,
   highlighted = false,
@@ -576,10 +478,11 @@ function PreviewBlock({
     </div>
   );
 }
+*/
 
 export function LandingFooter() {
   return (
-    <footer className="border-t border-[rgb(var(--color-border))] bg-white">
+    <footer className="landing-footer border-t border-[rgb(var(--color-border))]">
       <div className={cn(shell, "grid grid-cols-[1.6fr_1fr_1fr_1fr] gap-8 px-7 pb-10 pt-[52px] max-md:grid-cols-2")}>
         <div>
           <div className={logoClasses}>
@@ -591,9 +494,6 @@ export function LandingFooter() {
         <FooterColumn title="Product">
           <li>
             <a href="#features">Features</a>
-          </li>
-          <li>
-            <a href="#pricing">Pricing</a>
           </li>
           <li>
             <a href="#cta">Book walkthrough</a>
@@ -610,10 +510,10 @@ export function LandingFooter() {
           <FooterIconItem icon={<Bot size={13} />}>Grounded answer engine</FooterIconItem>
         </FooterColumn>
         <FooterColumn title="Trust">
-          <li className="flex items-center gap-[7px] text-[13px] text-[var(--rm-trip-text-muted)]">
+          {/* <li className="flex items-center gap-[7px] text-[13px] text-[var(--rm-trip-text-muted)]">
             <ShieldCheck size={13} className="shrink-0" />
             <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
-          </li>
+          </li> */}
           <FooterIconItem icon={<Lock size={13} />}>Chat history review tools</FooterIconItem>
           <FooterIconItem icon={<FileText size={13} />}>Approved source control</FooterIconItem>
         </FooterColumn>

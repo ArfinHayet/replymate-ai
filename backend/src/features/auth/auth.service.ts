@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { createClient } from '@supabase/supabase-js';
 import { UsageService } from '../usage/usage.service';
 import { ProfileCompletionService } from '../profile-completion/profile-completion.service';
+import { TURNSTILE_VERIFICATION_MESSAGE } from '../../core/turnstile/turnstile-token';
 
 @Injectable()
 export class AuthService {
@@ -24,7 +25,8 @@ export class AuthService {
     const anonKey = this.config.getOrThrow<string>('supabase.anonKey');
     const serviceRoleKey = this.config.getOrThrow<string>('supabase.serviceRoleKey');
 
-    // Admin client — used for server-side operations (create user, verify OTP)
+    // Isolated admin client keeps recovery/resend working without a CAPTCHA UI.
+    // Never sign a user into this client; its service-role authorization is required.
     this.supabaseAdmin = createClient(url, serviceRoleKey, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
@@ -40,16 +42,20 @@ export class AuthService {
    * using the SMTP settings configured in the Supabase dashboard (Brevo).
    * The confirmation link redirects to GET /auth/verify-email?token_hash=xxx&type=signup
    */
-  async signup(email: string, password: string) {
+  async signup(email: string, password: string, turnstileToken: string) {
     const { data, error } = await this.supabaseClient.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${this.redirectBase()}/auth/verify-email`,
+        captchaToken: turnstileToken,
       },
     });
 
     if (error) {
+      if (error.code === 'captcha_failed') {
+        throw new BadRequestException(TURNSTILE_VERIFICATION_MESSAGE);
+      }
       this.logger.warn(`Signup failed for ${email}: ${error.message}`);
       throw new BadRequestException(error.message);
     }
@@ -68,7 +74,7 @@ export class AuthService {
   }
 
   async sendPasswordResetEmail(email: string) {
-    const { error } = await this.supabaseClient.auth.resetPasswordForEmail(
+    const { error } = await this.supabaseAdmin.auth.resetPasswordForEmail(
       email,
       {
         redirectTo: `${this.frontendUrl()}/reset-password`,
@@ -87,7 +93,7 @@ export class AuthService {
   }
 
   async resendSignupConfirmation(email: string) {
-    const { error } = await this.supabaseClient.auth.resend({
+    const { error } = await this.supabaseAdmin.auth.resend({
       type: 'signup',
       email,
       options: {
@@ -151,11 +157,18 @@ export class AuthService {
   /**
    * Sign in with email + password. Rejects unverified accounts.
    */
-  async login(email: string, password: string) {
+  async login(email: string, password: string, turnstileToken: string) {
     const { data, error } =
-      await this.supabaseClient.auth.signInWithPassword({ email, password });
+      await this.supabaseClient.auth.signInWithPassword({
+        email,
+        password,
+        options: { captchaToken: turnstileToken },
+      });
 
     if (error) {
+      if (error.code === 'captcha_failed') {
+        throw new BadRequestException(TURNSTILE_VERIFICATION_MESSAGE);
+      }
       this.logger.warn(`Login failed for ${email}: ${error.message}`);
       throw new UnauthorizedException(error.message);
     }

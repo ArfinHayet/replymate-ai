@@ -11,14 +11,14 @@ export function CompanyEmptyState({ onCreate }: CompanyEmptyStateProps) {
         <Building2 className="h-8 w-8 text-gray-300" />
       </div>
       <div className="text-center">
-        <p className="font-rm-trip-heading font-bold text-rm-trip-text">No company profile yet</p>
-        <p className="text-rm-trip-text-muted text-sm mt-1">Add one to give the chatbot a company identity</p>
+        <p className="font-rm-trip-heading font-bold text-rm-trip-text">No bot information yet</p>
+        <p className="text-rm-trip-text-muted text-sm mt-1">Add a bot name and description to personalize your chatbot.</p>
       </div>
       <button
         onClick={onCreate}
         className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-bold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-glow text-sm transition-all duration-150"
       >
-        <Plus className="h-4 w-4" /> Add Company
+        <Plus className="h-4 w-4" /> Add Information
       </button>
     </div>
   );

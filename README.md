@@ -194,6 +194,7 @@ Create or update `frontend/.env.local`:
 VITE_API_URL=http://localhost:3000
 VITE_SUPABASE_URL=your_supabase_project_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 ```
 
 Start the frontend:
@@ -208,7 +209,42 @@ The local app will run at:
 http://localhost:5173
 ```
 
-### 4. Use The App Locally
+### 4. Configure Cloudflare Turnstile
+
+Contact us, email/password login, and registration require a Turnstile security check. The frontend needs a public site key; the backend and Supabase need its matching secret key. Google OAuth, password recovery, and confirmation resend keep their current UI.
+
+1. In the [Cloudflare dashboard](https://dash.cloudflare.com/), open **Turnstile**, add a widget, choose **Managed**, and allow `supportmate.online` and `www.supportmate.online` for production. Keep pre-clearance disabled. Use a separate widget for other environments.
+2. Set `VITE_TURNSTILE_SITE_KEY` in the frontend build environment. Set these backend variables in `.env` locally and `.env.lambda` for deployment:
+
+   ```dotenv
+   TURNSTILE_SECRET_KEY=your_turnstile_secret_key
+   TURNSTILE_ALLOWED_HOSTNAMES=supportmate.online,www.supportmate.online
+   ```
+
+3. Build/deploy the frontend and backend together before changing the live Supabase CAPTCHA setting. Vite embeds the public key at build time, so changing it requires rebuilding the frontend. Lambda already loads the backend variables from `.env.lambda` during deployment.
+4. After both deployments contain the integration, open **Authentication → Bot and Abuse Protection** in the intended Supabase project, enable CAPTCHA, select **Cloudflare Turnstile**, and enter the matching secret key. The [Supabase CAPTCHA guide](https://supabase.com/docs/guides/auth/auth-captcha) describes this setting. Supabase verifies login and signup tokens; the backend verifies contact tokens directly with Cloudflare. A token must never be verified by both. Authentication CAPTCHA enforcement is not active until this dashboard setting is enabled.
+5. Verify all three forms with real production keys. Check that direct anonymous Supabase password-login and signup requests without a CAPTCHA token fail. Also check Google OAuth, password reset, confirmation resend, and token refresh.
+
+The backend deliberately uses its isolated service-role client for password-reset emails and confirmation resends so those existing buttons still work after Supabase enables CAPTCHA. Login and signup continue to use the anonymous client and require CAPTCHA. Keep service-role credentials exclusively on the backend.
+
+For local development, configure an **isolated development Supabase project or local instance** with Cloudflare's public test secret and use:
+
+```dotenv
+# frontend/.env.local
+VITE_TURNSTILE_SITE_KEY=1x00000000000000000000AA
+
+# backend/.env, and the development Supabase CAPTCHA setting
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+TURNSTILE_ALLOWED_HOSTNAMES=localhost,127.0.0.1
+```
+
+Never replace the live Supabase CAPTCHA secret with a test secret. The backend rejects test secrets in production. Test keys still call Cloudflare but bypass contact action/hostname matching because their metadata is synthetic. See [Cloudflare's test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) for failing and expired-token scenarios.
+
+Cloudflare displays **“For testing only. If seen, report to site owner.”** when these demo keys are used. This notice is expected in local development and is absent with a real widget key. To use a real widget locally, create a separate development widget allowing `localhost` and `127.0.0.1`, configure its matching site/secret keys, and keep it separate from the production widget.
+
+If the site key is missing or the widget cannot load, these forms stay disabled and show an error. Rejected or expired tokens require a fresh check. Missing backend configuration or a Cloudflare outage returns a retryable error without saving a contact message. Tokens and secret keys are never persisted with contact messages.
+
+### 5. Use The App Locally
 
 After both servers are running:
 

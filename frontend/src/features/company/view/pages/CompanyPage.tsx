@@ -6,11 +6,12 @@ import { InlineError } from "@/components/ui/InlineError";
 import { useCompanyViewModel } from "../../viewModel/useCompanyViewModel";
 import { CompanyDeleteDialog } from "../components/CompanyDeleteDialog";
 import { CompanyFormDialog } from "../components/CompanyFormDialog";
-import { CompanyStats } from "../components/CompanyStats";
 import { CompanyTable } from "../components/CompanyTable";
 
 export function CompanyPage() {
   const viewModel = useCompanyViewModel();
+  const canCreate =
+    !viewModel.loading && !viewModel.error && viewModel.companies.length === 0;
 
   const refreshCompanies = async () => {
     const result = await viewModel.loadCompanies();
@@ -40,11 +41,9 @@ export function CompanyPage() {
   return (
     <div className="min-h-screen bg-rm-trip-surface">
       <PageHeader
-        title="Company Profile"
+        title="Information"
         subtitle={
-          <>
-            The <span className="font-semibold text-rm-trip-state-success">Active</span> company is injected into the chatbot's system prompt on every request.
-          </>
+          "This information is included in your bot's context on every request."
         }
       >
         <div className="flex items-center gap-2.5 shrink-0">
@@ -56,29 +55,31 @@ export function CompanyPage() {
             <RefreshCw className={`h-3.5 w-3.5 ${viewModel.loading ? "animate-spin" : ""}`} />
             Refresh
           </button>
-          <button
-            onClick={viewModel.openCreate}
-            className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-bold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-glow transition-all duration-150 text-sm"
-          >
-            <Plus className="h-4 w-4" />
-            Add Company
-          </button>
+          {canCreate && (
+            <button
+              onClick={viewModel.openCreate}
+              className="flex items-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-bold py-2.5 px-5 rounded-rm-trip-smooth shadow-rm-trip-glow transition-all duration-150 text-sm"
+            >
+              <Plus className="h-4 w-4" />
+              Add Information
+            </button>
+          )}
         </div>
       </PageHeader>
 
       <PageContent>
         {viewModel.error && !viewModel.loading && (
           <InlineError
-            title="Could not load company profile"
-            message="Your company details are unavailable right now. Retry before editing assistant behavior."
+            title="Could not load bot information"
+            message="Your bot information is unavailable right now. Retry before editing assistant behavior."
             onRetry={() => void refreshCompanies()}
             retrying={viewModel.loading}
           />
         )}
-        <CompanyStats companies={viewModel.companies} loading={viewModel.loading} />
         <CompanyTable
           companies={viewModel.companies}
           loading={viewModel.loading}
+          canCreate={canCreate}
           onCreate={viewModel.openCreate}
           onEdit={viewModel.openEdit}
           onDelete={viewModel.requestDelete}

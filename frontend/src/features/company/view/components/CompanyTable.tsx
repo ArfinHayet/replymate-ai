@@ -6,18 +6,19 @@ import { CompanyTableRow } from "./CompanyTableRow";
 interface CompanyTableProps {
   companies: Company[];
   loading: boolean;
+  canCreate: boolean;
   onCreate: () => void;
   onEdit: (company: Company) => void;
   onDelete: (company: Company) => void;
 }
 
-export function CompanyTable({ companies, loading, onCreate, onEdit, onDelete }: CompanyTableProps) {
+export function CompanyTable({ companies, loading, canCreate, onCreate, onEdit, onDelete }: CompanyTableProps) {
   return (
     <div className="overflow-hidden rounded-rm-trip-smooth border border-gray-100 bg-white">
       <div className="overflow-x-auto">
         <div className="min-w-[720px]">
           <div className="grid grid-cols-[2fr_3fr_2fr_80px] px-6 py-3.5 bg-gray-50/80 border-b border-gray-100">
-            {["Company Name", "Short Description", "Last Updated", "Actions"].map((heading, index) => (
+            {["Bot Name", "Short Description", "Last Updated", "Actions"].map((heading, index) => (
               <p
                 key={heading}
                 className={`text-xs font-semibold text-rm-trip-text-muted ${index === 3 ? "text-right" : ""}`}
@@ -40,7 +41,7 @@ export function CompanyTable({ companies, loading, onCreate, onEdit, onDelete }:
             ))}
         </div>
       </div>
-      {!loading && companies.length === 0 && <CompanyEmptyState onCreate={onCreate} />}
+      {canCreate && companies.length === 0 && <CompanyEmptyState onCreate={onCreate} />}
     </div>
   );
 }

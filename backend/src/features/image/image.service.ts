@@ -105,6 +105,27 @@ export class ImageService {
 
   async remove(id: string, userId: string): Promise<void> {
     const record = await this.findOne(id, userId);
+    await this.deleteRecord(record);
+  }
+
+  async removeAsAdmin(id: string): Promise<{ userId?: string }> {
+    const record = await this.imageRepo.findOne({ where: { id } });
+    if (!record) throw new NotFoundException(`Image ${id} not found`);
+    const ownerId = record.userId;
+    await this.deleteRecord(record);
+    return { userId: ownerId };
+  }
+
+  private async deleteRecord(record: ImageRecord): Promise<void> {
+    // Images uploaded by this service use the bucket's public URL.
+    const marker = `/storage/v1/object/public/${this.bucket}/`;
+    let path = '';
+    try { path = new URL(record.storageUrl).pathname; } catch { /* Legacy external URL. */ }
+    if (path.startsWith(marker)) {
+      const storagePath = decodeURIComponent(path.slice(marker.length));
+      const { error } = await this.supabase.storage.from(this.bucket).remove([storagePath]);
+      if (error) throw new Error(`Storage deletion failed: ${error.message}`);
+    }
     await this.imageRepo.remove(record);
   }
 }

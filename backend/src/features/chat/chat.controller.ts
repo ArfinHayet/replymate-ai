@@ -3,12 +3,10 @@ import type { Request } from 'express';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ChatSuggestionService } from './chat-suggestion.service';
-import type { FlightListContext } from './flight-list-context';
 
 class ChatRequestDto {
   'message': string;
   'sessionId': string;
-  'flightListContext'?: FlightListContext;
 }
 
 class UpdateChatSuggestionsDto {
@@ -39,7 +37,6 @@ export class ChatController {
       body.message.trim(),
       body.sessionId.trim(),
       userId,
-      body.flightListContext,
     );
   }
 

@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { AlertCircle, CheckCircle2, Loader2, Lock } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { clearRefreshToken, clearToken } from "@/lib/auth";
 import { createAuthService } from "../../model/services/createAuthService";
 import { AuthBrandHeader } from "../components/AuthBrandHeader";
@@ -69,7 +70,7 @@ export function ResetPasswordPage() {
   if (submitted) {
     return (
       <AuthSurface>
-        <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
+        <div className="flex min-h-[calc(100dvh-58px)] w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
           <div className="mb-6 flex justify-center">
             <div className="flex h-14 w-14 items-center justify-center rounded-rm-trip-smooth bg-emerald-50">
               <CheckCircle2 className="h-8 w-8 text-rm-trip-success" />
@@ -94,13 +95,13 @@ export function ResetPasswordPage() {
 
   return (
     <AuthSurface>
-      <div className="flex min-h-dvh w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
+      <div className="flex min-h-[calc(100dvh-58px)] w-full flex-col justify-center bg-white px-5 py-8 sm:min-h-0 sm:max-w-md sm:rounded-rm-trip-smooth sm:border sm:border-gray-200 sm:bg-white sm:p-9 sm:shadow-rm-trip-card">
         <AuthBrandHeader title="Create a new password" subtitle="Use a strong password to protect your workspace." />
 
         {loadingLink ? (
-          <div className="flex items-center justify-center gap-2 rounded-rm-trip-smooth bg-rm-trip-brand-light px-4 py-3 text-sm font-semibold text-rm-trip-brand">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Checking reset link...
+          <div aria-busy="true" className="space-y-2 rounded-rm-trip-smooth bg-rm-trip-brand-light px-4 py-3">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-4 w-52 max-w-full" />
           </div>
         ) : !accessToken || !refreshToken ? (
           <div className="rounded-rm-trip-smooth border border-red-100 bg-red-50 px-4 py-3">

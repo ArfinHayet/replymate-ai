@@ -10,7 +10,6 @@ import { CacheModule } from '../../core/cache/cache.module';
 import { CompanyModule } from '../company/company.module';
 import { RetrievalModule } from '../../core/retrieval/retrieval.module';
 import { UsageModule } from '../usage/usage.module';
-import { ChatToolsModule } from '../chat-tools/chat-tools.module';
 
 @Module({
   imports: [
@@ -20,7 +19,6 @@ import { ChatToolsModule } from '../chat-tools/chat-tools.module';
     CompanyModule,
     RetrievalModule,
     UsageModule,
-    ChatToolsModule,
   ],
   controllers: [ChatController],
   providers: [ChatService, ChatSuggestionService],

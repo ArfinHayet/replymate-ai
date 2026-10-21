@@ -35,8 +35,8 @@ import { UsageModule } from './features/usage/usage.module';
 import { PaymentsModule } from './features/payments/payments.module';
 import { ProfileCompletion } from './features/profile-completion/profile-completion.entity';
 import { ProfileCompletionModule } from './features/profile-completion/profile-completion.module';
-import { ChatToolConfig } from './features/chat-tools/chat-tool-config.entity';
-import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
+import { AdminModule } from './features/admin/admin.module';
+import { ContactMessagesModule } from './features/contact-messages/contact-messages.module';
 
 @Module({
   imports: [
@@ -51,7 +51,7 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
       useFactory: (config: ConfigService) => ({
         type: 'postgres',
         url: config.get<string>('databaseUrl'),
-        entities: [DocumentChunk, Pdf, Csv, CsvChunk, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion, ChatToolConfig],
+        entities: [DocumentChunk, Pdf, Csv, CsvChunk, Company, ChatMessage, ChatSuggestion, CachedAnswer, WidgetKey, AllowedDomain, ImageRecord, WebPage, WebPageChunk, WhatsappIntegration, WhatsappMessageEvent, Plan, AiMessageUsage, ProfileCompletion],
         synchronize: false,
         logging: false,
         extra: {
@@ -75,7 +75,8 @@ import { ChatToolsModule } from './features/chat-tools/chat-tools.module';
     UsageModule,
     PaymentsModule,
     ProfileCompletionModule,
-    ChatToolsModule,
+    AdminModule,
+    ContactMessagesModule,
   ],
 })
 export class AppModule implements OnModuleInit {

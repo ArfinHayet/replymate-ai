@@ -1,6 +1,6 @@
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/apiRoutes";
-import type { AllowedDomain, ChatToolConfig, WidgetKey } from "../entities/WidgetSettings";
+import type { AllowedDomain, WidgetKey } from "../entities/WidgetSettings";
 import type { EmbedRepository } from "./EmbedRepository";
 
 export class HttpEmbedRepository implements EmbedRepository {
@@ -32,8 +32,4 @@ export class HttpEmbedRepository implements EmbedRepository {
     await api.delete(apiRoutes.embed.allowedDomainById(id));
   }
 
-  async listChatToolConfigs(): Promise<ChatToolConfig[]> {
-    const response = await api.get<ChatToolConfig[]>(apiRoutes.chatTools.list);
-    return response.data;
-  }
 }

@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/theme-tokens.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SupportMate AI - Your Personal AI Assistant</title>
     <link rel="canonical" href="https://www.supportmate.online/" />
@@ -84,5 +85,19 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script type="module">
+      if (import.meta.env.DEV) {
+        const api = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const widget = document.createElement("script");
+        widget.src = `${api}/widget.js`;
+        widget.dataset.key =
+          import.meta.env.VITE_WIDGET_TEST_KEY ||
+          "wk_0183dd7530cb440492e71cdb02edbb11";
+        widget.dataset.api = api;
+        widget.dataset.icon = `${window.location.origin}/favicon.svg`;
+        widget.dataset.themeUrl = `${window.location.origin}/theme-tokens.css`;
+        document.body.appendChild(widget);
+      }
+    </script>
   </body>
 </html>

@@ -45,9 +45,17 @@ export default () => ({
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
     jwtSecret: process.env.SUPABASE_JWT_SECRET,
     imagesBucket: process.env.SUPABASE_IMAGES_BUCKET ?? 'images',
+    adminEmails: process.env.SUPABASE_ADMIN_EMAILS ?? '',
   },
   appUrl: process.env.APP_URL ?? `http://localhost:${parseInt(process.env.PORT ?? '3000', 10) || 3000}`,
   frontendUrl: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  turnstile: {
+    secretKey: process.env.TURNSTILE_SECRET_KEY,
+    allowedHostnames: (process.env.TURNSTILE_ALLOWED_HOSTNAMES ?? '')
+      .split(',')
+      .map((hostname) => hostname.trim().toLowerCase())
+      .filter(Boolean),
+  },
   creem: {
     apiKey: process.env.CREEM_API_KEY,
     webhookSecret: process.env.CREEM_WEBHOOK_SECRET,

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { MessageSquare } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useChatHistoryViewModel } from "../../viewModel/useChatHistoryViewModel";
 import { ChatHistoryConversation } from "../components/ChatHistoryConversation";
 import { ChatHistorySidebar } from "../components/ChatHistorySidebar";
@@ -24,7 +25,7 @@ export function ChatHistoryPage() {
         {!isMobileConversationView && (
           <div className="inline-flex items-center gap-2 rounded-rm-trip-pill border border-rm-trip-brand/20 bg-rm-trip-brand-light px-3 py-1 text-xs font-bold text-rm-trip-brand">
             <MessageSquare className="h-3.5 w-3.5" />
-            {viewModel.sessions.length} sessions
+            {viewModel.loading ? <Skeleton className="h-3 w-16" /> : `${viewModel.sessions.length} sessions`}
           </div>
         )}
       </PageHeader>
@@ -45,6 +46,7 @@ export function ChatHistoryPage() {
         <div className={cn("min-h-0 flex-1 lg:flex", isMobileConversationView ? "block" : "hidden lg:block")}>
           <ChatHistoryConversation
             selectedSession={viewModel.selectedSession}
+            loading={viewModel.loading}
             onBack={() => setMobileView("list")}
           />
         </div>

@@ -10,6 +10,7 @@ interface ChatMessageListProps {
   messages: ChatMessage[];
   loading: boolean;
   suggestions: string[];
+  suggestionsLoading: boolean;
   bottomRef: React.RefObject<HTMLDivElement | null>;
   onSelectSuggestion: (question: string) => void;
 }
@@ -18,6 +19,7 @@ export function ChatMessageList({
   messages,
   loading,
   suggestions,
+  suggestionsLoading,
   bottomRef,
   onSelectSuggestion,
 }: ChatMessageListProps) {
@@ -25,7 +27,11 @@ export function ChatMessageList({
     <ScrollArea className="flex-1 min-h-0">
       <div className="messages-area chat-page">
         {messages.length === 0 && (
-          <ChatEmptyState suggestions={suggestions} onSelectSuggestion={onSelectSuggestion} />
+          <ChatEmptyState
+            suggestions={suggestions}
+            suggestionsLoading={suggestionsLoading}
+            onSelectSuggestion={onSelectSuggestion}
+          />
         )}
 
         {messages.map((message, index) => (

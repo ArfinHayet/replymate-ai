@@ -1,4 +1,7 @@
 export const apiRoutes = {
+  contactMessages: {
+    create: "/contact-messages",
+  },
   auth: {
     login: "/auth/login",
     signup: "/auth/signup",
@@ -13,10 +16,6 @@ export const apiRoutes = {
     send: "/chat",
     history: "/chat/history",
     suggestions: "/chat/suggestions",
-  },
-  chatTools: {
-    list: "/chat-tools",
-    byKey: (toolKey: string) => `/chat-tools/${toolKey}`,
   },
   company: {
     list: "/company",

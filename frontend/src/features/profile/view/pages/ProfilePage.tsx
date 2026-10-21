@@ -1,4 +1,5 @@
-import { Calendar, IdCard, Loader2, Mail, ShieldCheck, UserRound } from "lucide-react";
+import { useState } from "react";
+import { Calendar, IdCard, Mail, ShieldCheck, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -8,13 +9,16 @@ import type { UserProfile } from "../../model/entities/UserProfile";
 import { useProfileViewModel } from "../../viewModel/useProfileViewModel";
 
 function Avatar({ profile }: { profile: UserProfile }) {
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const initial = (profile.displayName?.[0] ?? profile.email[0] ?? "?").toUpperCase();
+  const avatarUrl = profile.avatarUrl;
 
-  if (profile.avatarUrl) {
+  if (avatarUrl && failedAvatarUrl !== avatarUrl) {
     return (
       <img
-        src={profile.avatarUrl}
+        src={avatarUrl}
         alt={profile.displayName}
+        onError={() => setFailedAvatarUrl(avatarUrl)}
         className="h-20 w-20 rounded-rm-trip-smooth object-cover shadow-rm-trip-card ring-1 ring-gray-100 sm:h-24 sm:w-24"
       />
     );
@@ -46,7 +50,12 @@ export function ProfilePage() {
               </div>
             </div>
             <div className="rounded-rm-trip-smooth border border-gray-100 bg-white p-5 shadow-rm-trip-card sm:p-6">
-              <Loader2 className="h-5 w-5 animate-spin text-rm-trip-brand" />
+              <div className="space-y-4">
+                <Skeleton className="h-3 w-32" />
+                <Skeleton className="h-5 w-48 max-w-full" />
+                <Skeleton className="h-5 w-40 max-w-full" />
+                <Skeleton className="h-5 w-44 max-w-full" />
+              </div>
             </div>
           </div>
         </PageContent>

@@ -1,13 +1,4 @@
-import type {
-  FlightListContext,
-  WidgetDomManipulation,
-} from '../../features/chat/flight-list-context';
-import type { ProductListContext } from '../../features/chat/product-list-context';
-import type { ChatRedirectAction } from '../../features/chat-tools/chat-tools.types';
-import type { FlightListCriteria } from './visible-flights/visible-flight-criteria';
-import type { ProductListCriteria } from './visible-products/visible-product-criteria';
-
-/** History shape shared with ChatService */
+/** History shape shared with ChatService. */
 export interface Message {
   role: 'user' | 'model';
   parts: { text?: string }[];
@@ -19,33 +10,12 @@ export type QueryIntentClassification = {
     | 'direct'
     | 'follow_up'
     | 'standalone_knowledge_page'
-    | 'flight_list_query'
-    | 'product_list_query'
     | 'clarification_needed';
   resolvedQuery: string;
-  flightListCriteria?: FlightListCriteria;
-  productListCriteria?: ProductListCriteria;
-};
-
-export type VisibleFlightAnalysisResult = {
-  answer: string;
-  selectedFlight?: FlightListContext['flights'][number];
-  rankedFlights?: FlightListContext['flights'];
-  dommanipulate?: WidgetDomManipulation;
-};
-
-export type VisibleProductAnalysisResult = {
-  answer: string;
-  selectedProduct?: ProductListContext['products'][number];
-  rankedProducts?: ProductListContext['products'];
-  dommanipulate?: WidgetDomManipulation;
 };
 
 export type AgenticLoopResult = {
   answer: string;
-  action?: ChatRedirectAction;
-  dommanipulate?: WidgetDomManipulation;
-  usedToolKeys?: string[];
 };
 
 const TOOL_QUERY_CONTEXT_TURNS = 6;

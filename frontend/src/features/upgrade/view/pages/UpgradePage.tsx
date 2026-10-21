@@ -3,6 +3,7 @@ import { CalendarDays, Check, Loader2, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CONTACT_EMAIL } from "@/features/landing/view/components/landingContent";
 import { api } from "@/lib/api";
 import { apiRoutes } from "@/lib/apiRoutes";
@@ -261,10 +262,27 @@ export function UpgradePage() {
           <div className="grid gap-4 md:grid-cols-2">
             {pageLoading
               ? Array.from({ length: 2 }).map((_, index) => (
-                  <div
+                  <article
                     key={index}
-                    className="min-h-[300px] animate-pulse rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card"
-                  />
+                    aria-hidden="true"
+                    className="flex min-h-[300px] flex-col rounded-rm-trip-smooth border border-gray-100 bg-white p-6 shadow-rm-trip-card"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-4">
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                        <Skeleton className="h-8 w-40" />
+                      </div>
+                      <Skeleton className="h-8 w-16 rounded-rm-trip-smooth" />
+                    </div>
+                    <div className="mt-6 space-y-3">
+                      <Skeleton className="h-11 w-full rounded-rm-trip-smooth" />
+                      <Skeleton className="h-11 w-full rounded-rm-trip-smooth" />
+                      <Skeleton className="h-11 w-full rounded-rm-trip-smooth" />
+                    </div>
+                    <div className="mt-auto pt-6">
+                      <Skeleton className="h-11 w-full rounded-rm-trip-smooth" />
+                    </div>
+                  </article>
                 ))
               : plans.map((plan) => {
                   const isActive = currentPlanId === plan.id;
@@ -272,7 +290,6 @@ export function UpgradePage() {
                   const isStarting = checkoutPlanId === plan.id;
                   const features = [
                     `${plan.monthlyMessageLimit.toLocaleString()} AI messages every 30 days`,
-                    `${plan.webCrawlLimit.toLocaleString()} web crawls`,
                     `${plan.pdfUploadLimit.toLocaleString()} PDF uploads`,
                     `${plan.imageUploadLimit.toLocaleString()} image uploads`,
                   ];
@@ -349,18 +366,32 @@ export function UpgradePage() {
               Current Plan
             </p>
             <div className="mt-3 flex items-end gap-1">
-              <span className="font-rm-trip-heading text-4xl font-bold text-rm-trip-text">
-                {currentPlanName}
-              </span>
+              {pageLoading ? (
+                <Skeleton className="h-10 w-36" />
+              ) : (
+                <span className="font-rm-trip-heading text-4xl font-bold text-rm-trip-text">
+                  {currentPlanName}
+                </span>
+              )}
             </div>
-            {usage && (
+            {pageLoading ? (
+              <div className="mt-3 space-y-2" aria-hidden="true">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-4/5" />
+              </div>
+            ) : usage && (
               <p className="mt-3 text-sm leading-6 text-rm-trip-text-muted">
                 {usage.usedMessages.toLocaleString()} of{" "}
                 {usage.plan.monthlyMessageLimit.toLocaleString()} messages used.
               </p>
             )}
 
-            {usage && (
+            {pageLoading ? (
+              <div className="mt-5 grid gap-3" aria-hidden="true">
+                <Skeleton className="h-16 w-full rounded-rm-trip-smooth" />
+                <Skeleton className="h-16 w-full rounded-rm-trip-smooth" />
+              </div>
+            ) : usage && (
               <div className="mt-5 grid gap-3">
                 <div className="rounded-rm-trip-smooth bg-gray-50 px-4 py-3">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">

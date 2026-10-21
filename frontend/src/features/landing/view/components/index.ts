@@ -8,7 +8,6 @@ export {
   IntegrationsBar,
   LandingFooter,
   MetricsStrip,
-  PricingSection,
   ScreenshotsSection,
   TrustSection,
   WorkflowSection,

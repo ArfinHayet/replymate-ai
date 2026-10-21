@@ -36,21 +36,21 @@ export function CompanyFormDialog({
             </div>
             <div>
               <DialogTitle className="font-rm-trip-heading font-bold text-rm-trip-text leading-tight">
-                {editTarget ? "Edit Company" : "Add Company"}
+                {editTarget ? "Edit Information" : "Add Information"}
               </DialogTitle>
               <DialogDescription className="text-xs text-rm-trip-text-muted mt-0.5">
-                {editTarget ? "Update company details" : "Create a new company profile"}
+                {editTarget ? "Update bot information" : "Add a bot name and business description"}
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
         <div className="space-y-4 px-6 py-5 bg-white">
           <div className="space-y-1.5">
-            <label className="block text-sm font-bold text-rm-trip-text">Company Name</label>
+            <label className="block text-sm font-bold text-rm-trip-text">Bot Name</label>
             <input
               value={form.name}
               onChange={(event) => onNameChange(event.target.value)}
-              placeholder="For example: Acme Support"
+              placeholder="For example: Acme Assistant"
               className="w-full px-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-all duration-150 outline-none"
             />
           </div>
@@ -59,7 +59,7 @@ export function CompanyFormDialog({
             <textarea
               value={form.shortDescription}
               onChange={(event) => onShortDescriptionChange(event.target.value)}
-              placeholder="A brief description of what the company does..."
+              placeholder="A short description of your business..."
               rows={3}
               className="w-full px-4 py-2.5 border border-gray-200 rounded-rm-trip-smooth text-sm text-rm-trip-text placeholder:text-gray-400 focus-rm-trip-highlight bg-gray-50 focus:bg-white transition-all duration-150 outline-none resize-none"
             />
@@ -78,7 +78,7 @@ export function CompanyFormDialog({
             className="flex-1 flex items-center justify-center gap-2 bg-rm-trip-brand hover:bg-rm-trip-brand-dark text-rm-trip-on-brand font-bold py-2.5 px-4 rounded-rm-trip-smooth shadow-rm-trip-glow transition-all duration-150 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {editTarget ? "Save Changes" : "Create"}
+            {editTarget ? "Save Changes" : "Add Information"}
           </button>
         </DialogFooter>
       </DialogContent>

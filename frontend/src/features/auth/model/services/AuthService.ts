@@ -8,17 +8,19 @@ export class AuthService {
     this.authRepository = authRepository;
   }
 
-  login(email: string, password: string) {
+  login(email: string, password: string, turnstileToken: string) {
     return this.authRepository.login({
       email: email.toLowerCase().trim(),
       password: password.trim(),
+      turnstileToken,
     });
   }
 
-  signup(email: string, password: string) {
+  signup(email: string, password: string, turnstileToken: string) {
     return this.authRepository.signup({
       email: email.trim(),
       password,
+      turnstileToken,
     });
   }
 

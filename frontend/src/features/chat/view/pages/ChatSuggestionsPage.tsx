@@ -3,6 +3,7 @@ import { Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { PageContent } from "@/components/layout/PageContent";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Skeleton } from "@/components/ui/skeleton";
 import { createChatService } from "../../model/services/createChatService";
 import { AxiosError } from "axios";
 
@@ -85,22 +86,29 @@ export function ChatSuggestionsPage() {
           </div>
 
           <div className="space-y-4 p-6">
-            <div className="grid gap-3 md:grid-cols-3">
-              {draft.map((suggestion, index) => (
-                <label key={index} className="block">
-                  <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
-                    Suggestion {index + 1}
-                  </span>
-                  <input
-                    value={suggestion}
-                    maxLength={120}
-                    disabled={loading || saving}
-                    onChange={(event) => updateDraft(index, event.target.value)}
-                    placeholder="Example: What services do you offer?"
-                    className="h-11 w-full rounded-rm-trip-smooth border border-gray-200 bg-gray-50 px-3 text-sm text-rm-trip-text outline-none transition-all focus-rm-trip-highlight disabled:cursor-not-allowed disabled:opacity-60"
-                  />
-                </label>
-              ))}
+            <div className="grid gap-3 md:grid-cols-3" aria-busy={loading}>
+              {loading
+                ? Array.from({ length: 3 }, (_, index) => (
+                    <div key={index} className="space-y-2">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-11 w-full rounded-rm-trip-smooth" />
+                    </div>
+                  ))
+                : draft.map((suggestion, index) => (
+                    <label key={index} className="block">
+                      <span className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-rm-trip-text-muted">
+                        Suggestion {index + 1}
+                      </span>
+                      <input
+                        value={suggestion}
+                        maxLength={120}
+                        disabled={saving}
+                        onChange={(event) => updateDraft(index, event.target.value)}
+                        placeholder="Example: What services do you offer?"
+                        className="h-11 w-full rounded-rm-trip-smooth border border-gray-200 bg-gray-50 px-3 text-sm text-rm-trip-text outline-none transition-all focus-rm-trip-highlight disabled:cursor-not-allowed disabled:opacity-60"
+                      />
+                    </label>
+                  ))}
             </div>
 
             <div className="flex items-center justify-between gap-4">

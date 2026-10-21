@@ -23,7 +23,7 @@ export function useCompanyViewModel(): CompanyViewModel {
       setCompanies(await companyService.listCompanies());
       return { success: true };
     } catch {
-      const errorMessage = "Failed to load companies";
+      const errorMessage = "Failed to load bot information";
       setError(errorMessage);
       return { success: false, errorMessage };
     } finally {
@@ -36,6 +36,8 @@ export function useCompanyViewModel(): CompanyViewModel {
   }, [loadCompanies]);
 
   const openCreate = () => {
+    if (loading || error || companies.length > 0) return;
+
     setEditTarget(null);
     setForm(emptyCompanyForm);
     setFormOpen(true);
@@ -60,6 +62,13 @@ export function useCompanyViewModel(): CompanyViewModel {
   };
 
   const saveCompany = async () => {
+    if (!editTarget && (loading || error || companies.length > 0)) {
+      return {
+        success: false,
+        errorMessage: "Bot information can only be added once.",
+      };
+    }
+
     if (!companyService.isValidForm(form)) return { success: false };
 
     setSaving(true);
@@ -69,10 +78,10 @@ export function useCompanyViewModel(): CompanyViewModel {
       await loadCompanies();
       return {
         success: true,
-        message: editTarget ? "Company updated" : "Company created",
+        message: editTarget ? "Bot information updated" : "Bot information added",
       };
     } catch {
-      return { success: false, errorMessage: "Save failed" };
+      return { success: false, errorMessage: "Could not save bot information" };
     } finally {
       setSaving(false);
     }
@@ -94,9 +103,9 @@ export function useCompanyViewModel(): CompanyViewModel {
       await companyService.deleteCompany(deleteTarget.id);
       setDeleteTarget(null);
       await loadCompanies();
-      return { success: true, message: "Company deleted" };
+      return { success: true, message: "Bot information deleted" };
     } catch {
-      return { success: false, errorMessage: "Delete failed" };
+      return { success: false, errorMessage: "Could not delete bot information" };
     } finally {
       setDeleting(false);
     }

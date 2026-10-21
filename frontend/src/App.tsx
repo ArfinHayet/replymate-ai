@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
+import { PageLoadingSkeleton } from "./components/layout/PageLoadingSkeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { PrivateRoute } from "@/features/auth/view/components/PrivateRoute";
 
@@ -24,7 +25,7 @@ const AuthCallbackPage = lazy(() =>
 );
 const UploadPage = lazy(() => import("@/features/upload").then((module) => ({ default: module.UploadPage })));
 const PdfsPage = lazy(() => import("@/features/pdfs").then((module) => ({ default: module.PdfsPage })));
-const WebPagesPage = lazy(() => import("@/features/webPages").then((module) => ({ default: module.WebPagesPage })));
+// const WebPagesPage = lazy(() => import("@/features/webPages").then((module) => ({ default: module.WebPagesPage })));
 const ImageUploadPage = lazy(() => import("@/features/images").then((module) => ({ default: module.ImageUploadPage })));
 const ImagesPage = lazy(() => import("@/features/images").then((module) => ({ default: module.ImagesPage })));
 const CompanyPage = lazy(() => import("@/features/company").then((module) => ({ default: module.CompanyPage })));
@@ -36,7 +37,6 @@ const ChatHistoryPage = lazy(() =>
   import("@/features/chatHistory").then((module) => ({ default: module.ChatHistoryPage })),
 );
 const EmbedPage = lazy(() => import("@/features/embed").then((module) => ({ default: module.EmbedPage })));
-const ToolsPage = lazy(() => import("@/features/tools").then((module) => ({ default: module.ToolsPage })));
 const ProfilePage = lazy(() => import("@/features/profile").then((module) => ({ default: module.ProfilePage })));
 const ProfileCompletionPage = lazy(() =>
   import("@/features/profileCompletion").then((module) => ({ default: module.ProfileCompletionPage })),
@@ -45,11 +45,7 @@ const AnalyticsPage = lazy(() => import("@/features/analytics").then((module) =>
 const UpgradePage = lazy(() => import("@/features/upgrade").then((module) => ({ default: module.UpgradePage })));
 
 function RouteFallback() {
-  return (
-    <div className="flex h-dvh items-center justify-center bg-rm-trip-surface">
-      <div className="h-10 w-10 animate-spin rounded-full border-2 border-rm-trip-brand/20 border-t-rm-trip-brand" />
-    </div>
-  );
+  return <PageLoadingSkeleton />;
 }
 
 export default function App() {
@@ -73,7 +69,9 @@ export default function App() {
             <Route element={<AppLayout />}>
               <Route path="/upload" element={<UploadPage />} />
               <Route path="/pdfs" element={<PdfsPage />} />
+              {/* URL ingestion management is disabled; retain the page implementation for later re-enabling.
               <Route path="/web-pages" element={<WebPagesPage />} />
+              */}
               <Route path="/images/upload" element={<ImageUploadPage />} />
               <Route path="/images" element={<ImagesPage />} />
               <Route path="/company" element={<CompanyPage />} />
@@ -83,7 +81,6 @@ export default function App() {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/profile-completion" element={<ProfileCompletionPage />} />
               <Route path="/embed" element={<EmbedPage />} />
-              <Route path="/tools" element={<ToolsPage />} />
               <Route path="/analytics" element={<AnalyticsPage />} />
               <Route path="/upgrade" element={<UpgradePage />} />
             </Route>

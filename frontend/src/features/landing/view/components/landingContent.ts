@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import type { TurnstileControl } from "@/lib/turnstile";
 
 export type ContactFormState = { name: string; email: string; subject: string; message: string };
 
@@ -11,6 +12,7 @@ export type ContactFormProps = {
   set: <K extends keyof ContactFormState>(k: K, v: ContactFormState[K]) => void;
   submitting: boolean;
   success: string | null;
+  turnstile: TurnstileControl;
 };
 
 export const CONTACT_EMAIL = "arfinhayet786@gmail.com";
@@ -18,47 +20,31 @@ export const DASHBOARD_PATH = "/chat";
 
 export const workflowSteps = [
   {
-    title: "Add business knowledge",
-    desc: "Upload PDFs, markdown files, web pages, and images so answers are grounded in approved sources.",
+    title: "Upload your content",
+    desc: "Upload documents, spreadsheets, and images to give your chatbot the knowledge it needs.",
+    label: "Upload",
+    note: "Your uploaded content becomes your chatbot’s knowledge base.",
+    img: "/landing/screenshot-upload.png",
+    alt: "SupportMate AI Add Content page showing the PDF upload area",
+    imageClass: "w-full",
   },
   {
-    title: "Configure your workspace",
-    desc: "Set company profile context, review content sources, and prepare widget keys and allowed domains.",
+    title: "Copy the embed script and paste in your website",
+    desc: "Copy the generated embed script and paste it into your website to add your chatbot.",
+    label: "Embed",
+    note: "Create a widget key and allow your website domain before embedding.",
+    img: "/landing/screenshot-embed.png",
+    alt: "SupportMate AI Website Widget page showing the embed script and allowed domains",
+    imageClass: "w-full",
   },
   {
-    title: "Deploy and improve",
-    desc: "Embed the widget or share a public chat URL, then monitor analytics and chat history to keep improving.",
-  },
-];
-
-export const pricingPlans = [
-  {
-    name: "Free",
-    price: "$0",
-    subtitle: "per month - for getting started.",
-    features: [
-      { label: "10 documents", included: true },
-      { label: "1 website", included: true },
-      { label: "10 photos", included: true },
-      { label: "100 messages", included: true },
-      { label: "Chatbot customization", included: false },
-      { label: "Priority support", included: false },
-    ],
-    highlighted: false,
-  },
-  {
-    name: "Pro",
-    price: "$20 USD",
-    subtitle: "per month - for growing teams.",
-    features: [
-      { label: "100 document uploads", included: true },
-      { label: "10 websites", included: true },
-      { label: "200 photos", included: true },
-      { label: "Unlimited chatting", included: true },
-      { label: "Chatbot customization", included: true },
-      { label: "Priority support", included: true },
-    ],
-    highlighted: true,
+    title: "Get your own support chatbot",
+    desc: "Let visitors ask questions and receive answers based on your uploaded content.",
+    label: "Chatbot",
+    note: "Your support chatbot is ready to help visitors on your website.",
+    img: "/landing/screenshot-chatbot.png",
+    alt: "SupportMate AI support chatbot with its message input",
+    imageClass: "max-h-[520px] w-auto",
   },
 ];
 
@@ -69,7 +55,7 @@ export const faqs = [
   },
   {
     q: "What content can we train it with?",
-    a: "SupportMate supports PDFs, markdown files, website URLs, and images so your assistant can answer from your own material.",
+    a: "SupportMate supports PDFs, markdown files, and images so your assistant can answer from your own material.",
   },
   {
     q: "Can we control where the widget runs?",
@@ -77,7 +63,7 @@ export const faqs = [
   },
   {
     q: "How do we improve response quality over time?",
-    a: "Use chat history and analytics to review conversations, add missing sources, and refresh indexed web pages.",
+    a: "Use chat history and analytics to review conversations and add missing sources.",
   },
   {
     q: "Which AI models power the chatbot responses?",

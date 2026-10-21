@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTurnstile } from "@/lib/turnstile";
 import type { AuthFieldErrors } from "../model/entities/AuthFieldErrors";
 import type { AuthFormStatus } from "../model/entities/AuthFormStatus";
 import { getAuthErrorMessage } from "../model/services/authError";
@@ -12,6 +13,7 @@ export function useLoginViewModel(): LoginViewModel {
   const [errors, setErrors] = useState<AuthFieldErrors>({});
   const [googleLoading, setGoogleLoading] = useState(false);
   const authService = useMemo(() => createAuthService(), []);
+  const turnstile = useTurnstile();
 
   const setEmail = (value: string) => {
     setFormData((prev) => ({ ...prev, email: value }));
@@ -28,23 +30,30 @@ export function useLoginViewModel(): LoginViewModel {
   };
 
   const submitLogin = async () => {
+    if (formStatus === "loading" || formStatus === "success") return { success: false };
     const newErrors = validateLoginForm(formData.email, formData.password);
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return { success: false };
 
+    const turnstileToken = turnstile.consumeToken();
+    if (!turnstileToken) {
+      return { success: false, errorMessage: "Please complete the security check." };
+    }
+
     setFormStatus("loading");
 
     try {
-      await authService.login(formData.email, formData.password);
+      await authService.login(formData.email, formData.password, turnstileToken);
       setFormStatus("success");
       return { success: true };
     } catch (error: unknown) {
-      console.error("Login error:", error);
       setFormStatus("idle");
       return {
         success: false,
         errorMessage: getAuthErrorMessage(error, "Unable to log in. Please check your credentials and try again."),
       };
+    } finally {
+      turnstile.reset();
     }
   };
 
@@ -67,6 +76,7 @@ export function useLoginViewModel(): LoginViewModel {
     formStatus,
     errors,
     googleLoading,
+    turnstile,
     setEmail,
     setPassword,
     submitLogin,

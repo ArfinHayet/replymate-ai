@@ -30,6 +30,7 @@ export function ChatPage() {
         messages={viewModel.messages}
         loading={viewModel.loading}
         suggestions={viewModel.suggestions}
+        suggestionsLoading={viewModel.suggestionsLoading}
         bottomRef={viewModel.bottomRef}
         onSelectSuggestion={viewModel.setSuggestedQuestion}
       />

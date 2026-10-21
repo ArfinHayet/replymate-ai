@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ChatMessage } from './chat-message.entity';
@@ -10,13 +9,6 @@ import { CacheService } from '../../core/cache/cache.service';
 import { CompanyService } from '../company/company.service';
 import { RetrievalService } from '../../core/retrieval/retrieval.service';
 import { MessageUsageSnapshot, UsageService } from '../usage/usage.service';
-import { ChatRedirectAction } from '../chat-tools/chat-tools.types';
-import { ChatToolsService } from '../chat-tools/chat-tools.service';
-import type {
-  FlightListContext,
-  WidgetDomManipulation,
-} from './flight-list-context';
-import type { ProductListContext } from './product-list-context';
 
 /** Max stored messages loaded per session (10 full turns) */
 const MAX_HISTORY = 20;
@@ -46,14 +38,12 @@ export class ChatService implements OnModuleInit {
   constructor(
     @InjectRepository(ChatMessage)
     private readonly chatRepo: Repository<ChatMessage>,
-    private readonly config: ConfigService,
     private readonly aiService: AiService,
     private readonly cacheService: CacheService,
     private readonly companyService: CompanyService,
     private readonly retrievalService: RetrievalService,
     private readonly usageService: UsageService,
-    private readonly chatToolsService: ChatToolsService,
-  ) { }
+  ) {}
 
   onModuleInit() {
     const promptPath = path.join(__dirname, 'prompts', 'system.prompt.txt');
@@ -128,37 +118,63 @@ export class ChatService implements OnModuleInit {
     );
   }
 
+  private getHistoryMessageText(message: ProviderHistoryMessage): string {
+    return message.parts.map((part) => part.text ?? '').join('').trim();
+  }
+
+  private findPendingClarificationQuestion(
+    history: ProviderHistoryMessage[],
+  ): string | undefined {
+    let index = history.length - 1;
+    let pendingQuestion: string | undefined;
+
+    // A repeated clarification is stored as another ordinary user/assistant turn.
+    // Walk back through those turns to retain the original unanswered question.
+    while (index >= 1) {
+      const assistantMessage = history[index];
+      if (
+        assistantMessage.role !== 'model' ||
+        this.getHistoryMessageText(assistantMessage) !== CLARIFICATION_MESSAGE
+      ) {
+        break;
+      }
+
+      const userMessage = history[index - 1];
+      if (userMessage.role !== 'user') break;
+
+      pendingQuestion = this.getHistoryMessageText(userMessage);
+      index -= 2;
+    }
+
+    return pendingQuestion;
+  }
+
   async chat(
     message: string,
     sessionId: string,
     userId: string,
-    flightListContext?: FlightListContext,
-    productListContext?: ProductListContext,
   ): Promise<{
     answer: string;
     message?: string;
     cached: boolean;
     usage: MessageUsageSnapshot;
-    action?: ChatRedirectAction;
-    dommanipulate?: WidgetDomManipulation;
   }> {
     const usage = await this.usageService.incrementOrThrow(userId);
 
-    const [history, systemPrompt, chatToolConfigs] = await Promise.all([
+    const [history, systemPrompt] = await Promise.all([
       this.loadHistory(sessionId, userId),
       this.buildSystemPrompt(userId),
-      this.chatToolsService.list(userId),
     ]);
 
-    const enabledTools = chatToolConfigs.filter((tool) => tool.enabled);
     const hasCompanyProfile = Boolean(systemPrompt.activeCompanyName);
 
+    const pendingClarificationQuestion =
+      this.findPendingClarificationQuestion(history);
     const classification = await this.aiService.classifyQueryIntent(
       history,
       message,
       systemPrompt.activeCompanyName,
-      flightListContext,
-      productListContext,
+      pendingClarificationQuestion,
     );
 
     const retrievalIntent = classification.resolvedQuery?.trim() || null;
@@ -183,70 +199,6 @@ export class ChatService implements OnModuleInit {
     }
 
     // ---------------------------------------------------------------------------
-    // Visible flight analysis
-    // ---------------------------------------------------------------------------
-
-    if (
-      classification.intent === 'flight_list_query' &&
-      flightListContext
-    ) {
-      const flightResult =
-        await this.aiService.analyzeVisibleFlightContext(
-          retrievalIntent ?? message,
-          flightListContext,
-          classification.flightListCriteria,
-        );
-
-      await this.saveTurn(
-        sessionId,
-        userId,
-        message,
-        flightResult.answer,
-      );
-
-      return {
-        answer: flightResult.answer,
-        cached: false,
-        usage,
-        ...(flightResult.dommanipulate && {
-          dommanipulate: flightResult.dommanipulate,
-        }),
-      };
-    }
-
-    // ---------------------------------------------------------------------------
-    // Visible product analysis
-    // ---------------------------------------------------------------------------
-
-    if (
-      classification.intent === 'product_list_query' &&
-      productListContext
-    ) {
-      const productResult =
-        await this.aiService.analyzeVisibleProductContext(
-          retrievalIntent ?? message,
-          productListContext,
-          classification.productListCriteria,
-        );
-
-      await this.saveTurn(
-        sessionId,
-        userId,
-        message,
-        productResult.answer,
-      );
-
-      return {
-        answer: productResult.answer,
-        cached: false,
-        usage,
-        ...(productResult.dommanipulate && {
-          dommanipulate: productResult.dommanipulate,
-        }),
-      };
-    }
-
-    // ---------------------------------------------------------------------------
     // Retrieval setup
     // ---------------------------------------------------------------------------
 
@@ -261,28 +213,16 @@ export class ChatService implements OnModuleInit {
     // Cache lookup
     // ---------------------------------------------------------------------------
 
-    const toolsEnabled = enabledTools.length > 0;
+    const cachedAnswer = await this.cacheService.findHit(queryVector, userId);
 
-    if (!toolsEnabled) {
-      const cachedAnswer = await this.cacheService.findHit(
-        queryVector,
-        userId,
-      );
+    if (cachedAnswer) {
+      await this.saveTurn(sessionId, userId, message, cachedAnswer);
 
-      if (cachedAnswer) {
-        await this.saveTurn(
-          sessionId,
-          userId,
-          message,
-          cachedAnswer,
-        );
-
-        return {
-          answer: cachedAnswer,
-          cached: true,
-          usage,
-        };
-      }
+      return {
+        answer: cachedAnswer,
+        cached: true,
+        usage,
+      };
     }
 
     // ---------------------------------------------------------------------------
@@ -291,15 +231,13 @@ export class ChatService implements OnModuleInit {
 
     const hasRelevantKnowledge =
       hasCompanyProfile ||
-      classification.intent === 'flight_list_query' ||
-      classification.intent === 'product_list_query' ||
       classification.intent === 'standalone_knowledge_page' ||
       (await this.retrievalService.hasRelevantKnowledge(
         queryVector,
         userId,
       ));
 
-    if (!hasRelevantKnowledge && !toolsEnabled) {
+    if (!hasRelevantKnowledge) {
       this.logger.log(
         'No relevant chunks in KB - returning fallback without calling LLM',
       );
@@ -322,18 +260,7 @@ export class ChatService implements OnModuleInit {
     // Agent execution
     // ---------------------------------------------------------------------------
 
-    const agentTools =
-      classification.intent === 'flight_list_query' &&
-        flightListContext
-        ? enabledTools.filter(
-          (tool) => tool.toolKey !== 'flight_search',
-        )
-        : enabledTools;
-
     let answer = this.fallbackMessage;
-    let action: ChatRedirectAction | undefined;
-    let dommanipulate: WidgetDomManipulation | undefined;
-    let usedToolKeys: string[] = [];
 
     try {
       const result = await this.aiService.runAgenticLoop(
@@ -344,15 +271,9 @@ export class ChatService implements OnModuleInit {
         classification.intent === 'direct'
           ? undefined
           : retrievalIntent ?? undefined,
-        agentTools,
-        flightListContext,
-        productListContext,
       );
 
       answer = result.answer;
-      action = result.action;
-      dommanipulate = result.dommanipulate;
-      usedToolKeys = result.usedToolKeys ?? [];
     } catch (error) {
       this.logger.error('Agentic loop failed', error);
     }
@@ -364,20 +285,7 @@ export class ChatService implements OnModuleInit {
     const isFallback =
       answer.trim() === this.fallbackMessage.trim();
 
-    const usedFlightTool = usedToolKeys.some((toolKey) =>
-      [
-        'city_to_airport',
-        'flight_search',
-        'analyze_visible_flights',
-      ].includes(toolKey),
-    );
-
-    const shouldCache =
-      !isFallback &&
-      !action &&
-      !usedFlightTool &&
-      classification.intent !== 'flight_list_query' &&
-      classification.intent !== 'product_list_query';
+    const shouldCache = !isFallback;
 
     await Promise.all([
       this.saveTurn(sessionId, userId, message, answer),
@@ -397,8 +305,6 @@ export class ChatService implements OnModuleInit {
       answer,
       cached: false,
       usage,
-      ...(action && { action }),
-      ...(dommanipulate && { dommanipulate }),
     };
   }
 

@@ -1,4 +1,5 @@
 import { useMemo, useState, type ChangeEvent } from "react";
+import { useTurnstile } from "@/lib/turnstile";
 import type { AuthFieldErrors } from "../model/entities/AuthFieldErrors";
 import { getAuthErrorMessage } from "../model/services/authError";
 import { createAuthService } from "../model/services/createAuthService";
@@ -15,6 +16,7 @@ export function useSignupViewModel(): SignupViewModel {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<AuthFieldErrors>({});
   const authService = useMemo(() => createAuthService(), []);
+  const turnstile = useTurnstile();
 
   const handleEmailChange = (event: ChangeEvent<HTMLInputElement>) => {
     setEmail(event.target.value);
@@ -32,6 +34,7 @@ export function useSignupViewModel(): SignupViewModel {
   };
 
   const submitSignup = async () => {
+    if (loading || done) return { success: false };
     const newErrors = validateSignupForm(password, confirm);
     setErrors(newErrors);
 
@@ -43,9 +46,14 @@ export function useSignupViewModel(): SignupViewModel {
       return { success: false, errorMessage: newErrors.confirm };
     }
 
+    const turnstileToken = turnstile.consumeToken();
+    if (!turnstileToken) {
+      return { success: false, errorMessage: "Please complete the security check." };
+    }
+
     setLoading(true);
     try {
-      await authService.signup(email, password);
+      await authService.signup(email, password, turnstileToken);
       setDone(true);
       return { success: true };
     } catch (error: unknown) {
@@ -55,6 +63,7 @@ export function useSignupViewModel(): SignupViewModel {
       };
     } finally {
       setLoading(false);
+      turnstile.reset();
     }
   };
 
@@ -96,6 +105,7 @@ export function useSignupViewModel(): SignupViewModel {
     done,
     googleLoading,
     errors,
+    turnstile,
     handleEmailChange,
     handlePasswordChange,
     handleConfirmChange,

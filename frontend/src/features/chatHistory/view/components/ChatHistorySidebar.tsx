@@ -1,5 +1,6 @@
 import { Search } from "lucide-react";
 import { InlineError } from "@/components/ui/InlineError";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { ChatSession } from "../../model/entities/ChatSession";
 import { formatRelativeTime, shortSessionId } from "../../model/services/chatHistoryFormatters";
@@ -41,8 +42,19 @@ export function ChatHistorySidebar({
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2.5 sm:p-2">
         {loading && (
-          <div className="px-4 py-12 text-center">
-            <p className="text-sm font-semibold text-rm-trip-text-muted">Loading sessions...</p>
+          <div aria-busy="true" className="space-y-1">
+            {Array.from({ length: 5 }, (_, index) => (
+              <div key={index} className="flex items-center gap-3 rounded-rm-trip-smooth px-3 py-3.5">
+                <Skeleton className="h-11 w-11 shrink-0 rounded-rm-trip-smooth" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                  <Skeleton className="h-3 w-4/5" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
         {error && (

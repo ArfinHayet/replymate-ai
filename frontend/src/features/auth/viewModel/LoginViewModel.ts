@@ -1,5 +1,6 @@
 import type { AuthFieldErrors } from "../model/entities/AuthFieldErrors";
 import type { AuthFormStatus } from "../model/entities/AuthFormStatus";
+import type { TurnstileControl } from "@/lib/turnstile";
 
 export interface LoginFormData {
   email: string;
@@ -11,6 +12,7 @@ export interface LoginViewModel {
   formStatus: AuthFormStatus;
   errors: AuthFieldErrors;
   googleLoading: boolean;
+  turnstile: TurnstileControl;
   setEmail(value: string): void;
   setPassword(value: string): void;
   submitLogin(): Promise<{ success: boolean; errorMessage?: string }>;
