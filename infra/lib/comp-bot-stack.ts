@@ -88,7 +88,7 @@ export class CompBotStack extends cdk.Stack {
       description: `Comp-bot backend API (${deployEnv})`,
       corsPreflight: {
         // Fine-grained CORS is handled by NestJS; API GW passes OPTIONS through.
-        allowHeaders: ['*', 'Authorization'],
+        allowHeaders: ['*', 'Authorization', 'Content-Type'],
         allowMethods: [apigatewayv2.CorsHttpMethod.ANY],
         allowOrigins: ['*'],
         maxAge: cdk.Duration.days(1),
