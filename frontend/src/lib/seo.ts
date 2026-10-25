@@ -45,7 +45,9 @@ export function renderSeoHead(pathname: string) {
     page?.description ??
     "Manage your SupportMate AI account and customer support workspace.";
   const url = `${SITE_URL}${path}`;
-  const image = `${SITE_URL}/social-preview.jpg`;
+  const image = `${SITE_URL}/social-preview.jpg?v=retro-1`;
+  const imageAlt =
+    "SupportMate — AI-Powered Support. Smarter Responses. Happier Customers. Retro maroon chatbot preview on cream graph paper.";
 
   const meta = (
     attribute: "name" | "property",
@@ -95,13 +97,13 @@ export function renderSeoHead(pathname: string) {
     meta("property", "og:image:type", "image/jpeg"),
     meta("property", "og:image:width", "1200"),
     meta("property", "og:image:height", "630"),
-    meta("property", "og:image:alt", "SupportMate AI logo"),
+    meta("property", "og:image:alt", imageAlt),
     meta("name", "twitter:card", "summary_large_image"),
     meta("name", "twitter:site", "@SupportMateai"),
     meta("name", "twitter:title", title),
     meta("name", "twitter:description", description),
     meta("name", "twitter:image", image),
-    meta("name", "twitter:image:alt", "SupportMate AI logo"),
+    meta("name", "twitter:image:alt", imageAlt),
     path === "/"
       ? `<script data-seo type="application/ld+json">${
           JSON.stringify(structuredData).replace(/</g, "\\u003c")

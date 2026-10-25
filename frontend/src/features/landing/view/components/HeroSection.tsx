@@ -6,12 +6,12 @@ export function HeroSection() {
   return (
     <section className="landing-hero relative overflow-hidden border-b border-gray-200">
       <div className={cn(shell, "relative z-[1] grid grid-cols-[1.05fr_0.95fr] items-center gap-14 px-7 py-20 max-[900px]:grid-cols-1 max-[900px]:gap-12 max-[900px]:px-5 max-[900px]:py-14")}>
-        <div>
-          <h1 className="mb-6 max-w-[680px] font-[var(--font-display)] text-[clamp(3.5rem,7.6vw,6rem)] font-extrabold leading-[0.94] tracking-[-0.065em] text-rm-trip-text">
-            Knowledge in.
-            <br />
-            <em className="font-[var(--font-editorial)] font-normal tracking-[-0.055em] text-rm-trip-brand">
-              Answers out.
+        <div className="min-w-0">
+          <h1 className="mb-6 max-w-[680px] font-[family-name:var(--font-display)] text-[clamp(2rem,4.4vw,3.5rem)] font-extrabold leading-[1.08] tracking-[-0.045em] text-rm-trip-text max-[900px]:text-[clamp(1.75rem,5.8vw,3.5rem)]">
+            <span className="block">AI-Powered Support.</span>{" "}
+            <em className="block font-[family-name:var(--font-editorial)] font-normal tracking-[-0.035em] text-rm-trip-brand">
+              <span className="block">Smarter Responses.</span>{" "}
+              <span className="block">Happier Customers.</span>
             </em>
           </h1>
           <p className="mb-8 max-w-[540px] text-base leading-7 text-rm-trip-text-muted sm:text-lg">
