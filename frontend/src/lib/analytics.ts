@@ -56,8 +56,10 @@ export function trackPageView(pathname: string) {
 
   if (!analyticsWindow.gtag) {
     analyticsWindow.dataLayer ??= [];
-    analyticsWindow.gtag = (...args: unknown[]) => {
-      analyticsWindow.dataLayer?.push(args);
+    analyticsWindow.gtag = function () {
+      // Google tag commands require the standard Arguments object format.
+      // eslint-disable-next-line prefer-rest-params
+      analyticsWindow.dataLayer?.push(arguments);
     };
     analyticsWindow.gtag("js", new Date());
     analyticsWindow.gtag("config", GA_MEASUREMENT_ID, {
