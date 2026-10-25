@@ -4,6 +4,7 @@ import { AppLayout } from "./components/layout/AppLayout";
 import { PageLoadingSkeleton } from "./components/layout/PageLoadingSkeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { RouteSeo } from "@/components/RouteSeo";
+import { RouteAnalytics } from "@/components/RouteAnalytics";
 import { PrivateRoute } from "@/features/auth/view/components/PrivateRoute";
 
 const LandingPage = lazy(() => import("@/features/landing").then((module) => ({ default: module.LandingPage })));
@@ -53,6 +54,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <RouteSeo />
+      <RouteAnalytics />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Public routes - no sidebar */}

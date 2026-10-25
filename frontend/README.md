@@ -32,6 +32,31 @@ open **Sitemaps**, and submit `https://www.supportmate.online/sitemap.xml`.
 Use **URL Inspection** to check the three public pages and their canonical URLs.
 Submitting the sitemap does not guarantee indexing.
 
+## Google Analytics
+
+The production frontend uses Google Analytics 4 property **SupportMate AI**
+(`560594440`), web stream **SupportMate AI Frontend** (`16199271228`), and
+measurement ID `G-PTP6T5RXK3`. The property uses Bangladesh time and USD reporting.
+It is separate from the Noor AI property within the existing Analytics account.
+
+`src/lib/analytics.ts` loads the Google tag only in production on
+`www.supportmate.online` or `supportmate.online`. `RouteAnalytics` sends one
+manual page view per pathname change after `RouteSeo` updates the title. Keep
+enhanced measurement disabled in the web stream to avoid duplicate automatic
+page views and automatic form tracking.
+
+Only known frontend routes are tracked. Password recovery, password reset,
+OAuth callbacks, and unknown routes disable collection. Page locations exclude
+query strings and fragments; external referrers are reduced to their origin.
+No account IDs, user emails, chat messages, uploaded content, or form values are
+added to events. Advertising personalization and Google signals are disabled.
+Development, preview deployments, and localhost do not load the tag.
+
+To verify collection after deployment, visit the production frontend and open
+the SupportMate AI property's **Realtime** report. Standard reports can take
+time to populate. Search Console is available under the existing verified
+`supportmate.online` domain property, with the frontend sitemap submitted.
+
 ## Vite template reference
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
