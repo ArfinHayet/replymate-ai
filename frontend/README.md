@@ -1,4 +1,38 @@
-# React + TypeScript + Vite
+# SupportMate AI frontend
+
+## SEO
+
+The canonical production domain is `https://www.supportmate.online`. Only `/`,
+`/terms`, and `/privacy` are included in `public/sitemap.xml`. The sitemap is
+published at `https://www.supportmate.online/sitemap.xml` and advertised in
+`public/robots.txt`.
+
+Edit public page titles and descriptions in `src/lib/seo.ts`. The same module
+provides canonical URLs, Open Graph and Twitter metadata, and homepage-only
+software structured data. Keep the sitemap and Vercel rewrites in sync when
+adding public pages. Canonical URLs exclude queries, fragments, and trailing
+slashes (except the homepage).
+
+`npm run build` generates `dist/index.html`, `dist/terms.html`, and
+`dist/privacy.html` with page-specific metadata available before JavaScript runs.
+The `seo:start` and `seo:end` markers in `index.html` must remain in place.
+Vercel rewrites the public URLs to those files. Page content still renders with
+React; this is metadata generation, not content prerendering.
+
+`RouteSeo` updates metadata during browser navigation. All other paths receive
+`noindex, follow` and no canonical. Vercel also sends `X-Robots-Tag: noindex, follow`
+on account and dashboard routes so exclusion does not depend on JavaScript.
+These headers apply on Vercel, not the local Vite development or preview server.
+Crawling remains allowed in `robots.txt` so crawlers can read the indexing rules.
+
+After deployment, verify the sitemap and robots URLs return XML and plain text,
+and that `/terms` and `/privacy` return their own metadata in the HTML source.
+In Google Search Console, select or verify the production domain property,
+open **Sitemaps**, and submit `https://www.supportmate.online/sitemap.xml`.
+Use **URL Inspection** to check the three public pages and their canonical URLs.
+Submitting the sitemap does not guarantee indexing.
+
+## Vite template reference
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 

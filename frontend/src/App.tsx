@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "./components/layout/AppLayout";
 import { PageLoadingSkeleton } from "./components/layout/PageLoadingSkeleton";
 import { Toaster } from "@/components/ui/sonner";
+import { RouteSeo } from "@/components/RouteSeo";
 import { PrivateRoute } from "@/features/auth/view/components/PrivateRoute";
 
 const LandingPage = lazy(() => import("@/features/landing").then((module) => ({ default: module.LandingPage })));
@@ -51,6 +52,7 @@ function RouteFallback() {
 export default function App() {
   return (
     <BrowserRouter>
+      <RouteSeo />
       <Suspense fallback={<RouteFallback />}>
         <Routes>
           {/* Public routes - no sidebar */}
