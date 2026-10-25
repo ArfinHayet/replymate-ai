@@ -52,6 +52,11 @@ No account IDs, user emails, chat messages, uploaded content, or form values are
 added to events. Advertising personalization and Google signals are disabled.
 Development, preview deployments, and localhost do not load the tag.
 
+For loading diagnostics, inspect the `supportmate-google-analytics` script in
+the browser's document head. Its `data-status` reports `loading`, `loaded`, or
+`error`; `data-last-processed-page` records the last sanitized path processed by
+the Google tag callback. These attributes do not confirm report ingestion.
+
 To verify collection after deployment, visit the production frontend and open
 the SupportMate AI property's **Realtime** report. Standard reports can take
 time to populate. Search Console is available under the existing verified

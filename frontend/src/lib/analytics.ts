@@ -73,10 +73,20 @@ export function trackPageView(pathname: string) {
     script.id = "supportmate-google-analytics";
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+    script.dataset.status = "loading";
+    script.onload = () => { script.dataset.status = "loaded"; };
+    script.onerror = () => { script.dataset.status = "error"; };
     document.head.append(script);
   }
 
   analyticsWindow.gtag("set", page);
-  analyticsWindow.gtag("event", "page_view", { ...page, send_to: GA_MEASUREMENT_ID });
+  analyticsWindow.gtag("event", "page_view", {
+    ...page,
+    send_to: GA_MEASUREMENT_ID,
+    event_callback: () => {
+      const script = document.getElementById("supportmate-google-analytics");
+      if (script) script.dataset.lastProcessedPage = path;
+    },
+  });
   lastPageLocation = pageLocation;
 }
