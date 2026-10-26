@@ -10,6 +10,14 @@ A separate admin frontend for users, uploaded content, and contact messages. Sig
 
 The design imports the canonical theme tokens from `../frontend/public/theme-tokens.css`, so build the admin project from this repository with its sibling `frontend/` directory present. The Supabase service role key stays on the backend.
 
+## Routes and components
+
+The app uses React Router with `/login` and protected routes at `/users`, `/pdfs`, `/csvs`, `/images`, and `/contacts`. The root redirects to `/users`; unknown paths show a page-not-found screen. Signing in returns you to the requested admin URL. Applied filters, page number, and page size are stored in query parameters for refreshes, bookmarks, and browser back/forward navigation.
+
+`src/router/AppRouter.tsx` defines the routes, `src/auth/` manages the Supabase session and admin guard, and `src/layouts/AdminLayout.tsx` provides the shared shell. Page components live in `src/pages/`, reusable UI in `src/components/`, and record fetching and filter state in `src/hooks/`.
+
+When deploying, configure the static host to serve `index.html` for frontend routes so direct links and refreshes work. Keep requests to the backend API on its configured `VITE_API_URL`.
+
 ## Contact messages
 
 Run `npm run migration:run` from `backend/` before enabling contact submissions. The public `POST /contact-messages` endpoint saves the landing form's name, email, optional subject, and message; it does not send email notifications. The table is protected by row-level security and is accessed through the backend database connection.
